@@ -1,0 +1,55 @@
+-Dashboard:
+	-Total barang masuk
+	-Total Barang keluar
+	-Circel grafik
+	-
+-database produk ditambahkan kategori, untuk produk tampa sni muncul tanda silang
+-hak access
+-estimasi biaya
+-master gudang d17 dan d9s
+-cashcow
+-tambah kan input tgl manual dengan hak akses
+
+Hak akses:
+-admin gudang
+-admin stok
+
+Hostinger:
+User:astahomeware@gmail.com
+Pass:host=aswms
+
+Dewaweb:
+User:astahomeware@gmail.com
+Pass:dw=aswmsd17d09
+
+wms.astahomeware.com
+User:superadmin@gmail.com
+Pass:astawms=d17d09
+
+FTP wms.astahomeware.com:
+User:it@wms.astahomeware.com
+Pass:astawms=d17d09
+FTP Username: it@wms.astahomeware.com
+FTP server: ftp.astahomeware.com
+FTP & explicit FTPS port:  21
+
+Database wms.astahomeware.com:
+hostname = 103.163.138.82
+username = astahome_it,
+password = astawms=d17d09,
+database = astahome_wms,
+dbdriver = mysqli,
+
+Anydesk astawms:
+IP Address: 1827317047
+Password: astawms=d17d09
+
+Selamat Pagi ce berikut adalah alamat webnya dan data usernya.
+
+Url: wms.astahomeware.com
+User: superadmin@gmail.com
+Pass: astawms=d17d09
+
+Website astahomeware.com
+User: hello@astahomeware.com
+Pass: h3LL0@4sT4#!!
