@@ -38,26 +38,90 @@
                 <!-- End -->
                 <div class="row">
                     <div class="col">
-                        <table id="tableproduct" class="display" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>User Penginput</th>
-                                    <th>Tanggal Import</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach($acc_shopee as $askey => $asvalue){?>
-                                <tr>
-                                    <td><?= $askey+1 ?></td>
-                                    <td><?= $asvalue->full_name ?></td>
-                                    <td><?= $asvalue->created_date?></td>
-                                    <td><a href="<?php echo base_url('shopee_recap/detail_acc?idacc_shopee=' . $asvalue->idacc_shopee)?>"><button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button></a></td>
-                                </tr>
-                                <?php }?>
-                            </tbody>
-                        </table>
+                        <!-- Tabs Navigation -->
+                        <ul class="nav nav-tabs mt-4" id="listTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">List</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All</button>
+                            </li>
+                        </ul>
+
+                        <!-- Tabs Content -->
+                        <div class="tab-content" id="listTabsContent">
+                            <!-- Tab 1: list -->
+                            <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
+                                <div class="row mt-3">
+                                    <div class="col">
+                                        <table id="tableproduct" class="display" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>No</th>
+                                                    <th>User Penginput</th>
+                                                    <th>Tanggal Import</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                foreach ($acc_shopee as $askey => $asvalue) {
+                                                ?>
+                                                    <tr>
+                                                        <td><?= $askey + 1 ?></td>
+                                                        <td><?= $asvalue->full_name ?></td>
+                                                        <td><?= $asvalue->created_date ?></td>
+                                                        <td>
+                                                            <a href="<?php echo base_url('shopee_recap/detail_acc?idacc_shopee=' . $asvalue->idacc_shopee) ?>">
+                                                                <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                <?php } ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab 2: all (example filter - you can adjust based on backend or JS) -->
+                            <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
+                                <div class="row mt-3">
+                                    <div class="col">
+                                        <table id="tableall" class="display" style="width:100%">
+                                            <thead>
+                                                <tr>
+                                                    <th>No</th>
+                                                    <th>Nomer Faktur</th>
+                                                    <th>Tanggal Pesanan</th>
+                                                    <th>Tanggal Pembayaran</th>
+                                                    <th>Total Faktur</th>
+                                                    <th>Bayar</th>
+                                                    <th>Diskon</th>
+                                                    <th>Pembayaran</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                foreach ($acc_shopee_detail as $asdkey => $asdvalue) {
+                                                ?>
+                                                    <tr>
+                                                        <td><?= $asdkey + 1 ?></td>
+                                                        <td><?= $asdvalue->no_faktur ?></td>
+                                                        <td><?= $asdvalue->order_date ?></td>
+                                                        <td><?= $asdvalue->pay_date ?></td>
+                                                        <td><?= number_format($asdvalue->total_faktur) ?></td>
+                                                        <td><?= number_format($asdvalue->pay) ?></td>
+                                                        <td><?= number_format($asdvalue->discount) ?></td>
+                                                        <td><?= number_format($asdvalue->payment) ?></td>
+                                                    </tr>
+                                                <?php } ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -80,6 +144,19 @@
             <script>
                 $(document).ready(function() {
                     new DataTable('#tableproduct', {
+                        responsive: true,
+                        layout: {
+                            bottomEnd: {
+                                paging: {
+                                    firstLast: false
+                                }
+                            }
+                        }
+                    });
+                });
+
+                $(document).ready(function() {
+                    new DataTable('#tableall', {
                         responsive: true,
                         layout: {
                             bottomEnd: {

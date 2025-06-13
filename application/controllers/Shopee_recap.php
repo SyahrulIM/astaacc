@@ -19,24 +19,44 @@ class Shopee_recap extends CI_Controller
         $title = 'Shopee Recap';
         $product = $this->db->get('product');
 
-        // Start Get Pembayaran Shopee
+        // Get list import Shopee (header)
         $this->db->select('user.full_name as full_name, acc_shopee.created_date as created_date, acc_shopee.idacc_shopee as idacc_shopee');
         $this->db->join('user', 'user.iduser = acc_shopee.iduser');
-        $acc_shopee = $this->db->get('acc_shopee');
-        // End
+        $acc_shopee = $this->db->get('acc_shopee')->result();
+
+        // Get detail Shopee (no_faktur unik saja)
+        $this->db->select('
+            acc_shopee_detail.no_faktur,
+            MAX(acc_shopee_detail.pay_date) AS pay_date,
+            MAX(acc_shopee_detail.total_faktur) AS total_faktur,
+            MAX(acc_shopee_detail.pay) AS pay,
+            MAX(acc_shopee_detail.discount) AS discount,
+            MAX(acc_shopee_detail.payment) AS payment,
+            MAX(acc_shopee_detail.order_date) AS order_date
+        ');
+        $this->db->from('acc_shopee_detail');
+        $this->db->join('acc_shopee', 'acc_shopee.idacc_shopee = acc_shopee_detail.idacc_shopee');
+        $this->db->join('user', 'user.iduser = acc_shopee.iduser');
+        $this->db->group_by('acc_shopee_detail.no_faktur');
+        $acc_shopee_detail = $this->db->get()->result();
+
 
         $data = [
             'title' => $title,
-            'acc_shopee' => $acc_shopee->result()
+            'product' => $product->result(),
+            'acc_shopee' => $acc_shopee,
+            'acc_shopee_detail' => $acc_shopee_detail
         ];
 
         $this->load->view('theme/v_head', $data);
         $this->load->view('Shopee_recap/v_shopee_recap');
     }
 
+
     public function createShopee()
     {
         $this->load->library('upload');
+        $shopee_type = $this->input->post('typeExcel');
         $file = $_FILES['file']['tmp_name'];
 
         if (!empty($file)) {
@@ -48,6 +68,7 @@ class Shopee_recap extends CI_Controller
 
             $acc_shopee_data = [
                 'iduser' => $this->session->userdata('iduser'),
+                'excel_type' => $shopee_type,
                 'created_by' => $this->session->userdata('username'),
                 'created_date' => date('Y-m-d H:i:s'),
                 'status' => 1
@@ -58,14 +79,19 @@ class Shopee_recap extends CI_Controller
             foreach ($sheet as $i => $row) {
                 if ($i < 6 || !$row['B']) continue;
 
+                $total = (float) str_replace(',', '', $row['J']);
+                $payment = (float) str_replace(',', '', $row['AC']);
+                $discount = $total - $payment;
+
                 $detail = [
                     'idacc_shopee' => $idacc_shopee,
                     'no_faktur' => $row['B'],
-                    'pay_date' => date('Y-m-d', strtotime($row['H'])),
-                    'total_faktur' => str_replace(',', '', $row['J']),
-                    'pay' => str_replace(',', '', $row['L']),
-                    'discount' => str_replace(',', '', $row['N']),
-                    'payment' => str_replace(',', '', $row['P'])
+                    'order_date' => date('Y-m-d', strtotime($row['E'])),
+                    'pay_date' => date('Y-m-d', strtotime($row['G'])),
+                    'total_faktur' => $total,
+                    'pay' => $total,
+                    'payment' => $payment,
+                    'discount' => $discount,
                 ];
                 $this->db->insert('acc_shopee_detail', $detail);
             }

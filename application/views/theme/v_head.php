@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title>Asta WMS - <?php echo $title; ?></title>
+    <title>Asta ACOL - <?php echo $title; ?></title>
     <!-- Core theme CSS (includes Bootstrap)-->
     <link href="<?php echo base_url(); ?>css/styles.css" rel="stylesheet" />
     <!-- DataTable CSS -->
@@ -27,20 +27,29 @@
     <div class="d-flex" id="wrapper">
         <!-- Sidebar-->
         <div class="border-end bg-white" id="sidebar-wrapper">
-            <div class="sidebar-heading border-bottom bg-light text-center"><img src="<?php echo base_url('assets/image/logo A asta biru.png') ?>" alt="Asta Logo" width="20px"> Accounting</div>
+            <div class="sidebar-heading border-bottom bg-light text-center"><img src="<?php echo base_url('assets/image/logo A asta biru.png') ?>" alt="Asta Logo" width="20px"> Accounting Online</div>
             <?php
             $current = $this->uri->segment(1);
             ?>
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action list-group-item-light p-3 <?= ($current == 'dashboard') ? 'active' : ''; ?>" href="<?php echo base_url('dashboard/'); ?>">Dashboard</a>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['verification', 'barangmasuk', 'outstock']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#transaksiSubmenu" role="button" aria-expanded="<?= in_array($current, ['verification', 'barangmasuk', 'outstock']) ? 'true' : 'false'; ?>" aria-controls="transaksiSubmenu">
-                        Recap
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#transaksiSubmenu" role="button" aria-expanded="<?= in_array($current, ['verification', 'barangmasuk', 'outstock']) ? 'true' : 'false'; ?>" aria-controls="transaksiSubmenu">
+                        Database Recap
                         <i class="fas fa-chevron-down small"></i>
                     </a>
                     <div class="collapse <?= in_array($current, ['shopee_recap', 'accurate_recap']) ? 'show' : ''; ?>" id="transaksiSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_recap') ? 'active' : ''; ?>" href="<?= base_url('shopee_recap'); ?>">Shopee Recap</a>
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'accurate_recap') ? 'active' : ''; ?>" href="<?= base_url('accurate_recap'); ?>">Accurate Recap</a>
+                    </div>
+                </div>
+                <div class="list-group-item p-0">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#transaksiSubmenu" role="button" aria-expanded="<?= in_array($current, ['comparison','']) ? 'true' : 'false'; ?>" aria-controls="transaksiSubmenu">
+                        Tools
+                        <i class="fas fa-chevron-down small"></i>
+                    </a>
+                    <div class="collapse <?= in_array($current, ['comparison', 'accurate_recap']) ? 'show' : ''; ?>" id="transaksiSubmenu">
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'comparison') ? 'active' : ''; ?>" href="<?= base_url('comparison'); ?>">Comparison</a>
                     </div>
                 </div>
                 <?php if ($this->session->userdata('idrole') == 1) { ?>

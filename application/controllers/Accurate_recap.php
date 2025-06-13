@@ -24,9 +24,24 @@ class Accurate_recap extends CI_Controller
         $acc_accurate = $this->db->get('acc_accurate');
         // End
 
+        $this->db->select('
+            acc_accurate_detail.no_faktur,
+            MAX(acc_accurate_detail.pay_date) AS pay_date,
+            MAX(acc_accurate_detail.total_faktur) AS total_faktur,
+            MAX(acc_accurate_detail.pay) AS pay,
+            MAX(acc_accurate_detail.discount) AS discount,
+            MAX(acc_accurate_detail.payment) AS payment
+        ');
+        $this->db->from('acc_accurate_detail');
+        $this->db->join('acc_accurate', 'acc_accurate.idacc_accurate = acc_accurate_detail.idacc_accurate');
+        $this->db->join('user', 'user.iduser = acc_accurate.iduser');
+        $this->db->group_by('acc_accurate_detail.no_faktur');
+        $acc_accurate_detail = $this->db->get()->result();
+
         $data = [
             'title' => $title,
-            'acc_accurate' => $acc_accurate->result()
+            'acc_accurate' => $acc_accurate->result(),
+            'acc_accurate_detail' => $acc_accurate_detail
         ];
 
         $this->load->view('theme/v_head', $data);
