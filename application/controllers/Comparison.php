@@ -57,6 +57,8 @@ class Comparison extends CI_Controller
 
             $results = $this->db->get()->result();
             $seen_faktur = [];
+            $difference_count = 0;
+            $exceed_ratio_count = 0;
 
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
@@ -67,8 +69,25 @@ class Comparison extends CI_Controller
                     ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) ||
                     ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
                 ) {
-                    $grand_total_invoice += (float) ($row->shopee_total_faktur ?? 0);
-                    $grand_total_payment += (float) ($row->accurate_payment ?? 0);
+                    $shopee = (float) ($row->shopee_total_faktur ?? 0);
+                    $accurate = (float) ($row->accurate_payment ?? 0);
+
+                    // Cek selisih nominal
+                    if ($shopee != $accurate) {
+                        $difference_count++;
+                    }
+
+                    // Hitung rasio selisih jika accurate > 0
+                    if ($accurate > 0) {
+                        $ratio = (($shopee - $accurate) / $accurate) * 100;
+                        $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
+                        if ($ratio > $ratio_limit) {
+                            $exceed_ratio_count++; // faktur yang rasio-nya melebihi batas
+                        }
+                    }
+
+                    $grand_total_invoice += $shopee;
+                    $grand_total_payment += $accurate;
 
                     $data_comparison[] = $row;
                     $seen_faktur[] = $row->no_faktur;
@@ -82,6 +101,8 @@ class Comparison extends CI_Controller
             'data_comparison' => $data_comparison,
             'grand_total_invoice' => $grand_total_invoice,
             'grand_total_payment' => $grand_total_payment,
+            'difference_count' => $difference_count,
+            'exceed_ratio_count' => $exceed_ratio_count, // Tambahkan ini
         ];
 
         $this->load->view('theme/v_head', $data);

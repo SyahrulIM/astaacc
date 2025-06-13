@@ -42,6 +42,7 @@
                         <option value="">Pilih Status Pembayaran</option>
                         <option value="Belum Bayar" <?= $this->input->get('status') === 'Belum Bayar' ? 'selected' : '' ?>>Belum Bayar</option>
                         <option value="Sudah Bayar" <?= $this->input->get('status') === 'Sudah Bayar' ? 'selected' : '' ?>>Sudah Bayar</option>
+                        <option value="Kurang Max Ratio" <?= $this->input->get('status') === 'Kurang Max Ratio' ? 'selected' : '' ?>>Kurang Max Ratio</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
@@ -72,7 +73,7 @@
                 </div>
                 <div class="col">
                     <h5>Jumlah Selisih</h5>
-                    <h5> : <?= number_format($grand_total_invoice - $grand_total_payment) ?></h5>
+                    <h5> : <?= number_format($difference_count) ?></h5>
                 </div>
                 <div class="col">
                     <h5>Ratio Selisih</h5>
@@ -83,6 +84,10 @@
                             : 0;
                         ?>%
                     </h5>
+                </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Melebihi Max Ratio</h5>
+                    <h5> : <?= number_format($exceed_ratio_count) ?></h5>
                 </div>
             </div>
         </div>
