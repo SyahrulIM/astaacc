@@ -23,6 +23,8 @@ class Comparison extends CI_Controller
         $data_comparison = [];
         $grand_total_invoice = 0;
         $grand_total_payment = 0;
+        $difference_count = 0;
+        $exceed_ratio_count = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $this->db->select('
@@ -79,7 +81,7 @@ class Comparison extends CI_Controller
 
                     // Hitung rasio selisih jika accurate > 0
                     if ($accurate > 0) {
-                        $ratio = (($shopee - $accurate) / $accurate) * 100;
+                        $ratio = (($shopee - $accurate) / $shopee) * 100;
                         $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                         if ($ratio > $ratio_limit) {
                             $exceed_ratio_count++; // faktur yang rasio-nya melebihi batas

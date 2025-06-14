@@ -71,10 +71,10 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice - $grand_total_payment) ?></h5>
                 </div>
-                <div class="col">
+                <!-- <div class="col">
                     <h5>Jumlah Selisih</h5>
                     <h5> : <?= number_format($difference_count) ?></h5>
-                </div>
+                </div> -->
                 <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
@@ -121,6 +121,7 @@
                         <th>Nominal Invoice</th>
                         <th>Nilai Diterima</th>
                         <th>Max Ratio</th>
+                        <th>Selisih Ratio</th>
                         <th>Selisih</th>
                         <th>Status Matching</th>
                         <th>Status Terbayar</th>
@@ -131,13 +132,11 @@
                     $no = 1;
                     $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                     foreach ($data_comparison as $row) :
-                        $shopee = (float) ($row->shopee_total_faktur ?? 0);
-                        $accurate = (float) ($row->accurate_payment ?? 0);
-                        $max_allowed = $accurate ? (($shopee - $accurate) / $accurate) * 100 : 0;
-                        $highlight = $max_allowed > $ratio_limit ? 'style="background-color: #f8d7da;"' : '';
+                        $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100;
+                        $highlight = $ratio_diference > $ratio_limit ? 'style="background-color: #f8d7da;"' : '';
                     ?>
                         <tr <?= $highlight ?>>
-                            <td><?= $no++ ?></td> <!-- Tambahkan baris ini untuk kolom "No" -->
+                            <td><?= $no++ ?></td>
                             <td><?= $row->no_faktur ?></td>
                             <td>
                                 <?= $row->shopee_order_date ?? '-' ?>
@@ -146,6 +145,9 @@
                             <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
                             <td><?= number_format($row->accurate_payment ?? 0) ?></td>
                             <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
+                            <td>
+                                <?= number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100).'%' ?>
+                            </td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
                             <td>
                                 <?php
