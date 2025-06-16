@@ -21,14 +21,6 @@
                     <label for="order_end" class="form-label">Tanggal Pesanan (End)</label>
                     <input type="date" id="order_end" name="order_end" class="form-control" value="<?= $this->input->get('order_end') ?>">
                 </div>
-                <!-- <div class="col-md-4">
-                    <label for="start_date" class="form-label">Tanggal Pembayaran (Start)</label>
-                    <input type="date" id="start_date" name="start_date" class="form-control" value="<?= $this->input->get('start_date') ?>">
-                </div>
-                <div class="col-md-4">
-                    <label for="end_date" class="form-label">Tanggal Pembayaran (End)</label>
-                    <input type="date" id="end_date" name="end_date" class="form-control" value="<?= $this->input->get('end_date') ?>">
-                </div> -->
                 <div class="col-md-4">
                     <label for="ratio" class="form-label">Max Ratio</label>
                     <div class="input-group">
@@ -39,10 +31,24 @@
                 <div class="col-md-4">
                     <label for="status" class="form-label">Status Pembayaran</label>
                     <select id="status" name="status" class="form-select">
-                        <option value="">Pilih Status Pembayaran</option>
+                        <option value="">Semua</option>
                         <option value="Belum Bayar" <?= $this->input->get('status') === 'Belum Bayar' ? 'selected' : '' ?>>Belum Bayar</option>
                         <option value="Sudah Bayar" <?= $this->input->get('status') === 'Sudah Bayar' ? 'selected' : '' ?>>Sudah Bayar</option>
-                        <option value="Kurang Max Ratio" <?= $this->input->get('status') === 'Kurang Max Ratio' ? 'selected' : '' ?>>Kurang Max Ratio</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="ratio_status">Status Ratio</label>
+                    <select name="ratio_status" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="lebih" <?= ($ratio_status === 'lebih' ? 'selected' : '') ?>>Lebih dari Max Ratio</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="matching_status" class="form-label">Status Matching</label>
+                    <select id="matching_status" name="matching_status" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="match" <?= ($this->input->get('matching_status') === 'match') ? 'selected' : '' ?>>Match</option>
+                        <option value="mismatch" <?= ($this->input->get('matching_status') === 'mismatch') ? 'selected' : '' ?>>Mismatch</option>
                     </select>
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
@@ -71,10 +77,6 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice - $grand_total_payment) ?></h5>
                 </div>
-                <!-- <div class="col">
-                    <h5>Jumlah Selisih</h5>
-                    <h5> : <?= number_format($difference_count) ?></h5>
-                </div> -->
                 <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
@@ -146,7 +148,7 @@
                             <td><?= number_format($row->accurate_payment ?? 0) ?></td>
                             <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
                             <td>
-                                <?= number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100).'%' ?>
+                                <?= number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100) . '%' ?>
                             </td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
                             <td>

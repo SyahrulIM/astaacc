@@ -19,6 +19,9 @@ class Comparison extends CI_Controller
         $order_start = $this->input->get('order_start'); // Tambahan
         $order_end = $this->input->get('order_end');     // Tambahan
         $status_filter = $this->input->get('status');
+        $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
+        $ratio_status = $this->input->get('ratio_status'); // 'lebih' atau null
+        $matching_status = $this->input->get('matching_status'); // 'match', 'mismatch', or null
 
         $data_comparison = [];
         $grand_total_invoice = 0;
@@ -80,17 +83,37 @@ class Comparison extends CI_Controller
                     }
 
                     // Hitung rasio selisih jika accurate > 0
-                    if ($accurate > 0) {
+                    if ($accurate > 0 && $shopee > 0) {
                         $ratio = (($shopee - $accurate) / $shopee) * 100;
-                        $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
+
+                        // Jika user memilih filter 'lebih' dan rasio tidak melebihi limit, skip
+                        if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) {
+                            continue;
+                        }
+
                         if ($ratio > $ratio_limit) {
-                            $exceed_ratio_count++; // faktur yang rasio-nya melebihi batas
+                            $exceed_ratio_count++;
                         }
                     }
 
                     $grand_total_invoice += $shopee;
                     $grand_total_payment += $accurate;
 
+                    $is_match = (
+                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
+                        ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
+                        ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)
+                    );
+
+                    // Filter berdasarkan status matching
+                    if (
+                        empty($matching_status) ||
+                        ($matching_status === 'match' && $is_match) ||
+                        ($matching_status === 'mismatch' && !$is_match)
+                    ) {
+                        $data_comparison[] = $row;
+                        $seen_faktur[] = $row->no_faktur;
+                    }
                     $data_comparison[] = $row;
                     $seen_faktur[] = $row->no_faktur;
                 }
@@ -105,6 +128,9 @@ class Comparison extends CI_Controller
             'grand_total_payment' => $grand_total_payment,
             'difference_count' => $difference_count,
             'exceed_ratio_count' => $exceed_ratio_count, // Tambahkan ini
+            'ratio_status' => $ratio_status,
+            'ratio_limit' => $ratio_limit,
+            'matching_status' => $matching_status
         ];
 
         $this->load->view('theme/v_head', $data);
