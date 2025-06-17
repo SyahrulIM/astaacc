@@ -15,16 +15,16 @@
             <form method="get" class="row g-3 align-items-end">
                 <div class="col-md-4">
                     <label for="order_start" class="form-label">Tanggal Pesanan (Start)</label>
-                    <input type="date" id="order_start" name="order_start" class="form-control" value="<?= $this->input->get('order_start') ?>">
+                    <input type="date" id="order_start" name="order_start" class="form-control" value="<?= $this->input->get('order_start') ?>" required>
                 </div>
                 <div class="col-md-4">
                     <label for="order_end" class="form-label">Tanggal Pesanan (End)</label>
-                    <input type="date" id="order_end" name="order_end" class="form-control" value="<?= $this->input->get('order_end') ?>">
+                    <input type="date" id="order_end" name="order_end" class="form-control" value="<?= $this->input->get('order_end') ?>" required>
                 </div>
                 <div class="col-md-4">
                     <label for="ratio" class="form-label">Max Ratio</label>
                     <div class="input-group">
-                        <input type="number" id="ratio" name="ratio" class="form-control" value="<?= $this->input->get('ratio') ?>" max="100">
+                        <input type="number" id="ratio" name="ratio" class="form-control" value="<?= $this->input->get('ratio') ?>" max="100" required>
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
@@ -134,7 +134,12 @@
                     $no = 1;
                     $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                     foreach ($data_comparison as $row) :
-                        $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100;
+                        if ($row->accurate_payment == 0) {
+                            $ratio_diference = 0; // Atau bisa juga set ke null atau teks: "N/A"
+                        } else {
+                            $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
+                        }
+
                         $highlight = $ratio_diference > $ratio_limit ? 'style="background-color: #f8d7da;"' : '';
                     ?>
                         <tr <?= $highlight ?>>
@@ -147,9 +152,13 @@
                             <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
                             <td><?= number_format($row->accurate_payment ?? 0) ?></td>
                             <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
-                            <td>
-                                <?= number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100) . '%' ?>
-                            </td>
+                            <td class="dt-type-numeric"><?php
+                                                        if ($row->accurate_payment == 0) {
+                                                            echo '0%';
+                                                        } else {
+                                                            echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100) . '%';
+                                                        }
+                                                        ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
                             <td>
                                 <?php
