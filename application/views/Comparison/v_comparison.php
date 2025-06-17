@@ -109,6 +109,23 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
+    <!-- End -->
+
+    <!-- Modal Bootstrap -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalLabel">Detail Faktur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="detailContent">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
 
     <!-- Data Table Section -->
     <div class="row mt-4">
@@ -125,8 +142,10 @@
                         <th>Max Ratio</th>
                         <th>Selisih Ratio</th>
                         <th>Selisih</th>
+                        <th>Type Faktur</th>
                         <th>Status Matching</th>
                         <th>Status Terbayar</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -161,6 +180,9 @@
                                                         ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
                             <td>
+                                <?= ($row->shopee_payment ?? 0) == 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
+                            </td>
+                            <td>
                                 <?php
                                 if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
                                     ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
@@ -178,6 +200,9 @@
                                 <?php else : ?>
                                     <span class="badge bg-warning">Belum Bayar</span>
                                 <?php endif; ?>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail Matching</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -214,6 +239,19 @@
                     }
                 }
             }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.detail-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const faktur = this.getAttribute('data-faktur');
+                fetch('<?= base_url('comparison/detail_ajax/') ?>' + faktur)
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('detailContent').innerHTML = html;
+                        new bootstrap.Modal(document.getElementById('detailModal')).show();
+                    });
+            });
         });
     });
 </script>

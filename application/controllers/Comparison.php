@@ -31,18 +31,18 @@ class Comparison extends CI_Controller
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $this->db->select('
-            asd.no_faktur,
-            asd.order_date AS shopee_order_date,
-            asd.pay_date AS shopee_pay_date,
-            asd.total_faktur AS shopee_total_faktur,
-            asd.discount AS shopee_discount,
-            asd.payment AS shopee_payment,
+                asd.no_faktur,
+                asd.order_date AS shopee_order_date,
+                asd.pay_date AS shopee_pay_date,
+                asd.total_faktur AS shopee_total_faktur,
+                asd.discount AS shopee_discount,
+                asd.payment AS shopee_payment,
 
-            aad.pay_date AS accurate_pay_date,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
+                aad.pay_date AS accurate_pay_date,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
             $this->db->from('acc_shopee_detail asd');
             $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
 
@@ -57,11 +57,8 @@ class Comparison extends CI_Controller
             }
 
             $this->db->order_by('asd.no_faktur', 'asc');
-
             $results = $this->db->get()->result();
             $seen_faktur = [];
-            $difference_count = 0;
-            $exceed_ratio_count = 0;
 
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
@@ -86,20 +83,13 @@ class Comparison extends CI_Controller
                         ($matching_status === 'match' && $is_match) ||
                         ($matching_status === 'mismatch' && !$is_match)
                     ) {
-                        if ($shopee != $accurate) {
-                            $difference_count++;
-                        }
+                        if ($shopee != $accurate) $difference_count++;
 
                         if ($accurate > 0 && $shopee > 0) {
                             $ratio = (($shopee - $accurate) / $shopee) * 100;
 
-                            if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) {
-                                continue;
-                            }
-
-                            if ($ratio > $ratio_limit) {
-                                $exceed_ratio_count++;
-                            }
+                            if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
+                            if ($ratio > $ratio_limit) $exceed_ratio_count++;
                         }
 
                         $grand_total_invoice += $shopee;
@@ -112,9 +102,8 @@ class Comparison extends CI_Controller
             }
         }
 
-        $title = 'Comparison';
         $data = [
-            'title' => $title,
+            'title' => 'Comparison',
             'data_comparison' => $data_comparison,
             'grand_total_invoice' => $grand_total_invoice,
             'grand_total_payment' => $grand_total_payment,
@@ -126,6 +115,44 @@ class Comparison extends CI_Controller
         ];
 
         $this->load->view('theme/v_head', $data);
-        $this->load->view('comparison/v_comparison');
+        $this->load->view('comparison/v_comparison'); // <- ini view utama kamu
+    }
+
+    public function detail_ajax($no_faktur)
+    {
+        $this->db->select('
+            asd.no_faktur,
+            asd.order_date AS shopee_order_date,
+            asd.pay_date AS shopee_pay_date,
+            asd.total_faktur AS shopee_total_faktur,
+            asd.discount AS shopee_discount,
+            asd.payment AS shopee_payment,
+
+            aad.pay_date AS accurate_pay_date,
+            aad.total_faktur AS accurate_total_faktur,
+            aad.discount AS accurate_discount,
+            aad.payment AS accurate_payment
+        ');
+        $this->db->from('acc_shopee_detail asd');
+        $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
+        $this->db->where('asd.no_faktur', $no_faktur);
+        $detail = $this->db->get()->row();
+
+        if (!$detail) {
+            echo '<div class="text-danger">Data tidak ditemukan.</div>';
+            return;
+        }
+
+        echo '
+        <table class="table table-bordered">
+            <thead>
+                <th></th>
+                <th>Shopee</th>
+                <th>Accurate</th>
+            </thead>
+            <tr><th>Total Faktur</th><td>' . htmlspecialchars($detail->shopee_total_faktur) . '</td><td>' . htmlspecialchars($detail->accurate_total_faktur) . '</td></tr>
+            <tr><th>Discount</th><td>' . htmlspecialchars($detail->shopee_discount) . '</td><td>' . htmlspecialchars($detail->accurate_discount) . '</td></tr>
+            <tr><th>Pembayaran</th><td>' . htmlspecialchars($detail->shopee_payment) . '</td><td>' . htmlspecialchars($detail->accurate_payment) . '</td></tr>
+        </table>';
     }
 }
