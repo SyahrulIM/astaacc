@@ -92,6 +92,40 @@
                     <h5> : <?= number_format($exceed_ratio_count) ?></h5>
                 </div>
             </div>
+            <hr>
+            <div class="row">
+                <div class="col text-center">
+                    <h3>Summary Setelah Dikurangi Retur</h3>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h5>Grand total Nominal Invoice</h5>
+                    <h5> : <?= number_format($grand_total_invoice_non_retur) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Grand total Nilai Diterima</h5>
+                    <h5> : <?= number_format($grand_total_payment_non_retur) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Selisih Total</h5>
+                    <h5> : <?= number_format($grand_total_invoice_non_retur - $grand_total_payment_non_retur) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Ratio Selisih</h5>
+                    <h5> :
+                        <?php
+                        echo $grand_total_payment_non_retur > 0
+                            ? round((($grand_total_invoice_non_retur - $grand_total_payment_non_retur) / $grand_total_payment_non_retur) * 100, 2)
+                            : 0;
+                        ?>%
+                    </h5>
+                </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Melebihi Max Ratio</h5>
+                    <h5> : <?= number_format($exceed_ratio_count_non_retur) ?></h5>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -136,15 +170,27 @@
                         <th>No</th>
                         <th>Nomor Faktur</th>
                         <th>Tanggal Pesanan</th>
-                        <th>Tanggal Pembayaran</th>
+                        <th>
+                            Tanggal Pembayaran<br>
+                            <font size="2">ACC</font>
+                        </th>
                         <th>Nominal Invoice</th>
-                        <th>Nilai Diterima</th>
+                        <th>
+                            Nilai Diterima<br>
+                            <font size="2">ACC</font>
+                        </th>
                         <th>Max Ratio</th>
                         <th>Selisih Ratio</th>
                         <th>Selisih</th>
-                        <th>Type Faktur</th>
+                        <th>
+                            Type Faktur<br>
+                            <font size="2">MP</font>
+                        </th>
                         <th>Status Matching</th>
-                        <th>Status Terbayar</th>
+                        <th>
+                            Status Terbayar<br>
+                            <font size="2">ACC</font>
+                        </th>
                         <th>Action</th>
                     </tr>
                 </thead>

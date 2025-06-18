@@ -26,23 +26,26 @@ class Comparison extends CI_Controller
         $data_comparison = [];
         $grand_total_invoice = 0;
         $grand_total_payment = 0;
+        $grand_total_invoice_non_retur = 0;
+        $grand_total_payment_non_retur = 0;
         $difference_count = 0;
         $exceed_ratio_count = 0;
+        $exceed_ratio_count_non_retur = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $this->db->select('
-                asd.no_faktur,
-                asd.order_date AS shopee_order_date,
-                asd.pay_date AS shopee_pay_date,
-                asd.total_faktur AS shopee_total_faktur,
-                asd.discount AS shopee_discount,
-                asd.payment AS shopee_payment,
+            asd.no_faktur,
+            asd.order_date AS shopee_order_date,
+            asd.pay_date AS shopee_pay_date,
+            asd.total_faktur AS shopee_total_faktur,
+            asd.discount AS shopee_discount,
+            asd.payment AS shopee_payment,
 
-                aad.pay_date AS accurate_pay_date,
-                aad.total_faktur AS accurate_total_faktur,
-                aad.discount AS accurate_discount,
-                aad.payment AS accurate_payment
-            ');
+            aad.pay_date AS accurate_pay_date,
+            aad.total_faktur AS accurate_total_faktur,
+            aad.discount AS accurate_discount,
+            aad.payment AS accurate_payment
+        ');
             $this->db->from('acc_shopee_detail asd');
             $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
 
@@ -71,6 +74,7 @@ class Comparison extends CI_Controller
                 ) {
                     $shopee = (float) ($row->shopee_total_faktur ?? 0);
                     $accurate = (float) ($row->accurate_payment ?? 0);
+                    $is_retur = ($row->shopee_payment ?? 0) == 0;
 
                     $is_match = (
                         ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
@@ -89,11 +93,22 @@ class Comparison extends CI_Controller
                             $ratio = (($shopee - $accurate) / $shopee) * 100;
 
                             if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
-                            if ($ratio > $ratio_limit) $exceed_ratio_count++;
+                            if ($ratio > $ratio_limit) {
+                                $exceed_ratio_count++;
+                                if (!$is_retur) {
+                                    $exceed_ratio_count_non_retur++;
+                                }
+                            }
                         }
 
                         $grand_total_invoice += $shopee;
                         $grand_total_payment += $accurate;
+
+                        // Calculate non-retur totals
+                        if (!$is_retur) {
+                            $grand_total_invoice_non_retur += $shopee;
+                            $grand_total_payment_non_retur += $accurate;
+                        }
 
                         $data_comparison[] = $row;
                         $seen_faktur[] = $row->no_faktur;
@@ -107,15 +122,18 @@ class Comparison extends CI_Controller
             'data_comparison' => $data_comparison,
             'grand_total_invoice' => $grand_total_invoice,
             'grand_total_payment' => $grand_total_payment,
+            'grand_total_invoice_non_retur' => $grand_total_invoice_non_retur,
+            'grand_total_payment_non_retur' => $grand_total_payment_non_retur,
             'difference_count' => $difference_count,
             'exceed_ratio_count' => $exceed_ratio_count,
+            'exceed_ratio_count_non_retur' => $exceed_ratio_count_non_retur,
             'ratio_status' => $ratio_status,
             'ratio_limit' => $ratio_limit,
             'matching_status' => $matching_status
         ];
 
         $this->load->view('theme/v_head', $data);
-        $this->load->view('comparison/v_comparison'); // <- ini view utama kamu
+        $this->load->view('comparison/v_comparison');
     }
 
     public function detail_ajax($no_faktur)
