@@ -44,6 +44,14 @@
                     </select>
                 </div>
                 <div class="col-md-4">
+                    <label for="type_status">Type Pembayaran</label>
+                    <select name="type_status" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="pembayaran" <?= ($type_status === 'pembayaran' ? 'selected' : '') ?>>Pembayaran</option>
+                        <option value="retur" <?= ($type_status === 'retur' ? 'selected' : '') ?>>Retur</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <label for="matching_status" class="form-label">Status Matching</label>
                     <select id="matching_status" name="matching_status" class="form-select">
                         <option value="">Semua</option>
@@ -91,32 +99,41 @@
                     <h5>Jumlah Faktur Melebihi Max Ratio</h5>
                     <h5> : <?= number_format($exceed_ratio_count) ?></h5>
                 </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Mismatch</h5>
+                    <h5> : <?= number_format($mismatch_count) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Retur</h5>
+                    <h5> : <?= number_format($retur_count) ?></h5>
+                </div>
             </div>
             <hr>
             <div class="row">
                 <div class="col text-center">
-                    <h3>Summary Setelah Dikurangi Retur</h3>
+                    <h3>Summary</h3>
+                    <font size='4'>Setelah Dikurangi Retur</font>
                 </div>
             </div>
             <div class="row">
                 <div class="col">
                     <h5>Grand total Nominal Invoice</h5>
-                    <h5> : <?= number_format($grand_total_invoice_non_retur) ?></h5>
+                    <h5> : <?= number_format($grand_total_invoice_after_retur) ?></h5>
                 </div>
                 <div class="col">
                     <h5>Grand total Nilai Diterima</h5>
-                    <h5> : <?= number_format($grand_total_payment_non_retur) ?></h5>
+                    <h5> : <?= number_format($grand_total_payment_after_retur) ?></h5>
                 </div>
                 <div class="col">
                     <h5>Selisih Total</h5>
-                    <h5> : <?= number_format($grand_total_invoice_non_retur - $grand_total_payment_non_retur) ?></h5>
+                    <h5> : <?= number_format($grand_total_invoice_after_retur - $grand_total_payment_after_retur) ?></h5>
                 </div>
                 <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
                         <?php
-                        echo $grand_total_payment_non_retur > 0
-                            ? round((($grand_total_invoice_non_retur - $grand_total_payment_non_retur) / $grand_total_payment_non_retur) * 100, 2)
+                        echo $grand_total_payment_retur > 0
+                            ? round((($grand_total_invoice_retur - $grand_total_payment_retur) / $grand_total_payment_retur) * 100, 2)
                             : 0;
                         ?>%
                     </h5>
@@ -124,6 +141,14 @@
                 <div class="col">
                     <h5>Jumlah Faktur Melebihi Max Ratio</h5>
                     <h5> : <?= number_format($exceed_ratio_count_non_retur) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Mismatch</h5>
+                    <h5> : <?= number_format($mismatch_count); ?> </h5>
+                </div>
+                <div class="col">
+                    <h5>Jumlah Faktur Retur</h5>
+                    <h5> : <?= number_format($retur_count) ?></h5>
                 </div>
             </div>
         </div>
@@ -226,7 +251,7 @@
                                                         ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
                             <td>
-                                <?= ($row->shopee_payment ?? 0) == 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
+                                <?= ($row->shopee_payment ?? 0) <= 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
                             </td>
                             <td>
                                 <?php

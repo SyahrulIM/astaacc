@@ -22,16 +22,21 @@ class Comparison extends CI_Controller
         $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
         $ratio_status = $this->input->get('ratio_status');
         $matching_status = $this->input->get('matching_status');
+        $type_status = $this->input->get('type_status');
 
         $data_comparison = [];
         $grand_total_invoice = 0;
         $grand_total_payment = 0;
         $grand_total_invoice_non_retur = 0;
         $grand_total_payment_non_retur = 0;
+        $grand_total_invoice_retur = 0;
+        $grand_total_payment_retur = 0;
         $difference_count = 0;
         $difference_count_non_retur = 0;
         $exceed_ratio_count = 0;
         $exceed_ratio_count_non_retur = 0;
+        $mismatch_count = 0;
+        $retur_count = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $this->db->select('
@@ -60,6 +65,12 @@ class Comparison extends CI_Controller
                 $this->db->where('asd.order_date <=', $order_end);
             }
 
+            if ($type_status == 'retur') {
+                $this->db->where('asd.payment <=', 0);  // Only returns (0 or negative)
+            } elseif ($type_status == 'pembayaran') {
+                $this->db->where('asd.payment >', 0);
+            }
+
             $this->db->order_by('asd.no_faktur', 'asc');
             $results = $this->db->get()->result();
             $seen_faktur = [];
@@ -75,7 +86,7 @@ class Comparison extends CI_Controller
                 ) {
                     $shopee = (float) ($row->shopee_total_faktur ?? 0);
                     $accurate = (float) ($row->accurate_payment ?? 0);
-                    $is_retur = ($row->shopee_payment ?? 0) == 0;
+                    $is_retur = ($row->shopee_payment ?? 0) <= 0;
 
                     $is_match = (
                         ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
@@ -107,12 +118,28 @@ class Comparison extends CI_Controller
                             }
                         }
 
+                        if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
+                            ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
+                            ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)
+                        ) {
+                            $mismatch_count++;
+                        }
+
+                        if ($row->shopee_payment == 0 || $row->shopee_payment < 0) {
+                            $retur_count++;
+                        }
+
                         $grand_total_invoice += $shopee;
                         $grand_total_payment += $accurate;
 
                         if (!$is_retur) {
                             $grand_total_invoice_non_retur += $shopee;
                             $grand_total_payment_non_retur += $accurate;
+                        }
+
+                        if ($is_retur) {
+                            $grand_total_invoice_retur += $shopee;
+                            $grand_total_payment_retur += $accurate;
                         }
 
                         $data_comparison[] = $row;
@@ -129,13 +156,20 @@ class Comparison extends CI_Controller
             'grand_total_payment' => $grand_total_payment,
             'grand_total_invoice_non_retur' => $grand_total_invoice_non_retur,
             'grand_total_payment_non_retur' => $grand_total_payment_non_retur,
+            'grand_total_invoice_retur' => $grand_total_invoice_retur,
+            'grand_total_payment_retur' => $grand_total_payment_retur,
+            'grand_total_invoice_after_retur' => $grand_total_invoice - $grand_total_invoice_retur,
+            'grand_total_payment_after_retur' => $grand_total_payment - $grand_total_invoice_retur,
             'difference_count' => $difference_count,
             'difference_count_non_retur' => $difference_count_non_retur,
             'exceed_ratio_count' => $exceed_ratio_count,
             'exceed_ratio_count_non_retur' => $exceed_ratio_count_non_retur,
             'ratio_status' => $ratio_status,
             'ratio_limit' => $ratio_limit,
-            'matching_status' => $matching_status
+            'matching_status' => $matching_status,
+            'mismatch_count' => $mismatch_count,
+            'retur_count' => $retur_count,
+            'type_status' => $type_status
         ];
 
         $this->load->view('theme/v_head', $data);
