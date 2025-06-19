@@ -29,23 +29,24 @@ class Comparison extends CI_Controller
         $grand_total_invoice_non_retur = 0;
         $grand_total_payment_non_retur = 0;
         $difference_count = 0;
+        $difference_count_non_retur = 0;
         $exceed_ratio_count = 0;
         $exceed_ratio_count_non_retur = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $this->db->select('
-            asd.no_faktur,
-            asd.order_date AS shopee_order_date,
-            asd.pay_date AS shopee_pay_date,
-            asd.total_faktur AS shopee_total_faktur,
-            asd.discount AS shopee_discount,
-            asd.payment AS shopee_payment,
+                asd.no_faktur,
+                asd.order_date AS shopee_order_date,
+                asd.pay_date AS shopee_pay_date,
+                asd.total_faktur AS shopee_total_faktur,
+                asd.discount AS shopee_discount,
+                asd.payment AS shopee_payment,
 
-            aad.pay_date AS accurate_pay_date,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
+                aad.pay_date AS accurate_pay_date,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
             $this->db->from('acc_shopee_detail asd');
             $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
 
@@ -87,7 +88,12 @@ class Comparison extends CI_Controller
                         ($matching_status === 'match' && $is_match) ||
                         ($matching_status === 'mismatch' && !$is_match)
                     ) {
-                        if ($shopee != $accurate) $difference_count++;
+                        if ($shopee != $accurate) {
+                            $difference_count++;
+                            if (!$is_retur) {
+                                $difference_count_non_retur++;
+                            }
+                        }
 
                         if ($accurate > 0 && $shopee > 0) {
                             $ratio = (($shopee - $accurate) / $shopee) * 100;
@@ -104,7 +110,6 @@ class Comparison extends CI_Controller
                         $grand_total_invoice += $shopee;
                         $grand_total_payment += $accurate;
 
-                        // Calculate non-retur totals
                         if (!$is_retur) {
                             $grand_total_invoice_non_retur += $shopee;
                             $grand_total_payment_non_retur += $accurate;
@@ -125,6 +130,7 @@ class Comparison extends CI_Controller
             'grand_total_invoice_non_retur' => $grand_total_invoice_non_retur,
             'grand_total_payment_non_retur' => $grand_total_payment_non_retur,
             'difference_count' => $difference_count,
+            'difference_count_non_retur' => $difference_count_non_retur,
             'exceed_ratio_count' => $exceed_ratio_count,
             'exceed_ratio_count_non_retur' => $exceed_ratio_count_non_retur,
             'ratio_status' => $ratio_status,
