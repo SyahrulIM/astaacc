@@ -110,7 +110,7 @@
             </div>
             <hr>
             <div class="row">
-                <div class="col text-center">
+                <div class="col text-center mb-4">
                     <h3>Summary</h3>
                     <font size='4'>Setelah Dikurangi Retur</font>
                 </div>
@@ -132,8 +132,8 @@
                     <h5>Ratio Selisih</h5>
                     <h5> :
                         <?php
-                        echo $grand_total_payment_retur > 0
-                            ? round((($grand_total_invoice_retur - $grand_total_payment_retur) / $grand_total_payment_retur) * 100, 2)
+                        echo $grand_total_payment_after_retur > 0
+                            ? round((($grand_total_invoice_after_retur - $grand_total_payment_after_retur) / $grand_total_payment_after_retur) * 100, 2)
                             : 0;
                         ?>%
                     </h5>
@@ -207,6 +207,7 @@
                         <th>Max Ratio</th>
                         <th>Selisih Ratio</th>
                         <th>Selisih</th>
+                        <th>Refund</th>
                         <th>
                             Type Faktur<br>
                             <font size="2">MP</font>
@@ -230,7 +231,7 @@
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
                         }
 
-                        $highlight = $ratio_diference > $ratio_limit ? 'style="background-color: #f8d7da;"' : '';
+                        $highlight = $ratio_diference > $ratio_limit || ($row->shopee_refund ?? 0) < 0 ? 'style="background-color: #f8d7da;"' : '';
                     ?>
                         <tr <?= $highlight ?>>
                             <td><?= $no++ ?></td>
@@ -250,8 +251,9 @@
                                                         }
                                                         ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
+                            <td><?= number_format($row->shopee_refund)?></td>
                             <td>
-                                <?= ($row->shopee_payment ?? 0) <= 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
+                                <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
                             </td>
                             <td>
                                 <?php

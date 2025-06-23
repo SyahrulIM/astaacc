@@ -98,6 +98,7 @@
                                                     <th>Total Faktur</th>
                                                     <th>Bayar</th>
                                                     <th>Diskon</th>
+                                                    <th>Refund</th>
                                                     <th>Pembayaran</th>
                                                 </tr>
                                             </thead>
@@ -113,6 +114,7 @@
                                                         <td><?= number_format($asdvalue->total_faktur) ?></td>
                                                         <td><?= number_format($asdvalue->pay) ?></td>
                                                         <td><?= number_format($asdvalue->discount) ?></td>
+                                                        <td><?= number_format($asdvalue->refund) ?></td>
                                                         <td><?= number_format($asdvalue->payment) ?></td>
                                                     </tr>
                                                 <?php } ?>

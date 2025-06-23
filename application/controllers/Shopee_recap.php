@@ -32,7 +32,8 @@ class Shopee_recap extends CI_Controller
             MAX(acc_shopee_detail.pay) AS pay,
             MAX(acc_shopee_detail.discount) AS discount,
             MAX(acc_shopee_detail.payment) AS payment,
-            MAX(acc_shopee_detail.order_date) AS order_date
+            MAX(acc_shopee_detail.order_date) AS order_date,
+            MAX(acc_shopee_detail.refund) AS refund,
         ');
         $this->db->from('acc_shopee_detail');
         $this->db->join('acc_shopee', 'acc_shopee.idacc_shopee = acc_shopee_detail.idacc_shopee');
@@ -92,6 +93,7 @@ class Shopee_recap extends CI_Controller
                     'pay' => $total,
                     'payment' => $payment,
                     'discount' => $discount,
+                    'refund' => $row['K']
                 ];
                 $this->db->insert('acc_shopee_detail', $detail);
             }
