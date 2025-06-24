@@ -13,6 +13,13 @@
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
+                                <label for="typeExcel" class="form-label">Type Excel</label>
+                                <select name="typeExcel" id="typeExcel" class="form-select">
+                                    <option value="income">Income</option>
+                                    <option value="order">Order</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
                                 <label for="file" class="form-label">Pilih File Excel:</label>
                                 <input type="file" class="form-control" name="file" id="file" accept=".xlsx" required>
                             </div>
@@ -100,6 +107,7 @@
                                                     <th>Diskon</th>
                                                     <th>Refund</th>
                                                     <th>Pembayaran</th>
+                                                    <th>Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -116,6 +124,7 @@
                                                         <td><?= number_format($asdvalue->discount) ?></td>
                                                         <td><?= number_format($asdvalue->refund) ?></td>
                                                         <td><?= number_format($asdvalue->payment) ?></td>
+                                                        <td><a href="<?= base_url('shopee_recap/detail_faktur?no_faktur='.$asdvalue->no_faktur)?>"><button type="button" class="btn btn-success">Detail Faktur</button></a></td>
                                                     </tr>
                                                 <?php } ?>
                                             </tbody>

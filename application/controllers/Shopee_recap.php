@@ -53,54 +53,85 @@ class Shopee_recap extends CI_Controller
         $this->load->view('Shopee_recap/v_shopee_recap');
     }
 
-
     public function createShopee()
     {
+        $type_excel = $this->input->post('typeExcel');
+
         $this->load->library('upload');
-        $shopee_type = $this->input->post('typeExcel');
         $file = $_FILES['file']['tmp_name'];
 
-        if (!empty($file)) {
-            require APPPATH . '../vendor/autoload.php';
+        if ($type_excel === 'income') {
+            if (!empty($file)) {
+                require APPPATH . '../vendor/autoload.php';
 
-            $reader = new Xlsx();
-            $spreadsheet = $reader->load($file);
-            $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+                $reader = new Xlsx();
+                $spreadsheet = $reader->load($file);
+                $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
-            $acc_shopee_data = [
-                'iduser' => $this->session->userdata('iduser'),
-                'excel_type' => $shopee_type,
-                'created_by' => $this->session->userdata('username'),
-                'created_date' => date('Y-m-d H:i:s'),
-                'status' => 1
-            ];
-            $this->db->insert('acc_shopee', $acc_shopee_data);
-            $idacc_shopee = $this->db->insert_id();
-
-            foreach ($sheet as $i => $row) {
-                if ($i < 6 || !$row['B']) continue;
-
-                $total = (float) str_replace(',', '', $row['J']);
-                $payment = (float) str_replace(',', '', $row['AC']);
-                $discount = $total - $payment;
-
-                $detail = [
-                    'idacc_shopee' => $idacc_shopee,
-                    'no_faktur' => $row['B'],
-                    'order_date' => date('Y-m-d', strtotime($row['E'])),
-                    'pay_date' => date('Y-m-d', strtotime($row['G'])),
-                    'total_faktur' => $total,
-                    'pay' => $total,
-                    'payment' => $payment,
-                    'discount' => $discount,
-                    'refund' => $row['K']
+                $acc_shopee_data = [
+                    'iduser' => $this->session->userdata('iduser'),
+                    'excel_type' => $shopee_type,
+                    'created_by' => $this->session->userdata('username'),
+                    'created_date' => date('Y-m-d H:i:s'),
+                    'status' => 1
                 ];
-                $this->db->insert('acc_shopee_detail', $detail);
-            }
+                $this->db->insert('acc_shopee', $acc_shopee_data);
+                $idacc_shopee = $this->db->insert_id();
 
-            $this->session->set_flashdata('success', 'Data Shopee berhasil diimport.');
+                foreach ($sheet as $i => $row) {
+                    if ($i < 6 || !$row['B']) continue;
+
+                    $total = (float) str_replace(',', '', $row['J']);
+                    $payment = (float) str_replace(',', '', $row['AC']);
+                    $discount = $total - $payment;
+
+                    $detail = [
+                        'idacc_shopee' => $idacc_shopee,
+                        'no_faktur' => $row['B'],
+                        'order_date' => date('Y-m-d', strtotime($row['E'])),
+                        'pay_date' => date('Y-m-d', strtotime($row['G'])),
+                        'total_faktur' => $total,
+                        'pay' => $total,
+                        'payment' => $payment,
+                        'discount' => $discount,
+                        'refund' => $row['K']
+                    ];
+                    $this->db->insert('acc_shopee_detail', $detail);
+                }
+
+                $this->session->set_flashdata('success', 'Data Shopee berhasil diimport.');
+            } else {
+                $this->session->set_flashdata('error', 'File tidak ditemukan.');
+            }
         } else {
-            $this->session->set_flashdata('error', 'File tidak ditemukan.');
+            if (!empty($file)) {
+                require APPPATH . '../vendor/autoload.php';
+
+                $reader = new Xlsx();
+                $spreadsheet = $reader->load($file);
+                $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+                foreach ($sheet as $i => $row) {
+                    if ($i < 2 || !$row['A']) continue;
+
+                    $acc_shopee_detail_details = [
+                        'no_faktur' => $row['A'],
+                        'sku' => $row['O'],
+                        'name_product' => $row['N'],
+                        'price_after_discount' => $row['R'],
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'created_by' => $this->session->userdata('username'),
+                        'updated_date' => date('Y-m-d H:i:s'),
+                        'updated_by' => $this->session->userdata('username'),
+                        'status' => 1
+                    ];
+                    $this->db->insert('acc_shopee_detail_details', $acc_shopee_detail_details);
+                }
+
+                $this->session->set_flashdata('success', 'Data Shopee berhasil diimport.');
+            } else {
+                $this->session->set_flashdata('error', 'File tidak ditemukan.');
+            }
         }
 
         redirect('shopee_recap');
@@ -137,5 +168,23 @@ class Shopee_recap extends CI_Controller
 
         $this->load->view('theme/v_head', $data);
         $this->load->view('shopee_recap/v_shopee_recap_detail');
+    }
+
+    public function detail_faktur()
+    {
+        $no_faktur = $this->input->get('no_faktur');
+
+        $this->db->distinct();
+        $this->db->select('no_faktur, sku, name_product, price_after_discount');
+        $this->db->where('no_faktur', $no_faktur);
+        $acc_shopee_detail_details = $this->db->get('acc_shopee_detail_details')->result();
+
+        $data = [
+            'title' => 'Shopee Recap',
+            'acc_shopee_detail_details' => $acc_shopee_detail_details
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('shopee_recap/v_shopee_recap_detail_details');
     }
 }
