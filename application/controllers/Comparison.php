@@ -241,7 +241,7 @@ class Comparison extends CI_Controller
 
         // Tampilkan data ringkasan
         echo '
-    <h5>Perbandingan Data</h5>
+    <h5>Perbandingan Data - '.$no_faktur.'</h5>
     <table class="table table-bordered mb-4">
         <thead><tr><th></th><th>Shopee</th><th>Accurate</th></tr></thead>
         <tr><th>Total Faktur</th><td>' . number_format($detail->shopee_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
