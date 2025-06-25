@@ -186,22 +186,6 @@
     </div>
     <!-- End -->
 
-    <!-- Modal Bootstrap -->
-    <div class="modal fade" id="priceModal" tabindex="-1" aria-labelledby="priceModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="priceModalLabel">Detail Faktur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="priceContent">
-                    Loading...
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- End -->
-
     <!-- Data Table Section -->
     <div class="row mt-4">
         <div class="col">
