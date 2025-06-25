@@ -234,7 +234,7 @@
                             <font size="2">ACC</font>
                         </th>
                         <th>
-                            Bottom vs Invoice
+                            Invoice vs Bottom
                         </th>
                         <th>Action</th>
                     </tr>
@@ -298,10 +298,10 @@
                             </td>
                             <td>
                                 <?php if ($row->total_price_bottom > $row->shopee_total_faktur) { ?>
-                                    <span class="badge bg-warning">Bottom ></span>
+                                    <span class="badge bg-warning">< Bottom</span>
                                 <?php } else { ?>
                                     <span class="badge bg-success">
-                                        < Invoice</span>
+                                        Invoice ></span>
                                         <?php } ?>
                             </td>
                             <td>
