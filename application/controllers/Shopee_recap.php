@@ -17,8 +17,6 @@ class Shopee_recap extends CI_Controller
     public function index()
     {
         $title = 'Shopee Recap';
-        $product = $this->db->get('product');
-
         // Get list import Shopee (header)
         $this->db->select('user.full_name as full_name, acc_shopee.created_date as created_date, acc_shopee.idacc_shopee as idacc_shopee');
         $this->db->join('user', 'user.iduser = acc_shopee.iduser');
@@ -44,7 +42,6 @@ class Shopee_recap extends CI_Controller
 
         $data = [
             'title' => $title,
-            'product' => $product->result(),
             'acc_shopee' => $acc_shopee,
             'acc_shopee_detail' => $acc_shopee_detail
         ];
@@ -118,7 +115,7 @@ class Shopee_recap extends CI_Controller
                         'no_faktur' => $row['A'],
                         'sku' => $row['O'],
                         'name_product' => $row['N'],
-                        'price_after_discount' => $row['R'],
+                        'price_after_discount' => $total = (float) str_replace('.', '', $row['R']),
                         'created_date' => date('Y-m-d H:i:s'),
                         'created_by' => $this->session->userdata('username'),
                         'updated_date' => date('Y-m-d H:i:s'),

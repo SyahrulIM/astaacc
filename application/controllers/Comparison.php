@@ -80,6 +80,27 @@ class Comparison extends CI_Controller
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
 
+                // Ambil total price_bottom dari acc_shopee_bottom berdasarkan sku per no_faktur
+                $sku_list = $this->db
+                    ->select('sku')
+                    ->from('acc_shopee_detail_details')
+                    ->where('no_faktur', $row->no_faktur)
+                    ->get()
+                    ->result();
+
+                $skus = array_column($sku_list, 'sku');
+
+                $total_price_bottom = 0;
+                if (!empty($skus)) {
+                    $this->db->select_sum('price_bottom', 'total_price_bottom');
+                    $this->db->where_in('sku', $skus);
+                    $result = $this->db->get('acc_shopee_bottom')->row();
+                    $total_price_bottom = $result->total_price_bottom ?? 0;
+                }
+
+                $row->total_price_bottom = $total_price_bottom;
+                // End
+
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
                 if (
                     empty($status_filter) ||
@@ -180,24 +201,18 @@ class Comparison extends CI_Controller
 
     public function detail_ajax($no_faktur)
     {
+        // Ambil data detail faktur
         $this->db->select('
-            asd.no_faktur,
-            MAX(asd.order_date) AS shopee_order_date,
-            MAX(asd.pay_date) AS shopee_pay_date,
-            MAX(asd.total_faktur) AS shopee_total_faktur,
-            MAX(asd.discount) AS shopee_discount,
-            MAX(asd.payment) AS shopee_payment,
-            MAX(asd.refund) AS shopee_refund,
-
-            MAX(aad.pay_date) AS accurate_pay_date,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment
-        ');
+        MAX(asd.total_faktur) AS shopee_total_faktur,
+        MAX(asd.discount) AS shopee_discount,
+        MAX(asd.payment) AS shopee_payment,
+        MAX(asd.refund) AS shopee_refund,
+        MAX(aad.total_faktur) AS accurate_total_faktur,
+        MAX(aad.discount) AS accurate_discount,
+        MAX(aad.payment) AS accurate_payment
+    ');
         $this->db->from('acc_shopee_detail asd');
         $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
-        $this->db->join('acc_shopee', 'acc_shopee.idacc_shopee = asd.idacc_shopee');
-        $this->db->group_by('asd.no_faktur');
         $this->db->where('asd.no_faktur', $no_faktur);
         $detail = $this->db->get()->row();
 
@@ -206,17 +221,52 @@ class Comparison extends CI_Controller
             return;
         }
 
+        // Ambil detail produk Shopee
+        $this->db->distinct();
+        $this->db->select('no_faktur, sku, name_product, price_after_discount');
+        $this->db->where('no_faktur', $no_faktur);
+        $acc_shopee_detail_details = $this->db->get('acc_shopee_detail_details')->result();
+
+        // Ambil harga bottom per SKU dari tabel acc_shopee_bottom
+        $harga_bottom_map = [];
+        if (!empty($acc_shopee_detail_details)) {
+            $sku_list = array_column($acc_shopee_detail_details, 'sku');
+            $this->db->select('sku, price_bottom');
+            $this->db->where_in('sku', $sku_list);
+            $bottoms = $this->db->get('acc_shopee_bottom')->result();
+            foreach ($bottoms as $b) {
+                $harga_bottom_map[$b->sku] = $b->price_bottom;
+            }
+        }
+
+        // Tampilkan data ringkasan
         echo '
-        <table class="table table-bordered">
-            <thead>
-                <th></th>
-                <th>Shopee</th>
-                <th>Accurate</th>
-            </thead>
-            <tr><th>Total Faktur</th><td>' . htmlspecialchars($detail->shopee_total_faktur) . '</td><td>' . htmlspecialchars($detail->accurate_total_faktur) . '</td></tr>
-            <tr><th>Discount</th><td>' . htmlspecialchars($detail->shopee_discount) . '</td><td>' . htmlspecialchars($detail->accurate_discount) . '</td></tr>
-            <tr><th>Pembayaran</th><td>' . htmlspecialchars($detail->shopee_payment) . '</td><td>' . htmlspecialchars($detail->accurate_payment) . '</td></tr>
-            <tr><th>Refund</th><td>' . htmlspecialchars($detail->shopee_refund) . '</td><td></td></tr>
-        </table>';
+    <h5>Perbandingan Data</h5>
+    <table class="table table-bordered mb-4">
+        <thead><tr><th></th><th>Shopee</th><th>Accurate</th></tr></thead>
+        <tr><th>Total Faktur</th><td>' . number_format($detail->shopee_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
+        <tr><th>Discount</th><td>' . number_format($detail->shopee_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
+        <tr><th>Pembayaran</th><td>' . number_format($detail->shopee_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
+        <tr><th>Refund</th><td>' . number_format($detail->shopee_refund) . '</td><td>-</td></tr>
+    </table>';
+
+        // Tampilkan detail SKU dan harga
+        echo '
+    <h5>Detail Produk (Shopee & Bottom)</h5>
+    <table class="table table-striped table-bordered">
+        <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead>
+        <tbody>';
+
+        foreach ($acc_shopee_detail_details as $item) {
+            $bottom = $harga_bottom_map[$item->sku] ?? '-';
+            echo '<tr>
+            <td>' . htmlspecialchars($item->sku) . '</td>
+            <td>' . htmlspecialchars($item->name_product) . '</td>
+            <td>' . number_format((float)$item->price_after_discount) . '</td>
+            <td>' . (is_numeric($bottom) ? number_format($bottom) : '-') . '</td>
+        </tr>';
+        }
+
+        echo '</tbody></table>';
     }
 }

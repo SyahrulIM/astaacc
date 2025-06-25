@@ -186,6 +186,22 @@
     </div>
     <!-- End -->
 
+    <!-- Modal Bootstrap -->
+    <div class="modal fade" id="priceModal" tabindex="-1" aria-labelledby="priceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="priceModalLabel">Detail Faktur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="priceContent">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+
     <!-- Data Table Section -->
     <div class="row mt-4">
         <div class="col">
@@ -217,6 +233,9 @@
                             Status Terbayar<br>
                             <font size="2">ACC</font>
                         </th>
+                        <th>
+                            Bottom vs Invoice
+                        </th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -231,7 +250,10 @@
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
                         }
 
-                        $highlight = $ratio_diference > $ratio_limit || ($row->shopee_refund ?? 0) < 0 ? 'style="background-color: #f8d7da;"' : '';
+                        $highlight = ($ratio_diference > $ratio_limit ||
+                            ($row->shopee_refund ?? 0) < 0 ||
+                            ($row->total_price_bottom ?? 0) > ($row->shopee_total_faktur ?? 0)
+                        ) ? 'style="background-color: #f8d7da;"' : '';
                     ?>
                         <tr <?= $highlight ?>>
                             <td><?= $no++ ?></td>
@@ -251,7 +273,7 @@
                                                         }
                                                         ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
-                            <td><?= number_format($row->shopee_refund)?></td>
+                            <td><?= number_format($row->shopee_refund) ?></td>
                             <td>
                                 <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
                             </td>
@@ -275,7 +297,15 @@
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail Matching</button>
+                                <?php if ($row->total_price_bottom > $row->shopee_total_faktur) { ?>
+                                    <span class="badge bg-warning">Bottom ></span>
+                                <?php } else { ?>
+                                    <span class="badge bg-success">
+                                        < Invoice</span>
+                                        <?php } ?>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail</button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
