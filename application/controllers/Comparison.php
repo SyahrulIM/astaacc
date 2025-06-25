@@ -241,13 +241,13 @@ class Comparison extends CI_Controller
 
         // Tampilkan data ringkasan
         echo '
-    <h5>Perbandingan Data - '.$no_faktur.'</h5>
+    <h5>Perbandingan Data - ' . $no_faktur . '</h5>
     <table class="table table-bordered mb-4">
         <thead><tr><th></th><th>Shopee</th><th>Accurate</th></tr></thead>
         <tr><th>Total Faktur</th><td>' . number_format($detail->shopee_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
         <tr><th>Discount</th><td>' . number_format($detail->shopee_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
         <tr><th>Pembayaran</th><td>' . number_format($detail->shopee_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
-        <tr><th>Refund</th><td>' . number_format($detail->shopee_refund) . '</td><td>-</td></tr>
+        <tr><th>Refund</th><td>' . number_format($detail->shopee_refund) . '</td><td>0</td></tr>
     </table>';
 
         // Tampilkan detail SKU dan harga

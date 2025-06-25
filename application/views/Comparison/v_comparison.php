@@ -13,22 +13,22 @@
         </div>
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="order_start" class="form-label">Tanggal Pesanan (Start)</label>
                     <input type="date" id="order_start" name="order_start" class="form-control" value="<?= $this->input->get('order_start') ?>" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="order_end" class="form-label">Tanggal Pesanan (End)</label>
                     <input type="date" id="order_end" name="order_end" class="form-control" value="<?= $this->input->get('order_end') ?>" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="ratio" class="form-label">Max Ratio</label>
                     <div class="input-group">
                         <input type="number" id="ratio" name="ratio" class="form-control" value="<?= $this->input->get('ratio') ?>" max="100" required>
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="status" class="form-label">Status Pembayaran</label>
                     <select id="status" name="status" class="form-select">
                         <option value="">Semua</option>
@@ -36,14 +36,14 @@
                         <option value="Sudah Bayar" <?= $this->input->get('status') === 'Sudah Bayar' ? 'selected' : '' ?>>Sudah Bayar</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="ratio_status">Status Ratio</label>
                     <select name="ratio_status" class="form-select">
                         <option value="">Semua</option>
                         <option value="lebih" <?= ($ratio_status === 'lebih' ? 'selected' : '') ?>>Lebih dari Max Ratio</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="type_status">Type Pembayaran</label>
                     <select name="type_status" class="form-select">
                         <option value="">Semua</option>
@@ -51,7 +51,7 @@
                         <option value="retur" <?= ($type_status === 'retur' ? 'selected' : '') ?>>Retur</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="matching_status" class="form-label">Status Matching</label>
                     <select id="matching_status" name="matching_status" class="form-select">
                         <option value="">Semua</option>
@@ -59,7 +59,7 @@
                         <option value="mismatch" <?= ($this->input->get('matching_status') === 'mismatch') ? 'selected' : '' ?>>Mismatch</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
+                <div class="col-md-3 d-flex align-items-end">
                     <div>
                         <button type="submit" class="btn btn-primary me-2">Filter</button>
                         <a href="<?= base_url('comparison') ?>" class="btn btn-secondary">Reset</a>
@@ -298,10 +298,11 @@
                             </td>
                             <td>
                                 <?php if ($row->total_price_bottom > $row->shopee_total_faktur) { ?>
-                                    <span class="badge bg-warning">< Bottom</span>
-                                <?php } else { ?>
-                                    <span class="badge bg-success">
-                                        Invoice ></span>
+                                    <span class="badge bg-warning">
+                                        < Bottom</span>
+                                        <?php } else { ?>
+                                            <span class="badge bg-success">
+                                                Invoice ></span>
                                         <?php } ?>
                             </td>
                             <td>
