@@ -50,12 +50,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($acc_shopee_bottom as $asbkey => $asbvalue) {?>
-                                <tr>
-                                    <td><?= $asbkey+1;?></td>
-                                    <td><?= $asbvalue->sku;?></td>
-                                    <td><?= $asbvalue->price_bottom;?></td>
-                                </tr>
+                                <?php foreach ($acc_shopee_bottom as $asbkey => $asbvalue) { ?>
+                                    <tr>
+                                        <td><?= $asbkey + 1; ?></td>
+                                        <td><?= $asbvalue->sku; ?></td>
+                                        <td><?= number_format($asbvalue->price_bottom); ?></td>
+                                    </tr>
                                 <?php } ?>
                             </tbody>
                         </table>

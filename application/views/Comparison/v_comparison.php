@@ -28,6 +28,13 @@
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
+                <!-- <div class="col-md-3">
+                    <label for="additional" class="form-label">Additional Revenue</label>
+                    <div class="input-group">
+                        <input type="number" id="additional" name="additional" class="form-control" value="<?= $this->input->get('additional') ?>" required>
+                        <span class="input-group-text">Rp</span>
+                    </div>
+                </div> -->
                 <div class="col-md-3">
                     <label for="status" class="form-label">Status Pembayaran</label>
                     <select id="status" name="status" class="form-select">
@@ -105,7 +112,11 @@
                 </div>
                 <div class="col">
                     <h5>Jumlah Faktur Retur</h5>
-                    <h5> : <?= number_format($retur_count) ?></h5>
+                    <h5> : Rp. <?= number_format($retur_count) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Additional Revenue</h5>
+                    <h5> : <?= number_format($additional_revenue, 0, ',', '.') ?></h5>
                 </div>
             </div>
             <hr>
@@ -149,6 +160,10 @@
                 <div class="col">
                     <h5>Jumlah Faktur Retur</h5>
                     <h5> : <?= number_format($retur_count) ?></h5>
+                </div>
+                <div class="col">
+                    <h5>Additional Revenue</h5>
+                    <h5> : <?= number_format($additional_revenue, 0, ',', '.') ?></h5>
                 </div>
             </div>
         </div>
@@ -242,9 +257,7 @@
                         <tr <?= $highlight ?>>
                             <td><?= $no++ ?></td>
                             <td><?= $row->no_faktur ?></td>
-                            <td>
-                                <?= $row->shopee_order_date ?? '-' ?>
-                            </td>
+                            <td><?= $row->shopee_order_date ?? '-' ?></td>
                             <td><?= $row->accurate_pay_date ?? '-' ?></td>
                             <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
                             <td><?= number_format($row->accurate_payment ?? 0) ?></td>
@@ -291,6 +304,9 @@
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail</button>
+                                <?php if ($highlight) { ?>
+                                    <button class="btn btn-sm btn-primary btn-done">Final Dir</button>
+                                <?php } ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

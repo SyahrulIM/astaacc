@@ -172,6 +172,15 @@ class Comparison extends CI_Controller
             }
         }
 
+        $additional_revenue = 0;
+        if ($order_start && $order_end) {
+            $this->db->select_sum('additional_revenue');
+            $this->db->where('start_date >=', $order_start);
+            $this->db->where('end_date <=', $order_end);
+            $additional_data = $this->db->get('acc_shopee_additional')->row();
+            $additional_revenue = $additional_data->additional_revenue ?? 0;
+        }
+
         $data = [
             'title' => 'Comparison',
             'data_comparison' => $data_comparison,
@@ -192,7 +201,8 @@ class Comparison extends CI_Controller
             'matching_status' => $matching_status,
             'mismatch_count' => $mismatch_count,
             'retur_count' => $retur_count,
-            'type_status' => $type_status
+            'type_status' => $type_status,
+            'additional_revenue' => $additional_revenue,
         ];
 
         $this->load->view('theme/v_head', $data);

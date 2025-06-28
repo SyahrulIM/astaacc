@@ -34,13 +34,14 @@
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action list-group-item-light p-3 <?= ($current == 'dashboard') ? 'active' : ''; ?>" href="<?php echo base_url('dashboard/'); ?>">Dashboard</a>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#shopeerecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['shopee_recap', 'shopee_bottom']) ? 'true' : 'false'; ?>" aria-controls="shopeerecapSubmenu">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#shopeerecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['shopee_recap', 'shopee_bottom', 'shopee_additional']) ? 'true' : 'false'; ?>" aria-controls="shopeerecapSubmenu">
                         Database Shopee
                         <i class="fas fa-chevron-down small"></i>
                     </a>
                     <div class="collapse <?= in_array($current, ['shopee_recap', 'shopee_bottom']) ? 'show' : ''; ?>" id="shopeerecapSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_recap') ? 'active' : ''; ?>" href="<?= base_url('shopee_recap'); ?>">Shopee Recap</a>
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_bottom') ? 'active' : ''; ?>" href="<?= base_url('shopee_bottom'); ?>">Shopee Bottom Price</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_additional') ? 'active' : ''; ?>" href="<?= base_url('shopee_additional'); ?>">Shopee Additional</a>
                     </div>
                 </div>
                 <div class="list-group-item p-0">
