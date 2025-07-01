@@ -28,13 +28,6 @@
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
-                <!-- <div class="col-md-3">
-                    <label for="additional" class="form-label">Additional Revenue</label>
-                    <div class="input-group">
-                        <input type="number" id="additional" name="additional" class="form-control" value="<?= $this->input->get('additional') ?>" required>
-                        <span class="input-group-text">Rp</span>
-                    </div>
-                </div> -->
                 <div class="col-md-3">
                     <label for="status" class="form-label">Status Pembayaran</label>
                     <select id="status" name="status" class="form-select">
@@ -203,10 +196,16 @@
 
     <!-- Data Table Section -->
     <div class="row mt-4">
-        <div class="col">
+        <div class="col text-end">
+            <div class="mb-3">
+                <button id="finalDirSelected" class="btn btn-primary">Final Dir Select</button>
+            </div>
+        </div>
+        <div class="col-12">
             <table class="display" id="dataTable" width="100%">
                 <thead>
                     <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
                         <th>No</th>
                         <th>Nomor Faktur</th>
                         <th>Tanggal Pesanan</th>
@@ -222,7 +221,6 @@
                         <th>Max Ratio</th>
                         <th>Selisih Ratio</th>
                         <th>Selisih</th>
-                        <th>Refund</th>
                         <th>
                             Type Faktur<br>
                             <font size="2">MP</font>
@@ -234,6 +232,9 @@
                         </th>
                         <th>
                             Invoice vs Bottom
+                        </th>
+                        <th>
+                            Status Dir
                         </th>
                         <th>Action</th>
                     </tr>
@@ -248,13 +249,15 @@
                         } else {
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
                         }
-
-                        $highlight = ($ratio_diference > $ratio_limit ||
-                            ($row->shopee_refund ?? 0) < 0 ||
-                            ($row->total_price_bottom ?? 0) > ($row->shopee_total_faktur ?? 0)
+                        $highlight = (
+                            ($ratio_diference > $ratio_limit ||
+                                ($row->shopee_refund ?? 0) < 0 ||
+                                ($row->total_price_bottom ?? 0) > ($row->shopee_total_faktur ?? 0))
+                            && ($row->status_dir !== 'Allowed')
                         ) ? 'style="background-color: #f8d7da;"' : '';
                     ?>
                         <tr <?= $highlight ?>>
+                            <td><input type="checkbox" class="select-row" value="<?= $row->no_faktur ?>"></td>
                             <td><?= $no++ ?></td>
                             <td><?= $row->no_faktur ?></td>
                             <td><?= $row->shopee_order_date ?? '-' ?></td>
@@ -270,7 +273,6 @@
                                                         }
                                                         ?></td>
                             <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
-                            <td><?= number_format($row->shopee_refund) ?></td>
                             <td>
                                 <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
                             </td>
@@ -303,9 +305,22 @@
                                         <?php } ?>
                             </td>
                             <td>
+                                <?php
+                                if ($row->status_dir === 'Allowed') {
+                                    echo '<span class="badge bg-success">Allowed by Dir</span>';
+                                } elseif ($highlight) {
+                                    echo '<span class="badge bg-warning">Unsafe</span>';
+                                } else {
+                                    echo '<span class="badge bg-success">Safe</span>';
+                                }
+                                ?>
+                            </td>
+                            <td>
                                 <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail</button>
                                 <?php if ($highlight) { ?>
-                                    <button class="btn btn-sm btn-primary btn-done">Final Dir</button>
+                                    <a href="#" class="btn btn-sm btn-primary btn-final-dir" data-faktur="<?= $row->no_faktur ?>" onclick="return confirm('Yakin ingin set status Allowed untuk faktur ini?')">
+                                        Final Dir
+                                    </a>
                                 <?php } ?>
                             </td>
                         </tr>
@@ -336,7 +351,11 @@
                         firstLast: false
                     }
                 }
-            }
+            },
+            columnDefs: [{
+                targets: 0, // index kolom checkbox
+                orderable: false
+            }]
         });
     });
     document.addEventListener('DOMContentLoaded', function() {
@@ -352,4 +371,71 @@
             });
         });
     });
+    // Start Final Dir
+    $(document).on('click', '.btn-final-dir', function(e) {
+        e.preventDefault(); // Hindari redirect
+
+        if (!confirm('Yakin ingin set status Allowed untuk faktur ini?')) return;
+
+        var noFaktur = $(this).data('faktur');
+
+        $.ajax({
+            url: '<?= base_url("comparison/final_dir") ?>',
+            type: 'GET',
+            data: {
+                no_faktur: noFaktur
+            },
+            dataType: 'json',
+            success: function(response) {
+                alert(response.message);
+                if (response.status === 'success') {
+                    location.reload(); // Reload halaman kalau berhasil
+                }
+            },
+            error: function() {
+                alert('Gagal terhubung ke server.');
+            }
+        });
+    });
+    // End
+    // Start Multiple Select
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.select-row').forEach(cb => cb.checked = isChecked);
+    });
+
+    document.getElementById('finalDirSelected').addEventListener('click', function() {
+        const selected = Array.from(document.querySelectorAll('.select-row:checked')).map(cb => cb.value);
+        if (selected.length === 0) {
+            alert('Silakan pilih minimal satu faktur terlebih dahulu.');
+            return;
+        }
+
+        if (!confirm('Apakah Anda yakin ingin memproses Final Dir untuk faktur terpilih?')) return;
+
+        fetch('<?= base_url('comparison/final_dir_batch') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    faktur_list: selected
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Proses Final Dir berhasil!');
+                    location.reload();
+                } else {
+                    alert('Gagal memproses: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Terjadi kesalahan saat memproses.');
+            });
+    });
+    // End
 </script>

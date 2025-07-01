@@ -47,6 +47,7 @@ class Comparison extends CI_Controller
                 MAX(asd.discount) AS shopee_discount,
                 MAX(asd.payment) AS shopee_payment,
                 MAX(asd.refund) AS shopee_refund,
+                MAX(asd.status_dir) AS status_dir,
 
                 MAX(aad.pay_date) AS accurate_pay_date,
                 MAX(aad.total_faktur) AS accurate_total_faktur,
@@ -278,5 +279,46 @@ class Comparison extends CI_Controller
         }
 
         echo '</tbody></table>';
+    }
+
+    public function final_dir()
+    {
+        $no_faktur = $this->input->get('no_faktur');
+
+        if (!$no_faktur) {
+            echo json_encode(['status' => 'error', 'message' => 'Nomor faktur tidak ditemukan.']);
+            return;
+        }
+
+        $this->db->where('no_faktur', $no_faktur);
+        $updated = $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
+
+        if ($updated) {
+            echo json_encode(['status' => 'success', 'message' => 'Status Dir berhasil diset sebagai "Allowed".']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Gagal mengupdate status.']);
+        }
+    }
+
+    public function final_dir_batch()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $json = json_decode($this->input->raw_input_stream, true);
+        $faktur_list = $json['faktur_list'] ?? [];
+
+        if (empty($faktur_list)) {
+            echo json_encode(['success' => false, 'message' => 'Data faktur kosong.']);
+            return;
+        }
+
+        // Contoh update ke database
+        foreach ($faktur_list as $faktur) {
+            $this->db->where('no_faktur', $faktur)->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
+        }
+
+        echo json_encode(['success' => true]);
     }
 }

@@ -57,78 +57,96 @@ class Shopee_recap extends CI_Controller
         $this->load->library('upload');
         $file = $_FILES['file']['tmp_name'];
 
+        if (empty($file)) {
+            $this->session->set_flashdata('error', 'File tidak ditemukan.');
+            redirect('shopee_recap');
+            return;
+        }
+
+        require APPPATH . '../vendor/autoload.php';
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $spreadsheet = $reader->load($file);
+        $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
         if ($type_excel === 'income') {
-            if (!empty($file)) {
-                require APPPATH . '../vendor/autoload.php';
+            // Simpan header Shopee
+            $acc_shopee_data = [
+                'iduser' => $this->session->userdata('iduser'),
+                'excel_type' => $type_excel,
+                'created_by' => $this->session->userdata('username'),
+                'created_date' => date('Y-m-d H:i:s'),
+                'status' => 1
+            ];
+            $this->db->insert('acc_shopee', $acc_shopee_data);
+            $idacc_shopee = $this->db->insert_id();
 
-                $reader = new Xlsx();
-                $spreadsheet = $reader->load($file);
-                $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+            // Loop semua sheet
+            foreach ($spreadsheet->getSheetNames() as $sheetName) {
+                if (stripos($sheetName, 'Income -') !== 0) continue; // Skip sheet yang bukan "Income - X"
 
-                $acc_shopee_data = [
-                    'iduser' => $this->session->userdata('iduser'),
-                    'excel_type' => $shopee_type,
-                    'created_by' => $this->session->userdata('username'),
-                    'created_date' => date('Y-m-d H:i:s'),
-                    'status' => 1
-                ];
-                $this->db->insert('acc_shopee', $acc_shopee_data);
-                $idacc_shopee = $this->db->insert_id();
+                $sheetObj = $spreadsheet->getSheetByName($sheetName);
+                $highestRow = $sheetObj->getHighestRow();
+                $highestColumn = $sheetObj->getHighestColumn();
 
-                foreach ($sheet as $i => $row) {
-                    if ($i < 6 || !$row['B']) continue;
+                for ($rowIndex = 7; $rowIndex <= $highestRow; $rowIndex++) { // baris 7 ke bawah
+                    $noFaktur = $sheetObj->getCell("B$rowIndex")->getValue();
+                    if (!$noFaktur) continue;
 
-                    $total = (float) str_replace(',', '', $row['J']);
-                    $payment = (float) str_replace(',', '', $row['AC']);
-                    $discount = $total - $payment;
+                    $orderDate = $sheetObj->getCell("E$rowIndex")->getFormattedValue();
+                    $payDate = $sheetObj->getCell("G$rowIndex")->getFormattedValue();
+                    $nilaiH = $sheetObj->getCell("H$rowIndex")->getCalculatedValue(); // pakai getCalculatedValue utk nilai numerik
+                    $nilaiI = $sheetObj->getCell("I$rowIndex")->getCalculatedValue();
+                    $payment = $sheetObj->getCell("AB$rowIndex")->getCalculatedValue();
+                    $refund = $sheetObj->getCell("J$rowIndex")->getValue();
+
+                    $total = floatval(str_replace(',', '', $nilaiH)) - floatval(str_replace(',', '', $nilaiI));
+                    $discount = $total - floatval(str_replace(',', '', $payment));
 
                     $detail = [
                         'idacc_shopee' => $idacc_shopee,
-                        'no_faktur' => $row['B'],
-                        'order_date' => date('Y-m-d', strtotime($row['E'])),
-                        'pay_date' => date('Y-m-d', strtotime($row['G'])),
+                        'no_faktur' => $noFaktur,
+                        'order_date' => date('Y-m-d', strtotime($orderDate)),
+                        'pay_date' => date('Y-m-d', strtotime($payDate)),
                         'total_faktur' => $total,
                         'pay' => $total,
                         'payment' => $payment,
                         'discount' => $discount,
-                        'refund' => $row['K']
+                        'refund' => $refund
                     ];
                     $this->db->insert('acc_shopee_detail', $detail);
                 }
-
-                $this->session->set_flashdata('success', 'Data Shopee berhasil diimport.');
-            } else {
-                $this->session->set_flashdata('error', 'File tidak ditemukan.');
             }
+
+            $this->session->set_flashdata('success', 'Data Shopee Income dari semua sheet berhasil diimport.');
         } else {
-            if (!empty($file)) {
-                require APPPATH . '../vendor/autoload.php';
+            foreach ($sheet as $i => $row) {
+                if ($i < 2 || empty($row['A'])) continue;
 
-                $reader = new Xlsx();
-                $spreadsheet = $reader->load($file);
-                $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+                $price = floatval(str_replace('.', '', $row['R']));
 
-                foreach ($sheet as $i => $row) {
-                    if ($i < 2 || !$row['A']) continue;
+                $fullAddress = isset($row['AU']) ? trim($row['AU']) : null;
 
-                    $acc_shopee_detail_details = [
-                        'no_faktur' => $row['A'],
-                        'sku' => $row['O'],
-                        'name_product' => $row['N'],
-                        'price_after_discount' => $total = (float) str_replace('.', '', $row['R']),
-                        'created_date' => date('Y-m-d H:i:s'),
-                        'created_by' => $this->session->userdata('username'),
-                        'updated_date' => date('Y-m-d H:i:s'),
-                        'updated_by' => $this->session->userdata('username'),
-                        'status' => 1
-                    ];
-                    $this->db->insert('acc_shopee_detail_details', $acc_shopee_detail_details);
-                }
+                preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
+                $posCode = isset($matches[1]) ? $matches[1] : null;
 
-                $this->session->set_flashdata('success', 'Data Shopee berhasil diimport.');
-            } else {
-                $this->session->set_flashdata('error', 'File tidak ditemukan.');
+
+                $acc_shopee_detail_details = [
+                    'no_faktur' => $row['A'],
+                    'sku' => $row['O'],
+                    'name_product' => $row['N'],
+                    'price_after_discount' => $price,
+                    'address' => $fullAddress,
+                    'pos_code' => $posCode,
+                    'created_date' => date('Y-m-d H:i:s'),
+                    'created_by' => $this->session->userdata('username'),
+                    'updated_date' => date('Y-m-d H:i:s'),
+                    'updated_by' => $this->session->userdata('username'),
+                    'status' => 1
+                ];
+                $this->db->insert('acc_shopee_detail_details', $acc_shopee_detail_details);
             }
+
+            $this->session->set_flashdata('success', 'Data Shopee Detail berhasil diimport.');
         }
 
         redirect('shopee_recap');

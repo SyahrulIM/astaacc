@@ -54,12 +54,13 @@
                     </div>
                 </div>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#toolsSubmenu" role="button" aria-expanded="<?= in_array($current, ['comparison', '']) ? 'true' : 'false'; ?>" aria-controls="toolsSubmenu">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#toolsSubmenu" role="button" aria-expanded="<?= in_array($current, ['comparison', 'clustering']) ? 'true' : 'false'; ?>" aria-controls="toolsSubmenu">
                         Tools
                         <i class="fas fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse <?= in_array($current, ['comparison', 'accurate_recap']) ? 'show' : ''; ?>" id="toolsSubmenu">
+                    <div class="collapse <?= in_array($current, ['comparison', 'clustering']) ? 'show' : ''; ?>" id="toolsSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'comparison') ? 'active' : ''; ?>" href="<?= base_url('comparison'); ?>">Comparison</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'clustering') ? 'active' : ''; ?>" href="<?= base_url('clustering'); ?>">Clustering</a>
                     </div>
                 </div>
                 <?php if ($this->session->userdata('idrole') == 1) { ?>
