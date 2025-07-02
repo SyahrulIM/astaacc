@@ -25,8 +25,137 @@ class Clustering extends CI_Controller
 
         if (!empty($order_start) && !empty($order_end)) {
             $whereClause = "WHERE sd.order_date BETWEEN ? AND ?";
-            $bindParams[] = $order_start;
-            $bindParams[] = $order_end;
+            $bindParams = [$order_start, $order_end];
+        }
+
+        $sql = "
+            SELECT 
+                pc.prov_name AS label,
+                COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur
+            FROM 
+                acc_shopee_detail_details sdd
+            JOIN 
+                acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+            JOIN 
+                postal_code pc ON sdd.pos_code = pc.pos_code
+            $whereClause
+            GROUP BY 
+                pc.prov_name
+            ORDER BY 
+                jumlah_no_faktur DESC
+        ";
+
+        $query = $this->db->query($sql, $bindParams);
+
+        $data = [
+            'title' => 'Clustering',
+            'clustering_data' => $query->result()
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Clustering/v_clustering', $data);
+    }
+
+    public function province()
+    {
+        $order_start = $this->input->get('order_start');
+        $order_end = $this->input->get('order_end');
+        $prov_name = $this->input->get('prov_id');
+
+        $bindParams = [$prov_name];
+        $whereClause = 'WHERE pc.prov_name = ?';
+        $dateFilter = '';
+
+        if (!empty($order_start) && !empty($order_end)) {
+            $dateFilter = "AND sd.order_date BETWEEN ? AND ?";
+            array_push($bindParams, $order_start, $order_end);
+        }
+
+        $sql = "
+            SELECT 
+                pc.city_id,
+                pc.city_name AS label,
+                COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
+            FROM 
+                postal_code pc
+            LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+            LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+            $whereClause
+            $dateFilter
+            GROUP BY 
+                pc.city_id, pc.city_name
+            ORDER BY 
+                jumlah_no_faktur DESC
+        ";
+
+        $query = $this->db->query($sql, $bindParams);
+
+        $data = [
+            'title' => 'Clustering',
+            'clustering_data' => $query->result(),
+            'filter_mode' => 'city',
+            'prov_name' => $prov_name
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Clustering/v_clustering', $data);
+    }
+
+    public function district()
+    {
+        $order_start = $this->input->get('order_start');
+        $order_end = $this->input->get('order_end');
+        $city_id = $this->input->get('city_id');
+
+        $bindParams = [$city_id];
+
+        $dateFilter = '';
+        if (!empty($order_start) && !empty($order_end)) {
+            $dateFilter = "AND sd.order_date BETWEEN ? AND ?";
+            array_push($bindParams, $order_start, $order_end);
+        }
+
+        $sql = "
+        SELECT 
+            d.district_name AS label,
+            COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
+        FROM 
+            district d
+        LEFT JOIN postal_code pc ON pc.dis_id = d.iddistrict
+        LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+        LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+        WHERE d.idcity = ?
+        $dateFilter
+        GROUP BY d.district_name
+        ORDER BY jumlah_no_faktur DESC
+    ";
+
+        $query = $this->db->query($sql, $bindParams);
+
+        $data = [
+            'title' => 'Clustering',
+            'clustering_data' => $query->result(),
+            'filter_mode' => 'district',
+            'city_id' => $city_id
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Clustering/v_clustering', $data);
+    }
+
+    public function export_excel()
+    {
+        require_once(APPPATH . '../vendor/autoload.php');
+
+        $order_start = $this->input->get('order_start');
+        $order_end = $this->input->get('order_end');
+
+        $whereClause = '';
+        $bindParams = [];
+
+        if (!empty($order_start) && !empty($order_end)) {
+            $whereClause = "WHERE sd.order_date BETWEEN ? AND ?";
+            $bindParams = [$order_start, $order_end];
         }
 
         $sql = "
@@ -46,76 +175,35 @@ class Clustering extends CI_Controller
                 jumlah_no_faktur DESC
         ";
 
-        $query = !empty($bindParams)
-            ? $this->db->query($sql, $bindParams)
-            : $this->db->query($sql);
+        $query = $this->db->query($sql, $bindParams);
+        $data = $query->result();
 
-        $data = [
-            'title' => 'Clustering',
-            'clustering_data' => $query->result()
-        ];
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $this->load->view('theme/v_head', $data);
-        $this->load->view('Clustering/v_clustering', $data);
+        // Header
+        $sheet->setCellValue('A1', 'No');
+        $sheet->setCellValue('B1', 'Provinsi');
+        $sheet->setCellValue('C1', 'Jumlah Faktur');
+
+        // Data
+        $row = 2;
+        $no = 1;
+        foreach ($data as $d) {
+            $sheet->setCellValue('A' . $row, $no++);
+            $sheet->setCellValue('B' . $row, $d->province_name);
+            $sheet->setCellValue('C' . $row, $d->jumlah_no_faktur);
+            $row++;
+        }
+
+        // Output
+        $filename = 'Clustering_Faktur_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment; filename=\"{$filename}\"");
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
-
-public function export_excel()
-{
-    require_once(APPPATH . '../vendor/autoload.php');
-
-    $order_start = $this->input->get('order_start');
-    $order_end = $this->input->get('order_end');
-
-    $where_date = '';
-    if ($order_start && $order_end) {
-        $where_date = "WHERE asd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
-    }
-
-    $query = $this->db->query("
-        SELECT 
-            pc.prov_name AS province_name,
-            COUNT(DISTINCT asdd.no_faktur) AS jumlah_no_faktur
-        FROM 
-            acc_shopee_detail_details asdd
-        JOIN 
-            acc_shopee_detail asd ON asd.no_faktur = asdd.no_faktur
-        JOIN 
-            postal_code pc ON asdd.pos_code = pc.pos_code
-        {$where_date}
-        GROUP BY 
-            pc.prov_name
-        ORDER BY 
-            jumlah_no_faktur DESC
-    ");
-
-    $data = $query->result();
-
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-
-    // Header
-    $sheet->setCellValue('A1', 'No');
-    $sheet->setCellValue('B1', 'Provinsi');
-    $sheet->setCellValue('C1', 'Jumlah Faktur');
-
-    // Data
-    $row = 2;
-    $no = 1;
-    foreach ($data as $d) {
-        $sheet->setCellValue('A' . $row, $no++);
-        $sheet->setCellValue('B' . $row, $d->province_name);
-        $sheet->setCellValue('C' . $row, $d->jumlah_no_faktur);
-        $row++;
-    }
-
-    // Output
-    $filename = 'Clustering_Faktur_' . date('Ymd_His') . '.xlsx';
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header("Content-Disposition: attachment; filename=\"{$filename}\"");
-    header('Cache-Control: max-age=0');
-
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-    $writer->save('php://output');
-    exit;
-}
 }

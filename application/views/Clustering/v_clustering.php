@@ -70,18 +70,44 @@
                             <thead>
                                 <tr>
                                     <th>No</th>
-                                    <th>Provinsi</th>
+                                    <th>
+                                        <?php
+                                        if (isset($filter_mode) && $filter_mode === 'district') {
+                                            echo 'Kecamatan';
+                                        } elseif (isset($filter_mode) && $filter_mode === 'city') {
+                                            echo 'Kota';
+                                        } else {
+                                            echo 'Provinsi';
+                                        }
+                                        ?>
+                                    </th>
                                     <th>Jumlah Faktur</th>
+                                    <?php if (!isset($filter_mode) || $filter_mode !== 'district') : ?>
+                                        <th>Action</th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                $no = 1;
+                                <?php $no = 1;
                                 foreach ($clustering_data as $row) : ?>
                                     <tr>
                                         <td><?= $no++ ?></td>
-                                        <td><?= $row->province_name ?? 'Tidak diketahui' ?></td>
+                                        <td><?= $row->label ?? 'Tidak diketahui' ?></td>
                                         <td><?= $row->jumlah_no_faktur ?></td>
+
+                                        <?php if (!isset($filter_mode)) : ?>
+                                            <td>
+                                                <a href="<?= base_url('clustering/province?prov_id=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                                    Lihat Kota
+                                                </a>
+                                            </td>
+                                        <?php elseif ($filter_mode === 'city') : ?>
+                                            <td>
+                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                                    Lihat Kecamatan
+                                                </a>
+                                            </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -119,18 +145,17 @@
                     });
 
                     // Data dari PHP ke JavaScript
-                    const provinceLabels = <?= json_encode(array_column($clustering_data, 'province_name')) ?>;
+                    const labelData = <?= json_encode(array_column($clustering_data, 'label')) ?>;
                     const fakturCounts = <?= json_encode(array_column($clustering_data, 'jumlah_no_faktur')) ?>;
 
                     // Warna random untuk donut chart
-                    const backgroundColors = provinceLabels.map(() => '#' + Math.floor(Math.random() * 16777215).toString(16));
-
+                    const backgroundColors = labelData.map(() => '#' + Math.floor(Math.random() * 16777215).toString(16));
                     // Donut Chart
                     const ctx = document.getElementById('donutChart').getContext('2d');
                     new Chart(ctx, {
                         type: 'doughnut',
                         data: {
-                            labels: provinceLabels,
+                            labels: labelData,
                             datasets: [{
                                 label: 'Jumlah Faktur',
                                 data: fakturCounts,
@@ -157,7 +182,7 @@
                     new Chart(ctxBar, {
                         type: 'bar',
                         data: {
-                            labels: provinceLabels,
+                            labels: labelData,
                             datasets: [{
                                 label: 'Jumlah Faktur',
                                 data: fakturCounts,
