@@ -59,7 +59,7 @@
 
                 <div class="row mt-4">
                     <div class="col">
-                        <a href="<?= base_url('clustering/export_excel' . (isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : '')) ?>" class="btn btn-success">
+                        <a href="<?= base_url('clustering/export_excel?' . $_SERVER['QUERY_STRING']) ?>" class="btn btn-success">
                             Export Excel
                         </a>
                     </div>
