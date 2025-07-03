@@ -21,36 +21,36 @@ class Clustering extends CI_Controller
         $order_end = $this->input->get('order_end');
 
         $whereClause = '';
-        $bindParams = [];
 
         if (!empty($order_start) && !empty($order_end)) {
-            $whereClause = "WHERE sd.order_date BETWEEN ? AND ?";
-            $bindParams = [$order_start, $order_end];
+            $start = $this->db->escape($order_start);
+            $end = $this->db->escape($order_end);
+            $whereClause = "WHERE sd.order_date BETWEEN $start AND $end";
         }
 
         $sql = "
-        SELECT 
-            label,
-            COUNT(*) AS jumlah_no_faktur
-        FROM (
-            SELECT 
-                pc.prov_name AS label,
-                sdd.no_faktur
-            FROM 
-                acc_shopee_detail_details sdd
-            JOIN 
-                acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-            JOIN 
-                postal_code pc ON sdd.pos_code = pc.pos_code
-            $whereClause
-            GROUP BY 
-                pc.prov_name, sdd.no_faktur
-        ) AS subquery
-        GROUP BY label
-        ORDER BY jumlah_no_faktur DESC
-    ";
+            SELECT
+                label,
+                COUNT(*) AS jumlah_no_faktur
+            FROM (
+                SELECT
+                    pc.prov_name AS label,
+                    sdd.no_faktur
+                FROM
+                    acc_shopee_detail_details sdd
+                JOIN
+                    acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+                JOIN
+                    postal_code pc ON sdd.pos_code = pc.pos_code
+                $whereClause
+                GROUP BY
+                    pc.prov_name, sdd.no_faktur
+            ) AS subquery
+            GROUP BY label
+            ORDER BY jumlah_no_faktur DESC
+        ";
 
-        $query = $this->db->query($sql, $bindParams);
+        $query = $this->db->query($sql); // Tidak perlu bindParams lagi
 
         $data = [
             'title' => 'Clustering',
@@ -67,33 +67,33 @@ class Clustering extends CI_Controller
         $order_end = $this->input->get('order_end');
         $prov_name = $this->input->get('prov_id');
 
-        $bindParams = [$prov_name];
-        $whereClause = 'WHERE pc.prov_name = ?';
-        $dateFilter = '';
+        // Escape semua input agar aman
+        $escapedProvName = $this->db->escape($prov_name);
+        $whereClause = "WHERE pc.prov_name = $escapedProvName";
 
         if (!empty($order_start) && !empty($order_end)) {
-            $dateFilter = "AND sd.order_date BETWEEN ? AND ?";
-            array_push($bindParams, $order_start, $order_end);
+            $escapedStart = $this->db->escape($order_start);
+            $escapedEnd = $this->db->escape($order_end);
+            $whereClause .= " AND sd.order_date BETWEEN $escapedStart AND $escapedEnd";
         }
 
         $sql = "
-            SELECT 
+            SELECT
                 pc.city_id,
                 pc.city_name AS label,
                 COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
-            FROM 
+            FROM
                 postal_code pc
             LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
             LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
             $whereClause
-            $dateFilter
-            GROUP BY 
+            GROUP BY
                 pc.city_id, pc.city_name
-            ORDER BY 
+            ORDER BY
                 jumlah_no_faktur DESC
         ";
 
-        $query = $this->db->query($sql, $bindParams);
+        $query = $this->db->query($sql);
 
         $data = [
             'title' => 'Clustering',
@@ -110,38 +110,57 @@ class Clustering extends CI_Controller
     {
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
-        $city_id = $this->input->get('city_id');
+        $city_id = $this->input->get('city_id'); // Get city_id from GET parameter
+        $city_name = $this->input->get('city_name'); // For display purposes
 
-        $bindParams = [$city_id];
+        // Validate
+        if (empty($city_id)) {
+            $this->session->set_flashdata('error', 'City ID is required to view district data.');
+            redirect('clustering');
+        }
 
-        $dateFilter = '';
+        // Escape input
+        $escapedCityId = $this->db->escape($city_id);
+        $whereClause = "WHERE pc.city_id = $escapedCityId";
+
         if (!empty($order_start) && !empty($order_end)) {
-            $dateFilter = "AND sd.order_date BETWEEN ? AND ?";
-            array_push($bindParams, $order_start, $order_end);
+            $escapedStart = $this->db->escape($order_start);
+            $escapedEnd = $this->db->escape($order_end);
+            $whereClause .= " AND sd.order_date BETWEEN $escapedStart AND $escapedEnd";
         }
 
         $sql = "
         SELECT 
-            d.district_name AS label,
-            COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
-        FROM 
-            district d
-        LEFT JOIN postal_code pc ON pc.dis_id = d.iddistrict
-        LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
-        LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-        WHERE d.idcity = ?
-        $dateFilter
-        GROUP BY d.district_name
-        ORDER BY jumlah_no_faktur DESC
+            label,
+            COUNT(*) AS jumlah_no_faktur
+        FROM (
+            SELECT 
+                sd.no_faktur,
+                MIN(pc.dis_name) AS label
+            FROM 
+                postal_code pc
+            LEFT JOIN 
+                acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+            LEFT JOIN 
+                acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+            $whereClause
+            GROUP BY 
+                sd.no_faktur
+        ) AS subquery
+        GROUP BY 
+            label
+        ORDER BY 
+            jumlah_no_faktur DESC
     ";
 
-        $query = $this->db->query($sql, $bindParams);
+        $query = $this->db->query($sql);
 
         $data = [
             'title' => 'Clustering',
             'clustering_data' => $query->result(),
             'filter_mode' => 'district',
-            'city_id' => $city_id
+            'city_id' => $city_id,
+            'city_name' => $city_name
         ];
 
         $this->load->view('theme/v_head', $data);
@@ -164,19 +183,19 @@ class Clustering extends CI_Controller
         }
 
         $sql = "
-            SELECT 
+            SELECT
                 pc.prov_name AS province_name,
                 COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur
-            FROM 
+            FROM
                 acc_shopee_detail_details sdd
-            JOIN 
+            JOIN
                 acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-            JOIN 
+            JOIN
                 postal_code pc ON sdd.pos_code = pc.pos_code
             $whereClause
-            GROUP BY 
+            GROUP BY
                 pc.prov_name
-            ORDER BY 
+            ORDER BY
                 jumlah_no_faktur DESC
         ";
 
