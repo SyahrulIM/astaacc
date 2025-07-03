@@ -30,10 +30,12 @@ class Clustering extends CI_Controller
 
         $sql = "
             SELECT
+                prov_id,
                 label,
                 COUNT(*) AS jumlah_no_faktur
             FROM (
                 SELECT
+                    pc.prov_id,
                     pc.prov_name AS label,
                     sdd.no_faktur
                 FROM
@@ -44,9 +46,9 @@ class Clustering extends CI_Controller
                     postal_code pc ON sdd.pos_code = pc.pos_code
                 $whereClause
                 GROUP BY
-                    pc.prov_name, sdd.no_faktur
+                    pc.prov_id, pc.prov_name, sdd.no_faktur
             ) AS subquery
-            GROUP BY label
+            GROUP BY prov_id, label
             ORDER BY jumlah_no_faktur DESC
         ";
 
@@ -65,11 +67,13 @@ class Clustering extends CI_Controller
     {
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
-        $prov_name = $this->input->get('prov_id');
+        $prov_id = $this->input->get('prov_id');
+        $prov_name = $this->input->get('prov_name'); // hanya untuk display di view
 
-        // Escape semua input agar aman
-        $escapedProvName = $this->db->escape($prov_name);
-        $whereClause = "WHERE pc.prov_name = $escapedProvName";
+        // Escape input
+        $escapedProvId = $this->db->escape($prov_id);
+
+        $whereClause = "WHERE pc.prov_id = $escapedProvId";
 
         if (!empty($order_start) && !empty($order_end)) {
             $escapedStart = $this->db->escape($order_start);
@@ -78,20 +82,20 @@ class Clustering extends CI_Controller
         }
 
         $sql = "
-            SELECT
-                pc.city_id,
-                pc.city_name AS label,
-                COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
-            FROM
-                postal_code pc
-            LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
-            LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-            $whereClause
-            GROUP BY
-                pc.city_id, pc.city_name
-            ORDER BY
-                jumlah_no_faktur DESC
-        ";
+        SELECT
+            pc.city_id,
+            pc.city_name AS label,
+            COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
+        FROM
+            postal_code pc
+        LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+        LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+        $whereClause
+        GROUP BY
+            pc.city_id, pc.city_name
+        ORDER BY
+            jumlah_no_faktur DESC
+    ";
 
         $query = $this->db->query($sql);
 
@@ -99,7 +103,10 @@ class Clustering extends CI_Controller
             'title' => 'Clustering',
             'clustering_data' => $query->result(),
             'filter_mode' => 'city',
-            'prov_name' => $prov_name
+            'prov_name' => $prov_name,
+            'prov_id' => $prov_id,
+            'order_start' => $order_start,
+            'order_end' => $order_end
         ];
 
         $this->load->view('theme/v_head', $data);
@@ -173,8 +180,24 @@ class Clustering extends CI_Controller
 
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
-        $prov_name = $this->input->get('prov_id');
+        $prov_id = $this->input->get('prov_id');
         $city_id = $this->input->get('city_id');
+
+        // Ambil nama provinsi
+        $prov_display_name = $prov_id;
+        if (!empty($prov_id)) {
+            $prov_query = $this->db->query("SELECT prov_name FROM postal_code WHERE prov_id = ? LIMIT 1", [$prov_id])->row();
+            if ($prov_query) {
+                $prov_display_name = $prov_query->prov_name;
+            }
+        }
+
+        // Ambil nama kota
+        $city_name = '';
+        if (!empty($city_id)) {
+            $city_query = $this->db->query("SELECT city_name FROM postal_code WHERE city_id = ? LIMIT 1", [$city_id])->row();
+            $city_name = $city_query->city_name ?? '';
+        }
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 
@@ -190,16 +213,16 @@ class Clustering extends CI_Controller
         }
 
         $sqlProv = "
-            SELECT
-                pc.prov_name AS label,
-                COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur
-            FROM acc_shopee_detail_details sdd
-            JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-            JOIN postal_code pc ON sdd.pos_code = pc.pos_code
-            $whereClause
-            GROUP BY pc.prov_name
-            ORDER BY jumlah_no_faktur DESC
-        ";
+        SELECT
+            pc.prov_name AS label,
+            COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur
+        FROM acc_shopee_detail_details sdd
+        JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+        JOIN postal_code pc ON sdd.pos_code = pc.pos_code
+        $whereClause
+        GROUP BY pc.prov_name
+        ORDER BY jumlah_no_faktur DESC
+    ";
         $dataProv = $this->db->query($sqlProv, $bindParams)->result();
 
         $sheet1->setCellValue('A1', 'Filter:');
@@ -221,13 +244,12 @@ class Clustering extends CI_Controller
         $sheet2 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kota');
         $spreadsheet->addSheet($sheet2);
 
-        // Siapkan WHERE dan BIND
         $whereClauseCity = '';
         $bindCity = [];
 
-        if (!empty($prov_name)) {
+        if (!empty($prov_display_name)) {
             $whereClauseCity = "WHERE pc.prov_name = ?";
-            $bindCity[] = $prov_name;
+            $bindCity[] = $prov_display_name;
 
             if (!empty($order_start) && !empty($order_end)) {
                 $whereClauseCity .= " AND sd.order_date BETWEEN ? AND ?";
@@ -239,29 +261,25 @@ class Clustering extends CI_Controller
             $bindCity = [$order_start, $order_end];
         }
 
-        // Query data kota
         $sqlCity = "
-            SELECT
-                pc.city_name AS city_label,
-                COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
-            FROM postal_code pc
-            LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
-            LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-            $whereClauseCity
-            GROUP BY pc.city_id, pc.city_name
-            ORDER BY jumlah_no_faktur DESC
-        ";
+        SELECT
+            pc.city_name AS city_label,
+            COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
+        FROM postal_code pc
+        LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+        LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+        $whereClauseCity
+        GROUP BY pc.city_id, pc.city_name
+        ORDER BY jumlah_no_faktur DESC
+    ";
         $dataCity = $this->db->query($sqlCity, $bindCity)->result();
 
-        // Header dan filter info
         $sheet2->setCellValue('A1', 'Filter:');
-        $sheet2->setCellValue('B1', 'Provinsi: ' . ($prov_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
-
+        $sheet2->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
         $sheet2->setCellValue('A3', 'No');
         $sheet2->setCellValue('B3', 'Nama Kota');
         $sheet2->setCellValue('C3', 'Jumlah Faktur');
 
-        // Isi data kota
         $row = 4;
         $no = 1;
         foreach ($dataCity as $city) {
@@ -274,12 +292,6 @@ class Clustering extends CI_Controller
         // ===================== SHEET 3: KECAMATAN =====================
         $sheet3 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kecamatan');
         $spreadsheet->addSheet($sheet3);
-
-        $city_name = '';
-        if (!empty($city_id)) {
-            $city_query = $this->db->query("SELECT city_name FROM postal_code WHERE city_id = ? LIMIT 1", [$city_id])->row();
-            $city_name = $city_query->city_name ?? '';
-        }
 
         $whereClauseDist = '';
         $bindDist = [];
@@ -298,26 +310,26 @@ class Clustering extends CI_Controller
         }
 
         $sqlDist = "
+        SELECT 
+            label,
+            COUNT(*) AS jumlah_no_faktur
+        FROM (
             SELECT 
-                label,
-                COUNT(*) AS jumlah_no_faktur
-            FROM (
-                SELECT 
-                    sd.no_faktur,
-                    MIN(pc.dis_name) AS label
-                FROM postal_code pc
-                LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
-                LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-                $whereClauseDist
-                GROUP BY sd.no_faktur
-            ) AS subquery
-            GROUP BY label
-            ORDER BY jumlah_no_faktur DESC
-        ";
+                sd.no_faktur,
+                MIN(pc.dis_name) AS label
+            FROM postal_code pc
+            LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
+            LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
+            $whereClauseDist
+            GROUP BY sd.no_faktur
+        ) AS subquery
+        GROUP BY label
+        ORDER BY jumlah_no_faktur DESC
+    ";
         $dataDist = $this->db->query($sqlDist, $bindDist)->result();
 
         $sheet3->setCellValue('A1', 'Filter:');
-        $sheet3->setCellValue('B1', 'Provinsi: ' . ($prov_name ?? '-') . ', Kota: ' . ($city_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
+        $sheet3->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Kota: ' . ($city_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
         $sheet3->setCellValue('A3', 'No');
         $sheet3->setCellValue('B3', 'Kecamatan');
         $sheet3->setCellValue('C3', 'Jumlah Faktur');

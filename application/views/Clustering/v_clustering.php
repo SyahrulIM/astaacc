@@ -97,13 +97,13 @@
 
                                         <?php if (!isset($filter_mode)) : ?>
                                             <td>
-                                                <a href="<?= base_url('clustering/province?prov_id=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                                <a href="<?= base_url('clustering/province?prov_id=' . $row->prov_id . '&prov_name=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
                                                     Lihat Kota
                                                 </a>
                                             </td>
                                         <?php elseif ($filter_mode === 'city') : ?>
                                             <td>
-                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&prov_id=' . $this->input->get('prov_id') . '&prov_name=' . urlencode($this->input->get('prov_name')) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
                                                     Lihat Kecamatan
                                                 </a>
                                             </td>
