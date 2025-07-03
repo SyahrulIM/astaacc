@@ -29,9 +29,13 @@ class Clustering extends CI_Controller
         }
 
         $sql = "
+        SELECT 
+            label,
+            COUNT(*) AS jumlah_no_faktur
+        FROM (
             SELECT 
                 pc.prov_name AS label,
-                COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur
+                sdd.no_faktur
             FROM 
                 acc_shopee_detail_details sdd
             JOIN 
@@ -40,10 +44,11 @@ class Clustering extends CI_Controller
                 postal_code pc ON sdd.pos_code = pc.pos_code
             $whereClause
             GROUP BY 
-                pc.prov_name
-            ORDER BY 
-                jumlah_no_faktur DESC
-        ";
+                pc.prov_name, sdd.no_faktur
+        ) AS subquery
+        GROUP BY label
+        ORDER BY jumlah_no_faktur DESC
+    ";
 
         $query = $this->db->query($sql, $bindParams);
 
