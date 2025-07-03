@@ -230,6 +230,7 @@ class Clustering extends CI_Controller
         $sheet1->setCellValue('A3', 'No');
         $sheet1->setCellValue('B3', 'Provinsi');
         $sheet1->setCellValue('C3', 'Jumlah Faktur');
+        $sheet1->getStyle('A3:C3')->getFont()->setBold(true);
 
         $row = 4;
         $no = 1;
@@ -239,6 +240,14 @@ class Clustering extends CI_Controller
             $sheet1->setCellValue("C$row", $prov->jumlah_no_faktur);
             $row++;
         }
+
+        $lastRow = $row - 1;
+        $sheet1->getStyle("A3:C$lastRow")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ]);
+        $sheet1->getColumnDimension('A')->setWidth(5);
+        $sheet1->getColumnDimension('B')->setWidth(30);
+        $sheet1->getColumnDimension('C')->setWidth(20);
 
         // ===================== SHEET 2: KOTA =====================
         $sheet2 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kota');
@@ -279,6 +288,7 @@ class Clustering extends CI_Controller
         $sheet2->setCellValue('A3', 'No');
         $sheet2->setCellValue('B3', 'Nama Kota');
         $sheet2->setCellValue('C3', 'Jumlah Faktur');
+        $sheet2->getStyle('A3:C3')->getFont()->setBold(true);
 
         $row = 4;
         $no = 1;
@@ -288,6 +298,14 @@ class Clustering extends CI_Controller
             $sheet2->setCellValue("C$row", $city->jumlah_no_faktur);
             $row++;
         }
+
+        $lastRow = $row - 1;
+        $sheet2->getStyle("A3:C$lastRow")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ]);
+        $sheet2->getColumnDimension('A')->setWidth(5);
+        $sheet2->getColumnDimension('B')->setWidth(30);
+        $sheet2->getColumnDimension('C')->setWidth(20);
 
         // ===================== SHEET 3: KECAMATAN =====================
         $sheet3 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kecamatan');
@@ -333,6 +351,7 @@ class Clustering extends CI_Controller
         $sheet3->setCellValue('A3', 'No');
         $sheet3->setCellValue('B3', 'Kecamatan');
         $sheet3->setCellValue('C3', 'Jumlah Faktur');
+        $sheet3->getStyle('A3:C3')->getFont()->setBold(true);
 
         $row = 4;
         $no = 1;
@@ -342,6 +361,14 @@ class Clustering extends CI_Controller
             $sheet3->setCellValue("C$row", $dist->jumlah_no_faktur);
             $row++;
         }
+
+        $lastRow = $row - 1;
+        $sheet3->getStyle("A3:C$lastRow")->applyFromArray([
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
+        ]);
+        $sheet3->getColumnDimension('A')->setWidth(5);
+        $sheet3->getColumnDimension('B')->setWidth(30);
+        $sheet3->getColumnDimension('C')->setWidth(20);
 
         // ===================== EXPORT =====================
         $spreadsheet->setActiveSheetIndex(0);
