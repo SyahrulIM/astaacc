@@ -23,8 +23,8 @@ class Shopee_additional extends CI_Controller
             'acc_shopee_additional' => $acc_shopee_additional
         ];
 
-        $this->load->view('theme\v_head', $data);
-        $this->load->view('shopee_recap\v_shopee_recap_additional');
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Shopee_recap/v_shopee_recap_additional');
     }
 
     public function createAdditional()

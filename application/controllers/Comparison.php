@@ -207,7 +207,7 @@ class Comparison extends CI_Controller
         ];
 
         $this->load->view('theme/v_head', $data);
-        $this->load->view('comparison/v_comparison');
+        $this->load->view('Comparison/v_comparison');
     }
 
     public function detail_ajax($no_faktur)

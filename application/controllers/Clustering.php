@@ -15,53 +15,36 @@ class Clustering extends CI_Controller
         }
     }
 
-    public function index()
-    {
-        $order_start = $this->input->get('order_start');
-        $order_end = $this->input->get('order_end');
+public function index()
+{
+    $order_start = $this->input->get('order_start');
+    $order_end = $this->input->get('order_end');
 
-        $whereClause = '';
+    $clustering_data = [];
 
-        if (!empty($order_start) && !empty($order_end)) {
-            $start = $this->db->escape($order_start);
-            $end = $this->db->escape($order_end);
-            $whereClause = "WHERE sd.order_date BETWEEN $start AND $end";
-        }
+    if (!empty($order_start) && !empty($order_end)) {
+        $this->db->select('pc.prov_id, pc.prov_name AS label, COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur');
+        $this->db->from('acc_shopee_detail_details sdd');
+        $this->db->join('acc_shopee_detail sd', 'sdd.no_faktur = sd.no_faktur');
+        $this->db->join('postal_code pc', 'sdd.pos_code = pc.pos_code');
+        $this->db->where('sd.order_date >=', $order_start);
+        $this->db->where('sd.order_date <=', $order_end);
+        $this->db->group_by(['pc.prov_id', 'pc.prov_name']);
+        $this->db->order_by('jumlah_no_faktur', 'DESC');
 
-        $sql = "
-            SELECT
-                prov_id,
-                label,
-                COUNT(*) AS jumlah_no_faktur
-            FROM (
-                SELECT
-                    pc.prov_id,
-                    pc.prov_name AS label,
-                    sdd.no_faktur
-                FROM
-                    acc_shopee_detail_details sdd
-                JOIN
-                    acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
-                JOIN
-                    postal_code pc ON sdd.pos_code = pc.pos_code
-                $whereClause
-                GROUP BY
-                    pc.prov_id, pc.prov_name, sdd.no_faktur
-            ) AS subquery
-            GROUP BY prov_id, label
-            ORDER BY jumlah_no_faktur DESC
-        ";
-
-        $query = $this->db->query($sql); // Tidak perlu bindParams lagi
-
-        $data = [
-            'title' => 'Clustering',
-            'clustering_data' => $query->result()
-        ];
-
-        $this->load->view('theme/v_head', $data);
-        $this->load->view('Clustering/v_clustering', $data);
+        $clustering_data = $this->db->get()->result();
     }
+
+    $data = [
+        'title' => 'Clustering',
+        'clustering_data' => $clustering_data,
+        'order_start' => $order_start,
+        'order_end' => $order_end
+    ];
+
+    $this->load->view('theme/v_head', $data);
+    $this->load->view('Clustering/v_clustering', $data);
+}
 
     public function province()
     {
