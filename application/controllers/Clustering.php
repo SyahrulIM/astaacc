@@ -15,36 +15,36 @@ class Clustering extends CI_Controller
         }
     }
 
-public function index()
-{
-    $order_start = $this->input->get('order_start');
-    $order_end = $this->input->get('order_end');
+    public function index()
+    {
+        $order_start = $this->input->get('order_start');
+        $order_end = $this->input->get('order_end');
 
-    $clustering_data = [];
+        $clustering_data = [];
 
-    if (!empty($order_start) && !empty($order_end)) {
-        $this->db->select('pc.prov_id, pc.prov_name AS label, COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur');
-        $this->db->from('acc_shopee_detail_details sdd');
-        $this->db->join('acc_shopee_detail sd', 'sdd.no_faktur = sd.no_faktur');
-        $this->db->join('postal_code pc', 'sdd.pos_code = pc.pos_code');
-        $this->db->where('sd.order_date >=', $order_start);
-        $this->db->where('sd.order_date <=', $order_end);
-        $this->db->group_by(['pc.prov_id', 'pc.prov_name']);
-        $this->db->order_by('jumlah_no_faktur', 'DESC');
+        if (!empty($order_start) && !empty($order_end)) {
+            $this->db->select('pc.prov_id, pc.prov_name AS label, COUNT(DISTINCT sdd.no_faktur) AS jumlah_no_faktur');
+            $this->db->from('acc_shopee_detail_details sdd');
+            $this->db->join('acc_shopee_detail sd', 'sdd.no_faktur = sd.no_faktur');
+            $this->db->join('postal_code pc', 'sdd.pos_code = pc.pos_code');
+            $this->db->where('sd.order_date >=', $order_start);
+            $this->db->where('sd.order_date <=', $order_end);
+            $this->db->group_by(['pc.prov_id', 'pc.prov_name']);
+            $this->db->order_by('jumlah_no_faktur', 'DESC');
 
-        $clustering_data = $this->db->get()->result();
+            $clustering_data = $this->db->get()->result();
+        }
+
+        $data = [
+            'title' => 'Clustering',
+            'clustering_data' => $clustering_data,
+            'order_start' => $order_start,
+            'order_end' => $order_end
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Clustering/v_clustering', $data);
     }
-
-    $data = [
-        'title' => 'Clustering',
-        'clustering_data' => $clustering_data,
-        'order_start' => $order_start,
-        'order_end' => $order_end
-    ];
-
-    $this->load->view('theme/v_head', $data);
-    $this->load->view('Clustering/v_clustering', $data);
-}
 
     public function province()
     {
@@ -255,40 +255,44 @@ public function index()
 
         $sqlCity = "
         SELECT
+            pc.prov_name AS prov_label,
             pc.city_name AS city_label,
             COUNT(DISTINCT sd.no_faktur) AS jumlah_no_faktur
         FROM postal_code pc
         LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
         LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
         $whereClauseCity
-        GROUP BY pc.city_id, pc.city_name
+        GROUP BY pc.prov_name, pc.city_id, pc.city_name
         ORDER BY jumlah_no_faktur DESC
-    ";
+        ";
         $dataCity = $this->db->query($sqlCity, $bindCity)->result();
 
         $sheet2->setCellValue('A1', 'Filter:');
         $sheet2->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
         $sheet2->setCellValue('A3', 'No');
-        $sheet2->setCellValue('B3', 'Nama Kota');
-        $sheet2->setCellValue('C3', 'Jumlah Faktur');
-        $sheet2->getStyle('A3:C3')->getFont()->setBold(true);
+        $sheet2->setCellValue('B3', 'Provinsi');
+        $sheet2->setCellValue('C3', 'Nama Kota');
+        $sheet2->setCellValue('D3', 'Jumlah Faktur');
+        $sheet2->getStyle('A3:D3')->getFont()->setBold(true);
 
         $row = 4;
         $no = 1;
         foreach ($dataCity as $city) {
             $sheet2->setCellValue("A$row", $no++);
-            $sheet2->setCellValue("B$row", $city->city_label);
-            $sheet2->setCellValue("C$row", $city->jumlah_no_faktur);
+            $sheet2->setCellValue("B$row", $city->prov_label);
+            $sheet2->setCellValue("C$row", $city->city_label);
+            $sheet2->setCellValue("D$row", $city->jumlah_no_faktur);
             $row++;
         }
 
         $lastRow = $row - 1;
-        $sheet2->getStyle("A3:C$lastRow")->applyFromArray([
+        $sheet2->getStyle("A3:D$lastRow")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
         $sheet2->getColumnDimension('A')->setWidth(5);
         $sheet2->getColumnDimension('B')->setWidth(30);
-        $sheet2->getColumnDimension('C')->setWidth(20);
+        $sheet2->getColumnDimension('C')->setWidth(30);
+        $sheet2->getColumnDimension('D')->setWidth(20);
 
         // ===================== SHEET 3: KECAMATAN =====================
         $sheet3 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kecamatan');
@@ -313,45 +317,55 @@ public function index()
         $sqlDist = "
         SELECT 
             label,
+            city_name,
+            prov_name,
             COUNT(*) AS jumlah_no_faktur
         FROM (
             SELECT 
                 sd.no_faktur,
-                MIN(pc.dis_name) AS label
+                MIN(pc.dis_name) AS label,
+                MIN(pc.city_name) AS city_name,
+                MIN(pc.prov_name) AS prov_name
             FROM postal_code pc
             LEFT JOIN acc_shopee_detail_details sdd ON sdd.pos_code = pc.pos_code
             LEFT JOIN acc_shopee_detail sd ON sdd.no_faktur = sd.no_faktur
             $whereClauseDist
             GROUP BY sd.no_faktur
         ) AS subquery
-        GROUP BY label
+        GROUP BY label, city_name, prov_name
         ORDER BY jumlah_no_faktur DESC
-    ";
+        ";
         $dataDist = $this->db->query($sqlDist, $bindDist)->result();
 
         $sheet3->setCellValue('A1', 'Filter:');
         $sheet3->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Kota: ' . ($city_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
         $sheet3->setCellValue('A3', 'No');
         $sheet3->setCellValue('B3', 'Kecamatan');
-        $sheet3->setCellValue('C3', 'Jumlah Faktur');
-        $sheet3->getStyle('A3:C3')->getFont()->setBold(true);
+        $sheet3->setCellValue('C3', 'Kota');
+        $sheet3->setCellValue('D3', 'Provinsi');
+        $sheet3->setCellValue('E3', 'Jumlah Faktur');
+        $sheet3->getStyle('A3:E3')->getFont()->setBold(true);
 
         $row = 4;
         $no = 1;
         foreach ($dataDist as $dist) {
             $sheet3->setCellValue("A$row", $no++);
             $sheet3->setCellValue("B$row", $dist->label);
-            $sheet3->setCellValue("C$row", $dist->jumlah_no_faktur);
+            $sheet3->setCellValue("C$row", $dist->city_name);
+            $sheet3->setCellValue("D$row", $dist->prov_name);
+            $sheet3->setCellValue("E$row", $dist->jumlah_no_faktur);
             $row++;
         }
 
         $lastRow = $row - 1;
-        $sheet3->getStyle("A3:C$lastRow")->applyFromArray([
+        $sheet3->getStyle("A3:E$lastRow")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
         $sheet3->getColumnDimension('A')->setWidth(5);
         $sheet3->getColumnDimension('B')->setWidth(30);
-        $sheet3->getColumnDimension('C')->setWidth(20);
+        $sheet3->getColumnDimension('C')->setWidth(25);
+        $sheet3->getColumnDimension('D')->setWidth(25);
+        $sheet3->getColumnDimension('E')->setWidth(20);
 
         // ===================== EXPORT =====================
         $spreadsheet->setActiveSheetIndex(0);

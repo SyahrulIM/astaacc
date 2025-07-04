@@ -122,9 +122,31 @@ class Shopee_recap extends CI_Controller
             foreach ($sheet as $i => $row) {
                 if ($i < 2 || empty($row['A'])) continue;
 
-                $price = floatval(str_replace('.', '', $row['R']));
+                // $price = floatval(str_replace('.', '', $row['R']));
 
-                $fullAddress = isset($row['AU']) ? trim($row['AU']) : null;
+                // $fullAddress = isset($row['AU']) ? trim($row['AU']) : null;
+
+                // preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
+                // $posCode = isset($matches[1]) ? $matches[1] : null;
+
+
+                // $acc_shopee_detail_details = [
+                //     'no_faktur' => $row['A'],
+                //     'sku' => $row['O'],
+                //     'name_product' => $row['N'],
+                //     'price_after_discount' => $price,
+                //     'address' => $fullAddress,
+                //     'pos_code' => $posCode,
+                //     'created_date' => date('Y-m-d H:i:s'),
+                //     'created_by' => $this->session->userdata('username'),
+                //     'updated_date' => date('Y-m-d H:i:s'),
+                //     'updated_by' => $this->session->userdata('username'),
+                //     'status' => 1
+                // ];
+                // $this->db->insert('acc_shopee_detail_details', $acc_shopee_detail_details);
+                $price = floatval(str_replace('.', '', $row['Q']));
+
+                $fullAddress = isset($row['AT']) ? trim($row['AT']) : null;
 
                 preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
                 $posCode = isset($matches[1]) ? $matches[1] : null;
@@ -132,8 +154,8 @@ class Shopee_recap extends CI_Controller
 
                 $acc_shopee_detail_details = [
                     'no_faktur' => $row['A'],
-                    'sku' => $row['O'],
-                    'name_product' => $row['N'],
+                    'sku' => $row['N'],
+                    'name_product' => $row['M'],
                     'price_after_discount' => $price,
                     'address' => $fullAddress,
                     'pos_code' => $posCode,

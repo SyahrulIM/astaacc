@@ -198,6 +198,7 @@
     <div class="row mt-4">
         <div class="col text-end">
             <div class="mb-3">
+                <a href="<?= base_url('comparison/export_excel?' . http_build_query($this->input->get())) ?>" class="btn btn-success me-2">Export Excel</a>
                 <button id="finalDirSelected" class="btn btn-primary">Final Dir Select</button>
             </div>
         </div>
