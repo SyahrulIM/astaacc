@@ -48,6 +48,36 @@
                 <?php endif; ?>
                 <!-- End -->
 
+                <!-- Start Modal Produk Terpesan -->
+                <div class="modal fade" id="modalProduk" tabindex="-1" aria-labelledby="modalProdukLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalProdukLabel">Produk Terpesan</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="produk-loading" class="text-center my-3" style="display:none;">
+                                    <div class="spinner-border" role="status"></div>
+                                    <p>Memuat data...</p>
+                                </div>
+                                <table class="table table-bordered" id="tableProduk">
+                                    <thead>
+                                        <tr>
+                                            <th>No</th>
+                                            <th>SKU</th>
+                                            <th>Nama Produk</th>
+                                            <th>Jumlah Terpesan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End -->
+
                 <div class="row mb-4">
                     <div class="col-4 align-self-end">
                         <canvas id="donutChart"></canvas>
@@ -100,14 +130,21 @@
                                                 <a href="<?= base_url('clustering/province?prov_id=' . $row->prov_id . '&prov_name=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
                                                     Lihat Kota
                                                 </a>
+                                                <button class="btn btn-sm btn-success btn-produk" data-prov-id="<?= $row->prov_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="prov">
+                                                    Lihat Produk
+                                                </button>
                                             </td>
                                         <?php elseif ($filter_mode === 'city') : ?>
                                             <td>
-                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&prov_id=' . $this->input->get('prov_id') . '&prov_name=' . urlencode($this->input->get('prov_name')) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&city_name=' . urlencode($row->label) . '&prov_id=' . $this->input->get('prov_id') . '&prov_name=' . urlencode($this->input->get('prov_name')) . '&order_start=' . $order_start . '&order_end=' . $order_end) ?>" class="btn btn-sm btn-primary">
                                                     Lihat Kecamatan
                                                 </a>
+                                                <button class="btn btn-sm btn-success btn-produk" data-city-id="<?= $row->city_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="city">
+                                                    Lihat Produk
+                                                </button>
                                             </td>
                                         <?php endif; ?>
+
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -220,6 +257,50 @@
                         }
                     });
                 });
+                // Start Modal Produk
+                $('.btn-produk').click(function() {
+                    const label = $(this).data('label');
+                    const orderStart = $(this).data('order-start');
+                    const orderEnd = $(this).data('order-end');
+                    const type = $(this).data('type');
+                    const provId = $(this).data('prov-id') || '';
+                    const cityId = $(this).data('city-id') || '';
+
+                    $('#modalProdukLabel').text('Produk Terpesan di ' + label);
+                    $('#tableProduk tbody').empty();
+                    $('#produk-loading').show();
+                    $('#modalProduk').modal('show');
+
+                    const url = `<?= base_url('clustering/get_produk_terpesan') ?>?order_start=${orderStart}&order_end=${orderEnd}&prov_id=${provId}&city_id=${cityId}`;
+
+                    $.ajax({
+                        url: url,
+                        method: 'GET',
+                        success: function(res) {
+                            $('#produk-loading').hide();
+                            if (res.length > 0) {
+                                let html = '';
+                                res.forEach((item, index) => {
+                                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.sku || '-'}</td>
+                            <td>${item.nama_produk || '-'}</td>
+                            <td>${item.jumlah_terpesan}</td>
+                        </tr>`;
+                                });
+                                $('#tableProduk tbody').html(html);
+                            } else {
+                                $('#tableProduk tbody').html('<tr><td colspan="4" class="text-center">Tidak ada data</td></tr>');
+                            }
+                        },
+                        error: function() {
+                            $('#produk-loading').hide();
+                            $('#tableProduk tbody').html('<tr><td colspan="4" class="text-danger text-center">Gagal memuat data</td></tr>');
+                        }
+                    });
+                });
+                // End
             </script>
             </body>
 

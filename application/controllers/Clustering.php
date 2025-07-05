@@ -388,4 +388,41 @@ class Clustering extends CI_Controller
         $writer->save('php://output');
         exit;
     }
+
+    public function get_produk_terpesan()
+    {
+        $order_start = $this->input->get('order_start');
+        $order_end = $this->input->get('order_end');
+        $prov_id = $this->input->get('prov_id');
+        $city_id = $this->input->get('city_id');
+
+        $this->db->select('sdd.sku');
+        $this->db->select('COALESCE(MAX(p.nama_produk), MAX(sdd.name_product)) AS nama_produk', false);
+        $this->db->select('COUNT(DISTINCT sdd.no_faktur) AS jumlah_terpesan', false);
+        $this->db->from('acc_shopee_detail_details sdd');
+        $this->db->join('acc_shopee_detail sd', 'sdd.no_faktur = sd.no_faktur');
+        $this->db->join('postal_code pc', 'sdd.pos_code = pc.pos_code');
+        $this->db->join('product p', 'sdd.sku = p.sku', 'left');
+
+        if (!empty($order_start) && !empty($order_end)) {
+            $this->db->where('sd.order_date >=', $order_start);
+            $this->db->where('sd.order_date <=', $order_end);
+        }
+
+        if (!empty($prov_id)) {
+            $this->db->where('pc.prov_id', $prov_id);
+        }
+
+        if (!empty($city_id)) {
+            $this->db->where('pc.city_id', $city_id);
+        }
+
+        $this->db->group_by('sdd.sku');
+        $this->db->order_by('jumlah_terpesan', 'DESC');
+
+        $data = $this->db->get()->result();
+
+        header('Content-Type: application/json');
+        echo json_encode($data);
+    }
 }
