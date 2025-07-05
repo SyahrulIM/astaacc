@@ -166,7 +166,6 @@ class Clustering extends CI_Controller
         $prov_id = $this->input->get('prov_id');
         $city_id = $this->input->get('city_id');
 
-        // Ambil nama provinsi
         $prov_display_name = $prov_id;
         if (!empty($prov_id)) {
             $prov_query = $this->db->query("SELECT prov_name FROM postal_code WHERE prov_id = ? LIMIT 1", [$prov_id])->row();
@@ -175,7 +174,6 @@ class Clustering extends CI_Controller
             }
         }
 
-        // Ambil nama kota
         $city_name = '';
         if (!empty($city_id)) {
             $city_query = $this->db->query("SELECT city_name FROM postal_code WHERE city_id = ? LIMIT 1", [$city_id])->row();
@@ -187,6 +185,12 @@ class Clustering extends CI_Controller
         // ===================== SHEET 1: PROVINSI =====================
         $sheet1 = $spreadsheet->getActiveSheet();
         $sheet1->setTitle('Provinsi');
+
+        // Header
+        $sheet1->mergeCells('A1:C1')->setCellValue('A1', 'Asta Homeware');
+        $sheet1->mergeCells('A2:C2')->setCellValue('A2', 'Clustering Penjualan Online Wilaya Indoensia');
+        $sheet1->mergeCells('A3:C3')->setCellValue('A3', 'Periode: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
+        $sheet1->getStyle('A1:A3')->getFont()->setBold(true);
 
         $whereClause = '';
         $bindParams = [];
@@ -208,14 +212,12 @@ class Clustering extends CI_Controller
     ";
         $dataProv = $this->db->query($sqlProv, $bindParams)->result();
 
-        $sheet1->setCellValue('A1', 'Filter:');
-        $sheet1->setCellValue('B1', 'Tanggal ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
-        $sheet1->setCellValue('A3', 'No');
-        $sheet1->setCellValue('B3', 'Provinsi');
-        $sheet1->setCellValue('C3', 'Jumlah Faktur');
-        $sheet1->getStyle('A3:C3')->getFont()->setBold(true);
+        $sheet1->setCellValue('A4', 'No');
+        $sheet1->setCellValue('B4', 'Provinsi');
+        $sheet1->setCellValue('C4', 'Jumlah Faktur');
+        $sheet1->getStyle('A4:C4')->getFont()->setBold(true);
 
-        $row = 4;
+        $row = 5;
         $no = 1;
         foreach ($dataProv as $prov) {
             $sheet1->setCellValue("A$row", $no++);
@@ -225,7 +227,7 @@ class Clustering extends CI_Controller
         }
 
         $lastRow = $row - 1;
-        $sheet1->getStyle("A3:C$lastRow")->applyFromArray([
+        $sheet1->getStyle("A4:C$lastRow")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
         $sheet1->getColumnDimension('A')->setWidth(5);
@@ -235,6 +237,12 @@ class Clustering extends CI_Controller
         // ===================== SHEET 2: KOTA =====================
         $sheet2 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kota');
         $spreadsheet->addSheet($sheet2);
+
+        // Header
+        $sheet2->mergeCells('A1:D1')->setCellValue('A1', 'Asta Homeware');
+        $sheet2->mergeCells('A2:D2')->setCellValue('A2', 'Clustering Penjualan Online Wilaya Indoensia');
+        $sheet2->mergeCells('A3:D3')->setCellValue('A3', 'Periode: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
+        $sheet2->getStyle('A1:A3')->getFont()->setBold(true);
 
         $whereClauseCity = '';
         $bindCity = [];
@@ -264,18 +272,16 @@ class Clustering extends CI_Controller
         $whereClauseCity
         GROUP BY pc.prov_name, pc.city_id, pc.city_name
         ORDER BY jumlah_no_faktur DESC
-        ";
+    ";
         $dataCity = $this->db->query($sqlCity, $bindCity)->result();
 
-        $sheet2->setCellValue('A1', 'Filter:');
-        $sheet2->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
-        $sheet2->setCellValue('A3', 'No');
-        $sheet2->setCellValue('B3', 'Provinsi');
-        $sheet2->setCellValue('C3', 'Nama Kota');
-        $sheet2->setCellValue('D3', 'Jumlah Faktur');
-        $sheet2->getStyle('A3:D3')->getFont()->setBold(true);
+        $sheet2->setCellValue('A4', 'No');
+        $sheet2->setCellValue('B4', 'Provinsi');
+        $sheet2->setCellValue('C4', 'Nama Kota');
+        $sheet2->setCellValue('D4', 'Jumlah Faktur');
+        $sheet2->getStyle('A4:D4')->getFont()->setBold(true);
 
-        $row = 4;
+        $row = 5;
         $no = 1;
         foreach ($dataCity as $city) {
             $sheet2->setCellValue("A$row", $no++);
@@ -286,7 +292,7 @@ class Clustering extends CI_Controller
         }
 
         $lastRow = $row - 1;
-        $sheet2->getStyle("A3:D$lastRow")->applyFromArray([
+        $sheet2->getStyle("A4:D$lastRow")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
         $sheet2->getColumnDimension('A')->setWidth(5);
@@ -297,6 +303,12 @@ class Clustering extends CI_Controller
         // ===================== SHEET 3: KECAMATAN =====================
         $sheet3 = new \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet($spreadsheet, 'Kecamatan');
         $spreadsheet->addSheet($sheet3);
+
+        // Header
+        $sheet3->mergeCells('A1:E1')->setCellValue('A1', 'Asta Homeware');
+        $sheet3->mergeCells('A2:E2')->setCellValue('A2', 'Clustering Penjualan Online Wilaya Indoensia');
+        $sheet3->mergeCells('A3:E3')->setCellValue('A3', 'Periode: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
+        $sheet3->getStyle('A1:A3')->getFont()->setBold(true);
 
         $whereClauseDist = '';
         $bindDist = [];
@@ -315,13 +327,13 @@ class Clustering extends CI_Controller
         }
 
         $sqlDist = "
-        SELECT 
+        SELECT
             label,
             city_name,
             prov_name,
             COUNT(*) AS jumlah_no_faktur
         FROM (
-            SELECT 
+            SELECT
                 sd.no_faktur,
                 MIN(pc.dis_name) AS label,
                 MIN(pc.city_name) AS city_name,
@@ -334,19 +346,17 @@ class Clustering extends CI_Controller
         ) AS subquery
         GROUP BY label, city_name, prov_name
         ORDER BY jumlah_no_faktur DESC
-        ";
+    ";
         $dataDist = $this->db->query($sqlDist, $bindDist)->result();
 
-        $sheet3->setCellValue('A1', 'Filter:');
-        $sheet3->setCellValue('B1', 'Provinsi: ' . ($prov_display_name ?? '-') . ', Kota: ' . ($city_name ?? '-') . ', Tanggal: ' . ($order_start ?? '-') . ' s/d ' . ($order_end ?? '-'));
-        $sheet3->setCellValue('A3', 'No');
-        $sheet3->setCellValue('B3', 'Kecamatan');
-        $sheet3->setCellValue('C3', 'Kota');
-        $sheet3->setCellValue('D3', 'Provinsi');
-        $sheet3->setCellValue('E3', 'Jumlah Faktur');
-        $sheet3->getStyle('A3:E3')->getFont()->setBold(true);
+        $sheet3->setCellValue('A4', 'No');
+        $sheet3->setCellValue('B4', 'Kecamatan');
+        $sheet3->setCellValue('C4', 'Kota');
+        $sheet3->setCellValue('D4', 'Provinsi');
+        $sheet3->setCellValue('E4', 'Jumlah Faktur');
+        $sheet3->getStyle('A4:E4')->getFont()->setBold(true);
 
-        $row = 4;
+        $row = 5;
         $no = 1;
         foreach ($dataDist as $dist) {
             $sheet3->setCellValue("A$row", $no++);
@@ -358,7 +368,7 @@ class Clustering extends CI_Controller
         }
 
         $lastRow = $row - 1;
-        $sheet3->getStyle("A3:E$lastRow")->applyFromArray([
+        $sheet3->getStyle("A4:E$lastRow")->applyFromArray([
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]]
         ]);
         $sheet3->getColumnDimension('A')->setWidth(5);
@@ -369,7 +379,7 @@ class Clustering extends CI_Controller
 
         // ===================== EXPORT =====================
         $spreadsheet->setActiveSheetIndex(0);
-        $filename = 'Clustering_All_' . date('Ymd_His') . '.xlsx';
+        $filename = 'Clustering_Penjualan_Astahomeware_' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header("Content-Disposition: attachment; filename=\"$filename\"");
         header('Cache-Control: max-age=0');

@@ -523,7 +523,7 @@ class Comparison extends CI_Controller
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFD9D9D9']]
         ]);
 
-        $filename = 'Comparison_Report_' . date('Ymd_His') . '.xlsx';
+        $filename = 'Comparison_Report_Astahomeware' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header("Content-Disposition: attachment;filename=\"$filename\"");
         header('Cache-Control: max-age=0');

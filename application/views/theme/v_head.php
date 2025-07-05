@@ -38,7 +38,7 @@
                         Database Shopee
                         <i class="fas fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse <?= in_array($current, ['shopee_recap', 'shopee_bottom']) ? 'show' : ''; ?>" id="shopeerecapSubmenu">
+                    <div class="collapse <?= in_array($current, ['shopee_recap', 'shopee_bottom','shopee_additional']) ? 'show' : ''; ?>" id="shopeerecapSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_recap') ? 'active' : ''; ?>" href="<?= base_url('shopee_recap'); ?>">Shopee Recap</a>
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_bottom') ? 'active' : ''; ?>" href="<?= base_url('shopee_bottom'); ?>">Shopee Bottom Price</a>
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_additional') ? 'active' : ''; ?>" href="<?= base_url('shopee_additional'); ?>">Shopee Additional</a>
