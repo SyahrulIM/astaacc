@@ -51,7 +51,7 @@ class Clustering extends CI_Controller
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
         $prov_id = $this->input->get('prov_id');
-        $prov_name = $this->input->get('prov_name'); // hanya untuk display di view
+        $prov_name = $this->input->get('prov_name');
 
         // Escape input
         $escapedProvId = $this->db->escape($prov_id);
@@ -100,8 +100,8 @@ class Clustering extends CI_Controller
     {
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
-        $city_id = $this->input->get('city_id'); // Get city_id from GET parameter
-        $city_name = $this->input->get('city_name'); // For display purposes
+        $city_id = $this->input->get('city_id');
+        $city_name = $this->input->get('city_name');
 
         // Validate
         if (empty($city_id)) {

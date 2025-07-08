@@ -8,8 +8,16 @@
                 <!-- Import Excel -->
                 <form action="<?= base_url('shopee_recap/createShopee') ?>" method="post" enctype="multipart/form-data">
                     <div class="card mt-3">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <strong>Import Shopee Recap (xlsx)</strong>
+                            <div>
+                                <a href="<?= base_url('assets/template_excel/Income.sudah dilepas.id.20250101_20250630.xlsx') ?>" class="btn btn-sm btn-success me-2" download>
+                                    Download Template Income
+                                </a>
+                                <a href="<?= base_url('assets/template_excel/Order.completed.20250501_20250531.xlsx') ?>" class="btn btn-sm btn-info" download>
+                                    Download Template Order
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
@@ -124,7 +132,7 @@
                                                         <td><?= number_format($asdvalue->discount) ?></td>
                                                         <td><?= number_format($asdvalue->refund) ?></td>
                                                         <td><?= number_format($asdvalue->payment) ?></td>
-                                                        <td><a href="<?= base_url('shopee_recap/detail_faktur?no_faktur='.$asdvalue->no_faktur)?>"><button type="button" class="btn btn-success">Detail Faktur</button></a></td>
+                                                        <td><a href="<?= base_url('shopee_recap/detail_faktur?no_faktur=' . $asdvalue->no_faktur) ?>"><button type="button" class="btn btn-success">Detail Faktur</button></a></td>
                                                     </tr>
                                                 <?php } ?>
                                             </tbody>

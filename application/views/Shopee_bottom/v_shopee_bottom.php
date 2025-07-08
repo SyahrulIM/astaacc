@@ -9,8 +9,11 @@
                 <!-- Import Excel -->
                 <form action="<?= base_url('shopee_bottom/createBottom') ?>" method="post" enctype="multipart/form-data">
                     <div class="card mt-3">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <strong>Import Shopee Recap (xlsx)</strong>
+                            <a href="<?= base_url('assets/template_excel/harga bottom online.xlsx') ?>" class="btn btn-sm btn-success" download>
+                                Download Template Bottom
+                            </a>
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
