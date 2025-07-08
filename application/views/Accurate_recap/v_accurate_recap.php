@@ -8,8 +8,11 @@
     <!-- Import Excel -->
     <form action="<?= base_url('accurate_recap/createAccurate') ?>" method="post" enctype="multipart/form-data">
         <div class="card mt-3">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <strong>Import Accurate Recap (xlsx)</strong>
+                <a href="<?= base_url('assets/template_accurate/pembayaran_faktur_suryajayamakmur_250613135701.xlsx') ?>" class="btn btn-sm btn-success" download>
+                    Download Template Accurate
+                </a>
             </div>
             <div class="card-body">
                 <div class="mb-3">
@@ -150,7 +153,7 @@
                 }
             }
         });
-        
+
         new DataTable('#tableaccurate-all', {
             responsive: true,
             layout: {
@@ -164,4 +167,5 @@
     });
 </script>
 </body>
+
 </html>
