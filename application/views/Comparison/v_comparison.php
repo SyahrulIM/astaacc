@@ -105,7 +105,7 @@
                 </div>
                 <div class="col">
                     <h5>Jumlah Faktur Retur</h5>
-                    <h5> : Rp. <?= number_format($retur_count) ?></h5>
+                    <h5> : <?= number_format($retur_count) ?></h5>
                 </div>
                 <div class="col">
                     <h5>Additional Revenue</h5>
