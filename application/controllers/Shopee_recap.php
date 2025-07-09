@@ -99,7 +99,7 @@ class Shopee_recap extends CI_Controller
                     $payment = $sheetObj->getCell("AB$rowIndex")->getCalculatedValue();
                     $refund = $sheetObj->getCell("J$rowIndex")->getValue();
 
-                    $total = floatval(str_replace(',', '', $nilaiH)) - floatval(str_replace(',', '', $nilaiI));
+                    $total = floatval(str_replace(',', '', $nilaiH)) + floatval(str_replace(',', '', $nilaiI));
                     $discount = $total - floatval(str_replace(',', '', $payment));
 
                     $detail = [
