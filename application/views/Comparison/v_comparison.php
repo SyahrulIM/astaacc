@@ -345,7 +345,8 @@
 <script>
     $(document).ready(function() {
         new DataTable('#dataTable', {
-            responsive: true,
+            responsive: false,
+            scrollX: true,
             layout: {
                 bottomEnd: {
                     paging: {
