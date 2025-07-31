@@ -286,45 +286,30 @@ class Comparison extends CI_Controller
         echo '</tbody></table>';
     }
 
-    public function final_dir()
+    public function final_dir_single()
     {
-        $no_faktur = $this->input->get('no_faktur');
-
-        if (!$no_faktur) {
-            echo json_encode(['status' => 'error', 'message' => 'Nomor faktur tidak ditemukan.']);
-            return;
-        }
+        $no_faktur = $this->input->post('no_faktur');
 
         $this->db->where('no_faktur', $no_faktur);
         $updated = $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
 
-        if ($updated) {
-            echo json_encode(['status' => 'success', 'message' => 'Status Dir berhasil diset sebagai "Allowed".']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Gagal mengupdate status.']);
-        }
+        echo json_encode([
+            'success' => $updated,
+            'no_faktur' => $no_faktur
+        ]);
     }
 
     public function final_dir_batch()
     {
-        if (!$this->input->is_ajax_request()) {
-            show_404();
-        }
+        $faktur_list = $this->input->post('faktur_list');
 
-        $json = json_decode($this->input->raw_input_stream, true);
-        $faktur_list = $json['faktur_list'] ?? [];
+        $this->db->where_in('no_faktur', $faktur_list);
+        $updated = $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
 
-        if (empty($faktur_list)) {
-            echo json_encode(['success' => false, 'message' => 'Data faktur kosong.']);
-            return;
-        }
-
-        // Contoh update ke database
-        foreach ($faktur_list as $faktur) {
-            $this->db->where('no_faktur', $faktur)->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
-        }
-
-        echo json_encode(['success' => true]);
+        echo json_encode([
+            'success' => $updated,
+            'processed' => count($faktur_list)
+        ]);
     }
 
     public function export_excel()

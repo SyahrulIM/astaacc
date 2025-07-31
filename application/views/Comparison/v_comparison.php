@@ -442,27 +442,27 @@
     });
     // Start Final Dir
     $(document).on('click', '.btn-final-dir', function(e) {
-        e.preventDefault(); // Hindari redirect
+        e.preventDefault();
+        const faktur = $(this).data('faktur');
 
-        if (!confirm('Yakin ingin set status Allowed untuk faktur ini?')) return;
-
-        var noFaktur = $(this).data('faktur');
+        if (!confirm('Yakin set status Allowed untuk faktur ini?')) return;
 
         $.ajax({
-            url: '<?= base_url("comparison/final_dir") ?>',
-            type: 'GET',
+            url: '<?= base_url("comparison/final_dir_single") ?>',
+            type: 'POST',
             data: {
-                no_faktur: noFaktur
+                no_faktur: faktur
             },
             dataType: 'json',
             success: function(response) {
-                alert(response.message);
-                if (response.status === 'success') {
-                    location.reload(); // Reload halaman kalau berhasil
+                if (response.success) {
+                    $(`tr:has(button[data-faktur="${response.no_faktur}"])`).removeClass('table-danger').addClass('table-success');
+                    $(`[data-faktur="${response.no_faktur}"]`).closest('tr').find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                    $(`.btn-final-dir[data-faktur="${response.no_faktur}"]`).remove();
+                    showToast('Status Dir berhasil diupdate', 'success');
+                } else {
+                    showToast('Gagal update status', 'error');
                 }
-            },
-            error: function() {
-                alert('Gagal terhubung ke server.');
             }
         });
     });
@@ -473,38 +473,41 @@
         document.querySelectorAll('.select-row').forEach(cb => cb.checked = isChecked);
     });
 
-    document.getElementById('finalDirSelected').addEventListener('click', function() {
-        const selected = Array.from(document.querySelectorAll('.select-row:checked')).map(cb => cb.value);
+    // Final Dir Multi Select
+    $('#finalDirSelected').on('click', function() {
+        const selected = $('.select-row:checked').map(function() {
+            return $(this).val();
+        }).get();
+
         if (selected.length === 0) {
-            alert('Silakan pilih minimal satu faktur terlebih dahulu.');
+            showToast('Pilih minimal satu faktur', 'warning');
             return;
         }
 
-        if (!confirm('Apakah Anda yakin ingin memproses Final Dir untuk faktur terpilih?')) return;
+        if (!confirm(`Yakin set ${selected.length} faktur sebagai Allowed by Dir?`)) return;
 
-        fetch('<?= base_url('comparison/final_dir_batch') ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    faktur_list: selected
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Proses Final Dir berhasil!');
-                    location.reload();
+        $.ajax({
+            url: '<?= base_url("comparison/final_dir_batch") ?>',
+            type: 'POST',
+            data: {
+                faktur_list: selected
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    selected.forEach(faktur => {
+                        $(`tr:has(input[value="${faktur}"])`)
+                            .removeClass('table-danger')
+                            .addClass('table-success')
+                            .find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                        $(`.btn-final-dir[data-faktur="${faktur}"]`).remove();
+                    });
+                    showToast(`${response.processed} faktur berhasil diupdate`, 'success');
                 } else {
-                    alert('Gagal memproses: ' + data.message);
+                    showToast('Gagal update status', 'error');
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Terjadi kesalahan saat memproses.');
-            });
+            }
+        });
     });
     // End
     // Start Modal Edit Keterangan (Without Page Refresh)
