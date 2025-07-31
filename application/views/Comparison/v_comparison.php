@@ -246,6 +246,9 @@
             <div class="mb-3">
                 <a href="<?= base_url('comparison/export_excel?' . http_build_query($this->input->get())) ?>" class="btn btn-success me-2">Export Excel</a>
                 <button id="finalDirSelected" class="btn btn-primary">Final Dir Select</button>
+                <button id="multiCheckBtn" class="btn btn-info me-2">
+                    <i class="fas fa-check-circle"></i> Tercheck Select
+                </button>
             </div>
         </div>
         <div class="col-12">
@@ -602,6 +605,48 @@
             },
             error: function() {
                 showToast('Terjadi kesalahan saat menghubungi server', 'error');
+            }
+        });
+    });
+    // End
+    // Start tandai checking select
+    $('#selectAll').change(function() {
+        $('.select-row').prop('checked', $(this).prop('checked'));
+    });
+
+    $('#multiCheckBtn').on('click', function() {
+        const selected = $('.select-row:checked').map(function() {
+            return $(this).val();
+        }).get();
+
+        if (selected.length === 0) {
+            showToast('Pilih minimal satu faktur terlebih dahulu', 'warning');
+            return;
+        }
+
+        if (!confirm(`Yakin tandai ${selected.length} faktur sebagai sudah dicek?`)) return;
+
+        $.ajax({
+            url: '<?= base_url("comparison/update_checking_batch") ?>',
+            type: 'POST',
+            data: {
+                faktur_list: selected
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Update UI untuk semua yang dipilih
+                    selected.forEach(faktur => {
+                        $(`tr:has(input[value="${faktur}"])`).find('td:eq(15)').html('<span class="badge bg-success">Sudah</span>');
+                        $(`button.btn-checking[data-faktur="${faktur}"]`).remove();
+                    });
+                    showToast(`${selected.length} faktur berhasil ditandai`, 'success');
+                } else {
+                    showToast(response.message || 'Gagal memperbarui status', 'error');
+                }
+            },
+            error: function() {
+                showToast('Terjadi kesalahan saat memproses', 'error');
             }
         });
     });

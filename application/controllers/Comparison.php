@@ -611,4 +611,22 @@ class Comparison extends CI_Controller
             echo json_encode(['success' => false, 'message' => 'Gagal memperbarui status checking']);
         }
     }
+
+    public function update_checking_batch()
+    {
+        $faktur_list = $this->input->post('faktur_list');
+
+        if (empty($faktur_list)) {
+            echo json_encode(['success' => false, 'message' => 'Data faktur kosong']);
+            return;
+        }
+
+        $this->db->where_in('no_faktur', $faktur_list);
+        $updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
+
+        echo json_encode([
+            'success' => $updated,
+            'message' => $updated ? 'Status checking berhasil diperbarui' : 'Gagal memperbarui status'
+        ]);
+    }
 }
