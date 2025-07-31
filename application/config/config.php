@@ -25,7 +25,7 @@ date_default_timezone_set("Asia/Jakarta");
 |
 */
 // $config['base_url'] = 'http://localhost/astaacc/';
-$config['base_url'] = 'http://192.168.1.12/astaacc/';
+$config['base_url'] = 'http://192.168.1.99/astaacc/';
 
 /*
 |--------------------------------------------------------------------------

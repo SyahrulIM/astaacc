@@ -39,7 +39,6 @@ class Shopee_recap extends CI_Controller
         $this->db->group_by('acc_shopee_detail.no_faktur');
         $acc_shopee_detail = $this->db->get()->result();
 
-
         $data = [
             'title' => $title,
             'acc_shopee' => $acc_shopee,
@@ -64,7 +63,13 @@ class Shopee_recap extends CI_Controller
         }
 
         require APPPATH . '../vendor/autoload.php';
-        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        $extension = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
+        if ($extension === 'csv' || $extension === 'txt') {
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+            $reader->setDelimiter("\t");
+        } else {
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+        }
         $spreadsheet = $reader->load($file);
         $sheet = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
 
@@ -80,77 +85,50 @@ class Shopee_recap extends CI_Controller
             $this->db->insert('acc_shopee', $acc_shopee_data);
             $idacc_shopee = $this->db->insert_id();
 
-            // Loop semua sheet
-            foreach ($spreadsheet->getSheetNames() as $sheetName) {
-                if (stripos($sheetName, 'Income -') !== 0) continue; // Skip sheet yang bukan "Income - X"
+            // Get the first sheet
+            $sheet = $spreadsheet->getActiveSheet();
+            $highestRow = $sheet->getHighestRow();
 
-                $sheetObj = $spreadsheet->getSheetByName($sheetName);
-                $highestRow = $sheetObj->getHighestRow();
-                $highestColumn = $sheetObj->getHighestColumn();
+            // Start from row 2 to skip header
+            for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
+                $noFaktur = $sheet->getCell('B' . $rowIndex)->getValue(); // No. Pesanan (B)
+                if (empty($noFaktur)) continue;
 
-                for ($rowIndex = 7; $rowIndex <= $highestRow; $rowIndex++) { // baris 7 ke bawah
-                    $noFaktur = $sheetObj->getCell("B$rowIndex")->getValue();
-                    if (!$noFaktur) continue;
+                $orderDate = $sheet->getCell('E' . $rowIndex)->getFormattedValue(); // Waktu Pesanan Dibuat (E)
+                $payDate = $sheet->getCell('G' . $rowIndex)->getFormattedValue(); // Tanggal Dana Dilepaskan (G)
+                $hargaAsli = floatval(str_replace(['.', ','], '', $sheet->getCell('H' . $rowIndex)->getValue())); // Harga Asli Produk (H)
+                $totalDiskon = floatval(str_replace(['.', ','], '', $sheet->getCell('I' . $rowIndex)->getValue())); // Total Diskon Produk (I)
+                $payment = floatval(str_replace(['.', ','], '', $sheet->getCell('AB' . $rowIndex)->getValue())); // Total Penghasilan (AB)
+                $refund = floatval(str_replace(['.', ','], '', $sheet->getCell('J' . $rowIndex)->getValue())); // Jumlah Pengembalian Dana ke Pembeli (J)
 
-                    $orderDate = $sheetObj->getCell("E$rowIndex")->getFormattedValue();
-                    $payDate = $sheetObj->getCell("G$rowIndex")->getFormattedValue();
-                    $nilaiH = $sheetObj->getCell("H$rowIndex")->getCalculatedValue(); // pakai getCalculatedValue utk nilai numerik
-                    $nilaiI = $sheetObj->getCell("I$rowIndex")->getCalculatedValue();
-                    $payment = $sheetObj->getCell("AB$rowIndex")->getCalculatedValue();
-                    $refund = $sheetObj->getCell("J$rowIndex")->getValue();
+                $total = $hargaAsli + $totalDiskon;
 
-                    $total = floatval(str_replace(',', '', $nilaiH)) + floatval(str_replace(',', '', $nilaiI));
-                    $discount = $total - floatval(str_replace(',', '', $payment));
-
-                    $detail = [
-                        'idacc_shopee' => $idacc_shopee,
-                        'no_faktur' => $noFaktur,
-                        'order_date' => date('Y-m-d', strtotime($orderDate)),
-                        'pay_date' => date('Y-m-d', strtotime($payDate)),
-                        'total_faktur' => $total,
-                        'pay' => $total,
-                        'payment' => $payment,
-                        'discount' => $discount,
-                        'refund' => $refund
-                    ];
-                    $this->db->insert('acc_shopee_detail', $detail);
-                }
+                $detail = [
+                    'idacc_shopee' => $idacc_shopee,
+                    'no_faktur' => $noFaktur,
+                    'order_date' => date('Y-m-d', strtotime($orderDate)),
+                    'pay_date' => $payDate ? date('Y-m-d', strtotime($payDate)) : null,
+                    'total_faktur' => $total,
+                    'pay' => $total,
+                    'payment' => $payment,
+                    'discount' => $totalDiskon,
+                    'refund' => $refund,
+                    'is_check' => 0
+                ];
+                $this->db->insert('acc_shopee_detail', $detail);
             }
 
-            $this->session->set_flashdata('success', 'Data Shopee Income dari semua sheet berhasil diimport.');
+            $this->session->set_flashdata('success', 'Data Shopee Income berhasil diimport.');
         } else {
             foreach ($sheet as $i => $row) {
                 if ($i < 2 || empty($row['A'])) continue;
 
-                // $price = floatval(str_replace('.', '', $row['R']));
-
-                // $fullAddress = isset($row['AU']) ? trim($row['AU']) : null;
-
-                // preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
-                // $posCode = isset($matches[1]) ? $matches[1] : null;
-
-
-                // $acc_shopee_detail_details = [
-                //     'no_faktur' => $row['A'],
-                //     'sku' => $row['O'],
-                //     'name_product' => $row['N'],
-                //     'price_after_discount' => $price,
-                //     'address' => $fullAddress,
-                //     'pos_code' => $posCode,
-                //     'created_date' => date('Y-m-d H:i:s'),
-                //     'created_by' => $this->session->userdata('username'),
-                //     'updated_date' => date('Y-m-d H:i:s'),
-                //     'updated_by' => $this->session->userdata('username'),
-                //     'status' => 1
-                // ];
-                // $this->db->insert('acc_shopee_detail_details', $acc_shopee_detail_details);
                 $price = floatval(str_replace('.', '', $row['Q']));
 
                 $fullAddress = isset($row['AT']) ? trim($row['AT']) : null;
 
                 preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
                 $posCode = isset($matches[1]) ? $matches[1] : null;
-
 
                 $acc_shopee_detail_details = [
                     'no_faktur' => $row['A'],

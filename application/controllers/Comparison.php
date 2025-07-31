@@ -50,6 +50,8 @@ class Comparison extends CI_Controller
                 MAX(asd.discount) AS shopee_discount,
                 MAX(asd.payment) AS shopee_payment,
                 MAX(asd.refund) AS shopee_refund,
+                MAX(asd.note) AS note,
+                MAX(asd.is_check) AS is_check,
                 MAX(asd.status_dir) AS status_dir,
 
                 MAX(aad.pay_date) AS accurate_pay_date,
@@ -343,17 +345,19 @@ class Comparison extends CI_Controller
         if ($order_start && $order_end) {
             $this->db->select('
             asd.no_faktur,
-            MAX(asd.order_date) AS shopee_order_date,
-            MAX(asd.pay_date) AS shopee_pay_date,
-            MAX(asd.total_faktur) AS shopee_total_faktur,
-            MAX(asd.discount) AS shopee_discount,
-            MAX(asd.payment) AS shopee_payment,
-            MAX(asd.refund) AS shopee_refund,
-            MAX(asd.status_dir) AS status_dir,
-            MAX(aad.pay_date) AS accurate_pay_date,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment
+            asd.order_date AS shopee_order_date,
+            asd.pay_date AS shopee_pay_date,
+            asd.total_faktur AS shopee_total_faktur,
+            asd.discount AS shopee_discount,
+            asd.payment AS shopee_payment,
+            asd.refund AS shopee_refund,
+            asd.note AS note,
+            asd.is_check AS is_check,
+            asd.status_dir AS status_dir,
+            aad.pay_date AS accurate_pay_date,
+            aad.total_faktur AS accurate_total_faktur,
+            aad.discount AS accurate_discount,
+            aad.payment AS accurate_payment
         ');
             $this->db->from('acc_shopee_detail asd');
             $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
@@ -367,7 +371,6 @@ class Comparison extends CI_Controller
             }
 
             $this->db->order_by('asd.no_faktur', 'asc');
-            $this->db->group_by('asd.no_faktur');
             $results = $this->db->get()->result();
             $seen_faktur = [];
 
@@ -426,13 +429,13 @@ class Comparison extends CI_Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle("Comparison Report");
 
-        // Merge and set header text (A1:M3)
-        $sheet->mergeCells('A1:M1');
-        $sheet->mergeCells('A2:M2');
-        $sheet->mergeCells('A3:M3');
+        // Header with company info and date range
+        $sheet->mergeCells('A1:O1');
+        $sheet->mergeCells('A2:O2');
+        $sheet->mergeCells('A3:O3');
 
         $sheet->setCellValue('A1', 'Astahomeware');
-        $sheet->setCellValue('A2', 'Comparison');
+        $sheet->setCellValue('A2', 'Comparison Report');
         $sheet->setCellValue('A3', 'Periode: ' . ($order_start ?? '-') . ' s.d. ' . ($order_end ?? '-'));
 
         $sheet->getStyle('A1:A3')->applyFromArray([
@@ -447,27 +450,37 @@ class Comparison extends CI_Controller
         $sheet->getRowDimension(2)->setRowHeight(20);
         $sheet->getRowDimension(3)->setRowHeight(20);
 
-        // Set header (row 4)
+        // Column headers
         $headers = [
-            'A4' => 'No',
-            'B4' => 'Nomor Faktur',
-            'C4' => 'Tanggal Pesanan',
-            'D4' => 'Tanggal Pembayaran (ACC)',
-            'E4' => 'Nominal Invoice',
-            'F4' => 'Nilai Diterima (ACC)',
-            'G4' => 'Selisih Ratio',
-            'H4' => 'Selisih',
-            'I4' => 'Type Faktur',
-            'J4' => 'Status Matching',
-            'K4' => 'Status Terbayar (ACC)',
-            'L4' => 'Invoice vs Bottom',
-            'M4' => 'Status Dir',
+            'A' => 'No',
+            'B' => 'Nomor Faktur',
+            'C' => 'Tanggal Pesanan (Shopee)',
+            'D' => 'Tanggal Pembayaran (Shopee)',
+            'E' => 'Total Faktur (Shopee)',
+            'F' => 'Discount (Shopee)',
+            'G' => 'Payment (Shopee)',
+            'H' => 'Refund (Shopee)',
+            'I' => 'Tanggal Pembayaran (ACC)',
+            'J' => 'Total Faktur (ACC)',
+            'K' => 'Discount (ACC)',
+            'L' => 'Payment (ACC)',
+            'M' => 'Selisih Ratio',
+            'N' => 'Type Faktur',
+            'O' => 'Status Matching',
+            'P' => 'Status Terbayar (ACC)',
+            'Q' => 'Invoice vs Bottom',
+            'R' => 'Keterangan',
+            'S' => 'Status Check',
+            'T' => 'Status Dir'
         ];
-        foreach ($headers as $cell => $label) {
-            $sheet->setCellValue($cell, $label);
+
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '4', $header);
+            $col++;
         }
 
-        // Set data mulai dari baris 5
+        // Data rows
         $rowNumber = 5;
         foreach ($data_comparison as $row) {
             $accurate_payment = (float) ($row->accurate_payment ?? 0);
@@ -477,53 +490,71 @@ class Comparison extends CI_Controller
             $sheet->setCellValue("A$rowNumber", $rowNumber - 4);
             $sheet->setCellValue("B$rowNumber", $row->no_faktur);
             $sheet->setCellValue("C$rowNumber", $row->shopee_order_date ?? '-');
-            $sheet->setCellValue("D$rowNumber", $row->accurate_pay_date ?? '-');
+            $sheet->setCellValue("D$rowNumber", $row->shopee_pay_date ?? '-');
             $sheet->setCellValue("E$rowNumber", $shopee_total);
-            $sheet->setCellValue("F$rowNumber", $accurate_payment);
-            $sheet->setCellValue("G$rowNumber", round($ratio_diference, 2) . '%');
-            $sheet->setCellValue("H$rowNumber", $shopee_total - $accurate_payment);
-            $sheet->setCellValue("I$rowNumber", ($row->shopee_refund ?? 0) < 0 ? 'Retur' : 'Pembayaran');
+            $sheet->setCellValue("F$rowNumber", $row->shopee_discount ?? 0);
+            $sheet->setCellValue("G$rowNumber", $row->shopee_payment ?? 0);
+            $sheet->setCellValue("H$rowNumber", $row->shopee_refund ?? 0);
+            $sheet->setCellValue("I$rowNumber", $row->accurate_pay_date ?? '-');
+            $sheet->setCellValue("J$rowNumber", $row->accurate_total_faktur ?? 0);
+            $sheet->setCellValue("K$rowNumber", $row->accurate_discount ?? 0);
+            $sheet->setCellValue("L$rowNumber", $accurate_payment);
+            $sheet->setCellValue("M$rowNumber", round($ratio_diference, 2) . '%');
+            $sheet->setCellValue("N$rowNumber", ($row->shopee_refund ?? 0) < 0 ? 'Retur' : 'Pembayaran');
 
             $match = (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
                 ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
                 ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)) ? 'Mismatch' : 'Match';
-            $sheet->setCellValue("J$rowNumber", $match);
+            $sheet->setCellValue("O$rowNumber", $match);
 
             $payment_status = !empty($row->accurate_payment) ? 'Sudah Bayar' : 'Belum Bayar';
-            $sheet->setCellValue("K$rowNumber", $payment_status);
+            $sheet->setCellValue("P$rowNumber", $payment_status);
 
             $invoice_vs_bottom = ($row->total_price_bottom ?? 0) > $shopee_total ? '< Bottom' : 'Invoice >';
-            $sheet->setCellValue("L$rowNumber", $invoice_vs_bottom);
-
-            $status_dir = $row->status_dir === 'Allowed'
-                ? 'Allowed by Dir'
-                : (($ratio_diference > $ratio_limit || ($row->shopee_refund ?? 0) < 0 || ($row->total_price_bottom ?? 0) > $shopee_total)
-                    ? 'Unsafe'
-                    : 'Safe');
-            $sheet->setCellValue("M$rowNumber", $status_dir);
+            $sheet->setCellValue("Q$rowNumber", $invoice_vs_bottom);
+            $sheet->setCellValue("R$rowNumber", $row->note ?? '');
+            $sheet->setCellValue("S$rowNumber", $row->is_check ? 'Yes' : 'No');
+            if ($row->status_dir === 'Allowed') {
+                $status_dir = 'Allowed by Dir';
+            } elseif (
+                $ratio_diference > $ratio_limit ||
+                ($row->shopee_refund ?? 0) < 0 ||
+                ($row->total_price_bottom ?? 0) > $shopee_total
+            ) {
+                $status_dir = 'Unsafe';
+            } else {
+                $status_dir = 'Safe';
+            }
+            $sheet->setCellValue("T$rowNumber", $status_dir);
 
             $rowNumber++;
         }
 
-        foreach (range('A', 'M') as $col) {
+        // Formatting
+        foreach (range('A', 'T') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $sheet->getStyle('E5:F' . ($rowNumber - 1))
-            ->getNumberFormat()
-            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
-        $sheet->getStyle('H5:H' . ($rowNumber - 1))
-            ->getNumberFormat()
-            ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+        // Number formatting for numeric columns
+        $numericColumns = ['E', 'F', 'G', 'H', 'J', 'K', 'L'];
+        foreach ($numericColumns as $col) {
+            $sheet->getStyle($col . '5:' . $col . ($rowNumber - 1))
+                ->getNumberFormat()
+                ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+        }
 
-        $sheet->getStyle('A4:M4')->applyFromArray([
+        // Header styling
+        $sheet->getStyle('A4:T4')->applyFromArray([
             'font' => ['bold' => true],
             'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
             'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
             'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFD9D9D9']]
         ]);
 
-        $filename = 'Comparison_Report_Astahomeware' . date('Ymd_His') . '.xlsx';
+        // Freeze header row
+        $sheet->freezePane('A5');
+
+        $filename = 'Comparison_Report_' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header("Content-Disposition: attachment;filename=\"$filename\"");
         header('Cache-Control: max-age=0');
@@ -531,5 +562,49 @@ class Comparison extends CI_Controller
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         $writer->save('php://output');
         exit;
+    }
+
+    public function update_note()
+    {
+        $no_faktur = $this->input->post('no_faktur');
+        $note = $this->input->post('note');
+
+        $this->db->where('no_faktur', $no_faktur);
+        $result = $this->db->update('acc_shopee_detail', ['note' => $note]);
+
+        if ($result) {
+            // Ambil data terbaru untuk dikembalikan
+            $updated_data = $this->db->get_where('acc_shopee_detail', ['no_faktur' => $no_faktur])->row();
+            echo json_encode([
+                'success' => true,
+                'no_faktur' => $no_faktur,
+                'note' => $updated_data->note
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan keterangan']);
+        }
+    }
+
+    public function update_checking()
+    {
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+
+        $no_faktur = $this->input->post('no_faktur');
+
+        if (empty($no_faktur)) {
+            echo json_encode(['success' => false, 'message' => 'Nomor faktur tidak valid']);
+            return;
+        }
+
+        $this->db->where('no_faktur', $no_faktur);
+        $updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
+
+        if ($updated) {
+            echo json_encode(['success' => true, 'message' => 'Status checking berhasil diperbarui']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal memperbarui status checking']);
+        }
     }
 }

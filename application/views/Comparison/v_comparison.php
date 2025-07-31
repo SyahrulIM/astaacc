@@ -194,6 +194,52 @@
     </div>
     <!-- End -->
 
+    <!-- Modal Edit Keterangan -->
+    <div class="modal fade" id="editNoteModal" tabindex="-1" aria-labelledby="editNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editNoteForm" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editNoteModalLabel">Edit Keterangan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="no_faktur" id="editNoFaktur">
+                        <div class="mb-3">
+                            <label for="editNoteText" class="form-label">Keterangan</label>
+                            <textarea class="form-control" name="note" id="editNoteText" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+
+    <!-- Modal Konfirmasi Checking -->
+    <div class="modal fade" id="confirmCheckModal" tabindex="-1" aria-labelledby="confirmCheckModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmCheckModalLabel">Konfirmasi Checking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Apakah Anda yakin ingin menandai faktur ini sudah dicek?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="confirmCheckBtn">Ya, Tandai Sudah Dicek</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End -->
+
     <!-- Data Table Section -->
     <div class="row mt-4">
         <div class="col text-end">
@@ -234,6 +280,8 @@
                         <th>
                             Invoice vs Bottom
                         </th>
+                        <th>Keterangan</th>
+                        <th>Status Check</th>
                         <th>
                             Status Dir
                         </th>
@@ -305,6 +353,16 @@
                                                 Invoice ></span>
                                         <?php } ?>
                             </td>
+                            <?php if (isset($row->note)) { ?>
+                                <td><?= $row->note; ?></td>
+                            <?php } else { ?>
+                                <td>-</td>
+                            <?php } ?>
+                            <?php if ($row->is_check == 0) { ?>
+                                <td><span class="badge bg-warning">Belum</span></td>
+                            <?php } else { ?>
+                                <td><span class="badge bg-success">Sudah</span></td>
+                            <?php } ?>
                             <td>
                                 <?php
                                 if ($row->status_dir === 'Allowed') {
@@ -318,11 +376,15 @@
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail</button>
+                                <button type="button" class="btn btn-sm btn-info btn-edit-note" data-faktur="<?= $row->no_faktur ?>" data-note="<?= htmlspecialchars($row->note ?? '') ?>">Edit Keterangan</button>
                                 <?php if ($highlight) { ?>
                                     <a href="#" class="btn btn-sm btn-primary btn-final-dir" data-faktur="<?= $row->no_faktur ?>" onclick="return confirm('Yakin ingin set status Allowed untuk faktur ini?')">
                                         Final Dir
                                     </a>
                                 <?php } ?>
+                                <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
+                                    <?= $row->is_check ? 'Sudah Dicek' : 'Tandai Checking' ?>
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -440,4 +502,58 @@
             });
     });
     // End
+    // Start Modal Edit Keterangan (Without Page Refresh)
+    $(document).ready(function() {
+        // Show modal dan isi datanya
+        $(document).on('click', '.btn-edit-note', function() {
+            const faktur = $(this).data('faktur');
+            const note = $(this).data('note');
+
+            $('#editNoFaktur').val(faktur);
+            $('#editNoteText').val(note);
+
+            const modal = new bootstrap.Modal(document.getElementById('editNoteModal'));
+            modal.show();
+        });
+
+        // Submit form
+        $('#editNoteForm').on('submit', function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: "<?= base_url('comparison/update_note') ?>",
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Update the note in the table row without refresh
+                        const faktur = $('#editNoFaktur').val();
+                        const newNote = $('#editNoteText').val();
+
+                        // Find all rows with this invoice number and update their note cells
+                        $(`[data-faktur="${faktur}"]`).each(function() {
+                            // Update the note in the table cell
+                            const row = $(this).closest('tr');
+                            row.find('td:eq(14)').text(newNote || '-'); // Assuming note is in 15th column (0-based index 14)
+
+                            // Update the data-note attribute on the edit button
+                            row.find('.btn-edit-note').data('note', newNote);
+                        });
+
+                        // Close the modal
+                        bootstrap.Modal.getInstance(document.getElementById('editNoteModal')).hide();
+
+                        // Show success message
+                        alert('Keterangan berhasil diperbarui');
+                    } else {
+                        alert('Gagal: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat menyimpan keterangan');
+                }
+            });
+        });
+    });
 </script>
