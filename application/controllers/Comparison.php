@@ -602,7 +602,11 @@ class Comparison extends CI_Controller
         $updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
 
         if ($updated) {
-            echo json_encode(['success' => true, 'message' => 'Status checking berhasil diperbarui']);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Status checking berhasil diperbarui',
+                'no_faktur' => $no_faktur
+            ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Gagal memperbarui status checking']);
         }

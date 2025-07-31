@@ -382,9 +382,11 @@
                                         Final Dir
                                     </a>
                                 <?php } ?>
-                                <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
-                                    <?= $row->is_check ? 'Sudah Dicek' : 'Tandai Checking' ?>
-                                </button>
+                                <?php if ($row->is_check == 0) { ?>
+                                    <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
+                                        Tandai Checking
+                                    </button>
+                                <?php } ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -556,4 +558,52 @@
             });
         });
     });
+    // Start tandai checking
+    // Handle checking button click
+    $(document).on('click', '.btn-checking', function() {
+        const faktur = $(this).data('faktur');
+        const modal = new bootstrap.Modal(document.getElementById('confirmCheckModal'));
+
+        $('#confirmCheckModal').data('faktur', faktur);
+        modal.show();
+    });
+
+    // Handle confirmation button click
+    $('#confirmCheckBtn').on('click', function() {
+        const faktur = $('#confirmCheckModal').data('faktur');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmCheckModal'));
+
+        $.ajax({
+            url: '<?= base_url("comparison/update_checking") ?>',
+            type: 'POST',
+            data: {
+                no_faktur: faktur
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // Update status check column (change to match your column index)
+                    $(`tr td:has(button.btn-checking[data-faktur="${faktur}"])`)
+                        .closest('tr')
+                        .find('td').eq(15) // Change this index to match your Status Check column
+                        .html('<span class="badge bg-success">Sudah</span>');
+
+                    // Remove only the checking button with smooth fade effect
+                    $(`button.btn-checking[data-faktur="${faktur}"]`)
+                        .fadeOut(300, function() {
+                            $(this).remove();
+                        });
+
+                    modal.hide();
+                    showToast('Status checking berhasil diperbarui', 'success');
+                } else {
+                    showToast(response.message || 'Gagal memperbarui status', 'error');
+                }
+            },
+            error: function() {
+                showToast('Terjadi kesalahan saat menghubungi server', 'error');
+            }
+        });
+    });
+    // End
 </script>
