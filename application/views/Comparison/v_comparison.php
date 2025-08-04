@@ -207,7 +207,7 @@
                         <input type="hidden" name="no_faktur" id="editNoFaktur">
                         <div class="mb-3">
                             <label for="editNoteText" class="form-label">Keterangan</label>
-                            <textarea class="form-control" name="note" id="editNoteText" rows="4" required></textarea>
+                            <textarea class="form-control" name="note" id="editNoteText" rows="4"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -244,8 +244,10 @@
     <div class="row mt-4">
         <div class="col text-end">
             <div class="mb-3">
-                <a href="<?= base_url('comparison/export_excel?' . http_build_query($this->input->get())) ?>" class="btn btn-success me-2">Export Excel</a>
-                <button id="finalDirSelected" class="btn btn-primary">Final Dir Select</button>
+                <a href="<?= base_url('comparison/export_excel?' . http_build_query($this->input->get())) ?>" class="btn btn-success me-2"><i class="fa-solid fa-print"></i> Export Excel</a>
+                <button id="finalDirSelected" class="btn btn-primary">
+                    <i class="fas fa-check-circle"></i> Final Dir Select
+                </button>
                 <button id="multiCheckBtn" class="btn btn-info me-2">
                     <i class="fas fa-check-circle"></i> Tercheck Select
                 </button>
@@ -378,16 +380,16 @@
                                 ?>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>">Detail</button>
-                                <button type="button" class="btn btn-sm btn-info btn-edit-note" data-faktur="<?= $row->no_faktur ?>" data-note="<?= htmlspecialchars($row->note ?? '') ?>">Edit Keterangan</button>
+                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>"><i class="fa-solid fa-list"></i> Detail</button>
+                                <button type="button" class="btn btn-sm btn-info btn-edit-note" data-faktur="<?= $row->no_faktur ?>" data-note="<?= htmlspecialchars($row->note ?? '') ?>"><i class="fa-solid fa-file-pen"></i> Edit Keterangan</button>
                                 <?php if ($highlight) { ?>
                                     <a href="#" class="btn btn-sm btn-primary btn-final-dir" data-faktur="<?= $row->no_faktur ?>" onclick="return confirm('Yakin ingin set status Allowed untuk faktur ini?')">
-                                        Final Dir
+                                        <i class="fa-solid fa-check-double"></i> Final Dir
                                     </a>
                                 <?php } ?>
                                 <?php if ($row->is_check == 0) { ?>
                                     <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
-                                        Tandai Checking
+                                        <i class="fa-solid fa-check"></i> Tandai Checking
                                     </button>
                                 <?php } ?>
                             </td>
@@ -444,6 +446,7 @@
     $(document).on('click', '.btn-final-dir', function(e) {
         e.preventDefault();
         const faktur = $(this).data('faktur');
+        const row = $(this).closest('tr'); // Dapatkan elemen tr
 
         if (!confirm('Yakin set status Allowed untuk faktur ini?')) return;
 
@@ -456,12 +459,19 @@
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    $(`tr:has(button[data-faktur="${response.no_faktur}"])`).removeClass('table-danger').addClass('table-success');
-                    $(`[data-faktur="${response.no_faktur}"]`).closest('tr').find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
-                    $(`.btn-final-dir[data-faktur="${response.no_faktur}"]`).remove();
+                    // 1. Hapus highlight dari row
+                    row.css('background-color', ''); // Hapus style inline
+
+                    // 2. Update status column
+                    row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+
+                    // 3. Hapus tombol Final Dir
+                    row.find('.btn-final-dir').remove();
+
+                    // 4. Update status dir di kolom status
+                    row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+
                     showToast('Status Dir berhasil diupdate', 'success');
-                } else {
-                    showToast('Gagal update status', 'error');
                 }
             }
         });
@@ -484,8 +494,6 @@
             return;
         }
 
-        if (!confirm(`Yakin set ${selected.length} faktur sebagai Allowed by Dir?`)) return;
-
         $.ajax({
             url: '<?= base_url("comparison/final_dir_batch") ?>',
             type: 'POST',
@@ -496,15 +504,21 @@
             success: function(response) {
                 if (response.success) {
                     selected.forEach(faktur => {
-                        $(`tr:has(input[value="${faktur}"])`)
-                            .removeClass('table-danger')
-                            .addClass('table-success')
-                            .find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
-                        $(`.btn-final-dir[data-faktur="${faktur}"]`).remove();
+                        const row = $(`input[value="${faktur}"]`).closest('tr');
+
+                        // 1. Hapus highlight
+                        row.css('background-color', '');
+
+                        // 2. Update status column
+                        row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+
+                        // 3. Hapus tombol Final Dir
+                        row.find('.btn-final-dir').remove();
+
+                        // 4. Update status dir di kolom status
+                        row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
                     });
-                    showToast(`${response.processed} faktur berhasil diupdate`, 'success');
-                } else {
-                    showToast('Gagal update status', 'error');
+                    showToast(`${selected.length} faktur berhasil diupdate`, 'success');
                 }
             }
         });
