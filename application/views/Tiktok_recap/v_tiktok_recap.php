@@ -2,20 +2,20 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col">
-                        <h1 class="mt-4">Shopee Pembayaran</h1>
+                        <h1 class="mt-4">Tiktok Pembayaran</h1>
                     </div>
                 </div>
                 <!-- Import Excel -->
-                <form action="<?= base_url('shopee_recap/createShopee') ?>" method="post" enctype="multipart/form-data">
+                <form action="<?= base_url('tiktok_recap/createTiktok') ?>" method="post" enctype="multipart/form-data">
                     <div class="card mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <strong>Import Shopee Recap (xlsx)</strong>
+                            <strong>Import Tiktok Recap</strong>
                             <div>
-                                <a href="<?= base_url('assets/template_excel/Income.sudah dilepas.id.20250101_20250630.xlsx') ?>" class="btn btn-sm btn-success me-2" download>
+                                <a href="<?= base_url('assets/template_excel/tiktok/income_20250804071544.xlsx') ?>" class="btn btn-sm btn-success me-2" download>
                                     <i class="fas fa-file-excel"></i> Download Template Income
                                 </a>
-                                <a href="<?= base_url('assets/template_excel/Order.completed.20250501_20250531.xlsx') ?>" class="btn btn-sm btn-info" download>
-                                    <i class="fas fa-file-excel"></i> Download Template Order
+                                <a href="<?= base_url('assets/template_excel/tiktok/Selesai pesanan-2025-08-04-14_24.csv') ?>" class="btn btn-sm btn-info" download>
+                                    <i class="fas fa-file-excel"></i> Download Template Selesai
                                 </a>
                             </div>
                         </div>
@@ -24,12 +24,12 @@
                                 <label for="typeExcel" class="form-label">Type Excel</label>
                                 <select name="typeExcel" id="typeExcel" class="form-select">
                                     <option value="income">Income</option>
-                                    <option value="order">Order</option>
+                                    <option value="selesai">Selesai</option>
                                 </select>
                             </div>
                             <div class="mb-3">
                                 <label for="file" class="form-label">Pilih File Excel:</label>
-                                <input type="file" class="form-control" name="file" id="file" accept=".xlsx" required>
+                                <input type="file" class="form-control" name="file" id="file" accept=".xlsx,.csv" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Import</button>
                         </div>
@@ -80,15 +80,14 @@
                                             </thead>
                                             <tbody>
                                                 <?php
-                                                foreach ($acc_shopee as $askey => $asvalue) {
+                                                foreach ($acc_tiktok as $askey => $asvalue) {
                                                 ?>
                                                     <tr>
                                                         <td><?= $askey + 1 ?></td>
                                                         <td><?= $asvalue->full_name ?></td>
                                                         <td><?= $asvalue->created_date ?></td>
                                                         <td>
-                                                            <a href="<?php echo base_url('shopee_recap/detail_acc?idacc_shopee=' . $asvalue->idacc_shopee) ?>">
-                                                                <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
+                                                            <a href="<?php echo base_url('tiktok_recap/detail_acc?idacc_tiktok=' . $asvalue->idacc_tiktok) ?>"> <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
                                                             </a>
                                                         </td>
                                                     </tr>
@@ -120,7 +119,7 @@
                                             </thead>
                                             <tbody>
                                                 <?php
-                                                foreach ($acc_shopee_detail as $asdkey => $asdvalue) {
+                                                foreach ($acc_tiktok_detail as $asdkey => $asdvalue) {
                                                 ?>
                                                     <tr>
                                                         <td><?= $asdkey + 1 ?></td>
@@ -132,7 +131,7 @@
                                                         <td><?= number_format($asdvalue->discount) ?></td>
                                                         <td><?= number_format($asdvalue->refund) ?></td>
                                                         <td><?= number_format($asdvalue->payment) ?></td>
-                                                        <td><a href="<?= base_url('shopee_recap/detail_faktur?no_faktur=' . $asdvalue->no_faktur) ?>"><button type="button" class="btn btn-success">Detail Faktur</button></a></td>
+                                                        <td><a href="<?= base_url('tiktok_recap/detail_faktur?no_faktur=' . $asdvalue->no_faktur) ?>"><button type="button" class="btn btn-success">Detail Faktur</button></a></td>
                                                     </tr>
                                                 <?php } ?>
                                             </tbody>
