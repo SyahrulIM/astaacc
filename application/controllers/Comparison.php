@@ -42,7 +42,37 @@ class Comparison extends CI_Controller
         $retur_count = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
-            $this->db->select('
+
+            // Filter tambahan berdasarkan input
+            $filterShopee = [];
+            $filterTiktok = [];
+
+            if ($start_date && $end_date) {
+                $filterShopee[] = "asd.pay_date >= '{$start_date}'";
+                $filterShopee[] = "asd.pay_date <= '{$end_date}'";
+                $filterTiktok[] = "atd.pay_date >= '{$start_date}'";
+                $filterTiktok[] = "atd.pay_date <= '{$end_date}'";
+            }
+            if ($order_start && $order_end) {
+                $filterShopee[] = "asd.order_date >= '{$order_start}'";
+                $filterShopee[] = "asd.order_date <= '{$order_end}'";
+                $filterTiktok[] = "atd.order_date >= '{$order_start}'";
+                $filterTiktok[] = "atd.order_date <= '{$order_end}'";
+            }
+            if ($type_status == 'retur') {
+                $filterShopee[] = "asd.refund < 0";
+                $filterTiktok[] = "atd.refund < 0";
+            } elseif ($type_status == 'pembayaran') {
+                $filterShopee[] = "asd.refund > 0";
+                $filterTiktok[] = "atd.refund > 0";
+            }
+
+            $whereShopee = !empty($filterShopee) ? "WHERE " . implode(" AND ", $filterShopee) : "";
+            $whereTiktok = !empty($filterTiktok) ? "WHERE " . implode(" AND ", $filterTiktok) : "";
+
+            // Gabungan Shopee + TikTok
+            $sql = "
+            SELECT
                 asd.no_faktur,
                 MAX(asd.order_date) AS shopee_order_date,
                 MAX(asd.pay_date) AS shopee_pay_date,
@@ -53,59 +83,73 @@ class Comparison extends CI_Controller
                 MAX(asd.note) AS note,
                 MAX(asd.is_check) AS is_check,
                 MAX(asd.status_dir) AS status_dir,
-
                 MAX(aad.pay_date) AS accurate_pay_date,
                 MAX(aad.total_faktur) AS accurate_total_faktur,
                 MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment
-            ');
-            $this->db->from('acc_shopee_detail asd');
-            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
+                MAX(aad.payment) AS accurate_payment,
+                'Shopee' AS source
+            FROM acc_shopee_detail asd
+            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
+            {$whereShopee}
+            GROUP BY asd.no_faktur
 
-            if ($start_date && $end_date) {
-                $this->db->where('asd.pay_date >=', $start_date);
-                $this->db->where('asd.pay_date <=', $end_date);
-            }
+            UNION
 
-            if ($order_start && $order_end) {
-                $this->db->where('asd.order_date >=', $order_start);
-                $this->db->where('asd.order_date <=', $order_end);
-            }
+            SELECT
+                atd.no_faktur,
+                MAX(atd.order_date) AS shopee_order_date,
+                MAX(atd.pay_date) AS shopee_pay_date,
+                MAX(atd.total_faktur) AS shopee_total_faktur,
+                MAX(atd.discount) AS shopee_discount,
+                MAX(atd.payment) AS shopee_payment,
+                MAX(atd.refund) AS shopee_refund,
+                MAX(atd.note) AS note,
+                MAX(atd.is_check) AS is_check,
+                MAX(atd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                'TikTok' AS source
+            FROM acc_tiktok_detail atd
+            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
+            {$whereTiktok}
+            GROUP BY atd.no_faktur
+            ORDER BY no_faktur ASC
+        ";
 
-            if ($type_status == 'retur') {
-                $this->db->where('asd.refund <', 0);  // Only returns (0 or negative)
-            } elseif ($type_status == 'pembayaran') {
-                $this->db->where('asd.refund >', 0);
-            }
-
-            $this->db->order_by('asd.no_faktur', 'asc');
-            $this->db->group_by('asd.no_faktur');
-            $results = $this->db->get()->result();
+            $results = $this->db->query($sql)->result();
             $seen_faktur = [];
 
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
 
-                // Ambil total price_bottom dari acc_shopee_bottom berdasarkan sku per no_faktur
-                $sku_list = $this->db
-                    ->select('sku')
-                    ->from('acc_shopee_detail_details')
-                    ->where('no_faktur', $row->no_faktur)
-                    ->get()
-                    ->result();
+                // Ambil total price_bottom
+                if ($row->source == 'Shopee') {
+                    $sku_list = $this->db
+                        ->select('sku')
+                        ->from('acc_shopee_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                } else {
+                    $sku_list = $this->db
+                        ->select('sku')
+                        ->from('acc_tiktok_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                }
 
                 $skus = array_column($sku_list, 'sku');
-
                 $total_price_bottom = 0;
                 if (!empty($skus)) {
                     $this->db->select_sum('price_bottom', 'total_price_bottom');
                     $this->db->where_in('sku', $skus);
-                    $result = $this->db->get('acc_shopee_bottom')->row();
-                    $total_price_bottom = $result->total_price_bottom ?? 0;
+                    $result_bottom = $this->db->get('acc_shopee_bottom')->row();
+                    $total_price_bottom = $result_bottom->total_price_bottom ?? 0;
                 }
-
                 $row->total_price_bottom = $total_price_bottom;
-                // End
 
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
                 if (
@@ -164,9 +208,7 @@ class Comparison extends CI_Controller
                         if (!$is_retur) {
                             $grand_total_invoice_non_retur += $shopee;
                             $grand_total_payment_non_retur += $accurate;
-                        }
-
-                        if ($is_retur) {
+                        } else {
                             $grand_total_invoice_retur += $shopee;
                             $grand_total_payment_retur += $accurate;
                         }
@@ -214,6 +256,7 @@ class Comparison extends CI_Controller
         $this->load->view('theme/v_head', $data);
         $this->load->view('Comparison/v_comparison');
     }
+
 
     public function detail_ajax($no_faktur)
     {
