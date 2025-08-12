@@ -17,7 +17,6 @@ class Comparison extends CI_Controller
 
     public function index()
     {
-        // Get all filter parameters
         $marketplace_filter = $this->input->get('marketplace');
         $start_date = $this->input->get('start_date');
         $end_date = $this->input->get('end_date');
@@ -31,46 +30,31 @@ class Comparison extends CI_Controller
 
         $data_comparison = [];
 
-        // Shopee totals
-        $grand_total_invoice = 0;
-        $grand_total_payment = 0;
-        $grand_total_invoice_non_retur = 0;
-        $grand_total_payment_non_retur = 0;
-        $grand_total_invoice_retur = 0;
-        $grand_total_payment_retur = 0;
-        $difference_count = 0;
-        $difference_count_non_retur = 0;
-        $exceed_ratio_count = 0;
-        $exceed_ratio_count_non_retur = 0;
-        $mismatch_count = 0;
-        $retur_count = 0;
+        $grand_total_invoice = $grand_total_payment = 0;
+        $grand_total_invoice_non_retur = $grand_total_payment_non_retur = 0;
+        $grand_total_invoice_retur = $grand_total_payment_retur = 0;
+        $difference_count = $difference_count_non_retur = 0;
+        $exceed_ratio_count = $exceed_ratio_count_non_retur = 0;
+        $mismatch_count = $retur_count = 0;
 
-        // TikTok totals
-        $grand_total_invoice_tiktok = 0;
-        $grand_total_payment_tiktok = 0;
-        $grand_total_invoice_non_retur_tiktok = 0;
-        $grand_total_payment_non_retur_tiktok = 0;
-        $grand_total_invoice_retur_tiktok = 0;
-        $grand_total_payment_retur_tiktok = 0;
-        $difference_count_tiktok = 0;
-        $difference_count_non_retur_tiktok = 0;
-        $exceed_ratio_count_tiktok = 0;
-        $exceed_ratio_count_non_retur_tiktok = 0;
-        $mismatch_count_tiktok = 0;
-        $retur_count_tiktok = 0;
+        $grand_total_invoice_tiktok = $grand_total_payment_tiktok = 0;
+        $grand_total_invoice_non_retur_tiktok = $grand_total_payment_non_retur_tiktok = 0;
+        $grand_total_invoice_retur_tiktok = $grand_total_payment_retur_tiktok = 0;
+        $difference_count_tiktok = $difference_count_non_retur_tiktok = 0;
+        $exceed_ratio_count_tiktok = $exceed_ratio_count_non_retur_tiktok = 0;
+        $mismatch_count_tiktok = $retur_count_tiktok = 0;
 
         if (($start_date && $end_date) || ($order_start && $order_end)) {
-            // Filter conditions
             $filterShopee = [];
             $filterTiktok = [];
 
-            // Apply marketplace filter
             if ($marketplace_filter === 'Shopee') {
-                $filterTiktok[] = "1 = 0"; // Exclude TikTok results
+                $filterTiktok[] = "1 = 0";
             } elseif ($marketplace_filter === 'TikTok') {
-                $filterShopee[] = "1 = 0"; // Exclude Shopee results
+                $filterShopee[] = "1 = 0";
             }
 
+            // Date filters
             if ($start_date && $end_date) {
                 $filterShopee[] = "asd.pay_date >= '{$start_date}'";
                 $filterShopee[] = "asd.pay_date <= '{$end_date}'";
@@ -83,6 +67,7 @@ class Comparison extends CI_Controller
                 $filterTiktok[] = "atd.order_date >= '{$order_start}'";
                 $filterTiktok[] = "atd.order_date <= '{$order_end}'";
             }
+
             if ($type_status == 'retur') {
                 $filterShopee[] = "asd.refund < 0";
                 $filterTiktok[] = "atd.refund < 0";
@@ -94,53 +79,52 @@ class Comparison extends CI_Controller
             $whereShopee = !empty($filterShopee) ? "WHERE " . implode(" AND ", $filterShopee) : "";
             $whereTiktok = !empty($filterTiktok) ? "WHERE " . implode(" AND ", $filterTiktok) : "";
 
-            // Combined Shopee + TikTok query
             $sql = "
-            SELECT
-                asd.no_faktur,
-                MAX(asd.order_date) AS shopee_order_date,
-                MAX(asd.pay_date) AS shopee_pay_date,
-                MAX(asd.total_faktur) AS shopee_total_faktur,
-                MAX(asd.discount) AS shopee_discount,
-                MAX(asd.payment) AS shopee_payment,
-                MAX(asd.refund) AS shopee_refund,
-                MAX(asd.note) AS note,
-                MAX(asd.is_check) AS is_check,
-                MAX(asd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'Shopee' AS source
-            FROM acc_shopee_detail asd
-            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
-            {$whereShopee}
-            GROUP BY asd.no_faktur
+                SELECT
+                    asd.no_faktur,
+                    MAX(asd.order_date) AS shopee_order_date,
+                    MAX(asd.pay_date) AS shopee_pay_date,
+                    MAX(asd.total_faktur) AS shopee_total_faktur,
+                    MAX(asd.discount) AS shopee_discount,
+                    MAX(asd.payment) AS shopee_payment,
+                    MAX(asd.refund) AS shopee_refund,
+                    MAX(asd.note) AS note,
+                    MAX(asd.is_check) AS is_check,
+                    MAX(asd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    'Shopee' AS source
+                FROM acc_shopee_detail asd
+                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
+                {$whereShopee}
+                GROUP BY asd.no_faktur
 
-            UNION
+                UNION
 
-            SELECT
-                atd.no_faktur,
-                MAX(atd.order_date) AS shopee_order_date,
-                MAX(atd.pay_date) AS shopee_pay_date,
-                MAX(atd.total_faktur) AS shopee_total_faktur,
-                MAX(atd.discount) AS shopee_discount,
-                MAX(atd.payment) AS shopee_payment,
-                MAX(atd.refund) AS shopee_refund,
-                MAX(atd.note) AS note,
-                MAX(atd.is_check) AS is_check,
-                MAX(atd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'TikTok' AS source
-            FROM acc_tiktok_detail atd
-            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
-            {$whereTiktok}
-            GROUP BY atd.no_faktur
-            ORDER BY no_faktur ASC
-        ";
+                SELECT
+                    atd.no_faktur,
+                    MAX(atd.order_date) AS shopee_order_date,
+                    MAX(atd.pay_date) AS shopee_pay_date,
+                    MAX(atd.total_faktur) AS shopee_total_faktur,
+                    MAX(atd.discount) AS shopee_discount,
+                    MAX(atd.payment) AS shopee_payment,
+                    MAX(atd.refund) AS shopee_refund,
+                    MAX(atd.note) AS note,
+                    MAX(atd.is_check) AS is_check,
+                    MAX(atd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    'TikTok' AS source
+                FROM acc_tiktok_detail atd
+                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
+                {$whereTiktok}
+                GROUP BY atd.no_faktur
+                ORDER BY no_faktur ASC
+            ";
 
             $results = $this->db->query($sql)->result();
             $seen_faktur = [];
@@ -148,22 +132,12 @@ class Comparison extends CI_Controller
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
 
-                // Get total price_bottom
-                if ($row->source == 'Shopee') {
-                    $sku_list = $this->db
-                        ->select('sku')
-                        ->from('acc_shopee_detail_details')
-                        ->where('no_faktur', $row->no_faktur)
-                        ->get()
-                        ->result();
-                } else {
-                    $sku_list = $this->db
-                        ->select('sku')
-                        ->from('acc_tiktok_detail_details')
-                        ->where('no_faktur', $row->no_faktur)
-                        ->get()
-                        ->result();
-                }
+                $sku_list = $this->db
+                    ->select('sku')
+                    ->from($row->source == 'Shopee' ? 'acc_shopee_detail_details' : 'acc_tiktok_detail_details')
+                    ->where('no_faktur', $row->no_faktur)
+                    ->get()
+                    ->result();
 
                 $skus = array_column($sku_list, 'sku');
                 $total_price_bottom = 0;
@@ -181,6 +155,7 @@ class Comparison extends CI_Controller
                     ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) ||
                     ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
                 ) {
+
                     $shopee = (float) ($row->shopee_total_faktur ?? 0);
                     $accurate = (float) ($row->accurate_payment ?? 0);
                     $is_retur = ($row->shopee_refund ?? 0) < 0;
@@ -196,8 +171,8 @@ class Comparison extends CI_Controller
                         ($matching_status === 'match' && $is_match) ||
                         ($matching_status === 'mismatch' && !$is_match)
                     ) {
+
                         if ($row->source == 'TikTok') {
-                            // TikTok calculations
                             $grand_total_invoice_tiktok += $shopee;
                             $grand_total_payment_tiktok += $accurate;
 
@@ -207,39 +182,25 @@ class Comparison extends CI_Controller
                             } else {
                                 $grand_total_invoice_retur_tiktok += $shopee;
                                 $grand_total_payment_retur_tiktok += $accurate;
+                                $retur_count_tiktok++;
                             }
 
                             if ($shopee != $accurate) {
                                 $difference_count_tiktok++;
-                                if (!$is_retur) {
-                                    $difference_count_non_retur_tiktok++;
-                                }
+                                if (!$is_retur) $difference_count_non_retur_tiktok++;
                             }
 
                             if ($accurate > 0 && $shopee > 0) {
                                 $ratio = (($shopee - $accurate) / $accurate) * 100;
-
                                 if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
                                 if ($ratio > $ratio_limit) {
                                     $exceed_ratio_count_tiktok++;
-                                    if (!$is_retur) {
-                                        $exceed_ratio_count_non_retur_tiktok++;
-                                    }
+                                    if (!$is_retur) $exceed_ratio_count_non_retur_tiktok++;
                                 }
                             }
 
-                            if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
-                                ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
-                                ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)
-                            ) {
-                                $mismatch_count_tiktok++;
-                            }
-
-                            if ($row->shopee_refund < 0) {
-                                $retur_count_tiktok++;
-                            }
+                            if (!$is_match) $mismatch_count_tiktok++;
                         } else {
-                            // Shopee calculations
                             $grand_total_invoice += $shopee;
                             $grand_total_payment += $accurate;
 
@@ -249,37 +210,24 @@ class Comparison extends CI_Controller
                             } else {
                                 $grand_total_invoice_retur += $shopee;
                                 $grand_total_payment_retur += $accurate;
+                                $retur_count++;
                             }
 
                             if ($shopee != $accurate) {
                                 $difference_count++;
-                                if (!$is_retur) {
-                                    $difference_count_non_retur++;
-                                }
+                                if (!$is_retur) $difference_count_non_retur++;
                             }
 
                             if ($accurate > 0 && $shopee > 0) {
                                 $ratio = (($shopee - $accurate) / $accurate) * 100;
-
                                 if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
                                 if ($ratio > $ratio_limit) {
                                     $exceed_ratio_count++;
-                                    if (!$is_retur) {
-                                        $exceed_ratio_count_non_retur++;
-                                    }
+                                    if (!$is_retur) $exceed_ratio_count_non_retur++;
                                 }
                             }
 
-                            if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
-                                ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
-                                ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)
-                            ) {
-                                $mismatch_count++;
-                            }
-
-                            if ($row->shopee_refund < 0) {
-                                $retur_count++;
-                            }
+                            if (!$is_match) $mismatch_count++;
                         }
 
                         $data_comparison[] = $row;
@@ -309,8 +257,8 @@ class Comparison extends CI_Controller
             'grand_total_payment_non_retur' => $grand_total_payment_non_retur + $grand_total_payment_non_retur_tiktok,
             'grand_total_invoice_retur' => $grand_total_invoice_retur + $grand_total_invoice_retur_tiktok,
             'grand_total_payment_retur' => $grand_total_payment_retur + $grand_total_payment_retur_tiktok,
-            'grand_total_invoice_after_retur' => $grand_total_invoice - $grand_total_invoice_retur - $grand_total_invoice_tiktok - $grand_total_invoice_retur_tiktok,
-            'grand_total_payment_after_retur' => $grand_total_payment - $grand_total_invoice_retur - $grand_total_payment_tiktok - $grand_total_invoice_retur_tiktok,
+            'grand_total_invoice_after_retur' => ($grand_total_invoice + $grand_total_invoice_tiktok) - ($grand_total_invoice_retur + $grand_total_invoice_retur_tiktok),
+            'grand_total_payment_after_retur' => ($grand_total_payment + $grand_total_payment_tiktok) - ($grand_total_payment_retur + $grand_total_payment_retur_tiktok),
             'difference_count' => $difference_count + $difference_count_tiktok,
             'difference_count_non_retur' => $difference_count_non_retur + $difference_count_non_retur_tiktok,
             'exceed_ratio_count' => $exceed_ratio_count + $exceed_ratio_count_tiktok,
@@ -318,7 +266,6 @@ class Comparison extends CI_Controller
             'mismatch_count' => $mismatch_count + $mismatch_count_tiktok,
             'retur_count' => $retur_count + $retur_count_tiktok,
 
-            // Other data
             'ratio_status' => $ratio_status,
             'ratio_limit' => $ratio_limit,
             'matching_status' => $matching_status,
