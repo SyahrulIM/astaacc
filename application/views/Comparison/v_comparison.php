@@ -13,6 +13,16 @@
         </div>
         <div class="card-body">
             <form method="get" class="row g-3 align-items-end">
+                <!-- Marketplace Filter -->
+                <div class="col-md-3">
+                    <label for="marketplace" class="form-label">Marketplace</label>
+                    <select id="marketplace" name="marketplace" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="Shopee" <?= ($marketplace_filter === 'Shopee' ? 'selected' : '') ?>>Shopee</option>
+                        <option value="TikTok" <?= ($marketplace_filter === 'TikTok' ? 'selected' : '') ?>>TikTok</option>
+                    </select>
+                </div>
+
                 <div class="col-md-3">
                     <label for="order_start" class="form-label">Tanggal Pesanan (Start)</label>
                     <input type="date" id="order_start" name="order_start" class="form-control" value="<?= $this->input->get('order_start') ?>" required>
@@ -73,6 +83,10 @@
                 </div>
             </div>
             <div class="row">
+                <div class="col">
+                    <h5>Marketplace</h5>
+                    <h5> : <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h5>
+                </div>
                 <div class="col">
                     <h5>Grand total Nominal Invoice</h5>
                     <h5> : <?= number_format($grand_total_invoice) ?></h5>
