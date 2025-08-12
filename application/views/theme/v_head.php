@@ -45,12 +45,13 @@
                     </div>
                 </div>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#accuraterecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['tiktok_recap']) ? 'true' : 'false'; ?>" aria-controls="accuraterecapSubmenu">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['tiktok_recap','tiktok_additional']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#accuraterecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['tiktok_recap','tiktok_additional']) ? 'true' : 'false'; ?>" aria-controls="accuraterecapSubmenu">
                         Database Tiktok
                         <i class="fas fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse <?= in_array($current, ['tiktok_recap', '']) ? 'show' : ''; ?>" id="accuraterecapSubmenu">
+                    <div class="collapse <?= in_array($current, ['tiktok_recap', 'tiktok_additional']) ? 'show' : ''; ?>" id="accuraterecapSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'tiktok_recap') ? 'active' : ''; ?>" href="<?= base_url('tiktok_recap'); ?>">Tiktok Recap</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'tiktok_additional') ? 'active' : ''; ?>" href="<?= base_url('tiktok_additional'); ?>">Tiktok Additional</a>
                     </div>
                 </div>
                 <div class="list-group-item p-0">
