@@ -274,6 +274,7 @@
                         <th><input type="checkbox" id="selectAll"></th>
                         <th>No</th>
                         <th>Nomor Faktur</th>
+                        <th>Marketplace</th>
                         <th>Tanggal Pesanan</th>
                         <th>
                             Tanggal Pembayaran<br>
@@ -328,6 +329,7 @@
                             <td><input type="checkbox" class="select-row" value="<?= $row->no_faktur ?>"></td>
                             <td><?= $no++ ?></td>
                             <td><?= $row->no_faktur ?></td>
+                            <td><?= $row->source ?></td>
                             <td><?= $row->shopee_order_date ?? '-' ?></td>
                             <td><?= $row->accurate_pay_date ?? '-' ?></td>
                             <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
