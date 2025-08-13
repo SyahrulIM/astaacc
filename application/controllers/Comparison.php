@@ -239,11 +239,38 @@ class Comparison extends CI_Controller
 
         $additional_revenue = 0;
         if ($order_start && $order_end) {
-            $this->db->select_sum('additional_revenue');
-            $this->db->where('start_date >=', $order_start);
-            $this->db->where('end_date <=', $order_end);
-            $additional_data = $this->db->get('acc_shopee_additional')->row();
-            $additional_revenue = $additional_data->additional_revenue ?? 0;
+            $additional_revenue = 0;
+
+            if ($marketplace_filter == 'Shopee') {
+                // Shopee only
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $additional_data = $this->db->get('acc_shopee_additional')->row();
+                $additional_revenue = $additional_data->additional_revenue ?? 0;
+            } elseif ($marketplace_filter == 'TikTok') {
+                // TikTok only
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $additional_data = $this->db->get('acc_tiktok_additional')->row();
+                $additional_revenue = $additional_data->additional_revenue ?? 0;
+            } else {
+                // All marketplaces → sum both
+                // Shopee
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $shopee = $this->db->get('acc_shopee_additional')->row()->additional_revenue ?? 0;
+
+                // TikTok
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $tiktok = $this->db->get('acc_tiktok_additional')->row()->additional_revenue ?? 0;
+
+                $additional_revenue = $shopee + $tiktok;
+            }
         }
 
         $data = [

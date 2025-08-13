@@ -19,7 +19,7 @@ class Tiktok_additional extends CI_Controller
         $acc_tiktok_additional = $this->db->get('acc_tiktok_additional');
 
         $data = [
-            'title' => 'tiktok Additional',
+            'title' => 'TikTok Additional',
             'acc_tiktok_additional' => $acc_tiktok_additional
         ];
 
