@@ -34,14 +34,33 @@
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action list-group-item-light p-3 <?= ($current == 'dashboard') ? 'active' : ''; ?>" href="<?php echo base_url('dashboard/'); ?>">Dashboard</a>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['recap']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#recapSubmenu" role="button" aria-expanded="<?= in_array($current, ['recap']) ? 'true' : 'false'; ?>" aria-controls="recapSubmenu">
-                        Data
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#shopeerecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['shopee_recap', 'shopee_bottom', 'shopee_additional']) ? 'true' : 'false'; ?>" aria-controls="shopeerecapSubmenu">
+                        Database Shopee
                         <i class="fas fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse <?= in_array($current, ['recap']) ? 'show' : ''; ?>" id="recapSubmenu">
-                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'recap') ? 'active' : ''; ?>" href="<?= base_url('recap'); ?>">Import Payment</a>
-                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_bottom') ? 'active' : ''; ?>" href="<?= base_url('shopee_bottom'); ?>">Import Bottom Price</a>
-                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_additional') ? 'active' : ''; ?>" href="<?= base_url('shopee_additional'); ?>">Additional Revenue</a>
+                    <div class="collapse <?= in_array($current, ['shopee_recap', 'shopee_bottom', 'shopee_additional']) ? 'show' : ''; ?>" id="shopeerecapSubmenu">
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_recap') ? 'active' : ''; ?>" href="<?= base_url('shopee_recap'); ?>">Shopee Recap</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_bottom') ? 'active' : ''; ?>" href="<?= base_url('shopee_bottom'); ?>">Shopee Bottom Price</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_additional') ? 'active' : ''; ?>" href="<?= base_url('shopee_additional'); ?>">Shopee Additional</a>
+                    </div>
+                </div>
+                <div class="list-group-item p-0">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['tiktok_recap','tiktok_additional']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#accuraterecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['tiktok_recap','tiktok_additional']) ? 'true' : 'false'; ?>" aria-controls="accuraterecapSubmenu">
+                        Database Tiktok
+                        <i class="fas fa-chevron-down small"></i>
+                    </a>
+                    <div class="collapse <?= in_array($current, ['tiktok_recap', 'tiktok_additional']) ? 'show' : ''; ?>" id="accuraterecapSubmenu">
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'tiktok_recap') ? 'active' : ''; ?>" href="<?= base_url('tiktok_recap'); ?>">Tiktok Recap</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'tiktok_additional') ? 'active' : ''; ?>" href="<?= base_url('tiktok_additional'); ?>">Tiktok Additional</a>
+                    </div>
+                </div>
+                <div class="list-group-item p-0">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#accuraterecapSubmenu" role="button" aria-expanded="<?= in_array($current, ['accurate_recap','']) ? 'true' : 'false'; ?>" aria-controls="accuraterecapSubmenu">
+                        Database Accurate
+                        <i class="fas fa-chevron-down small"></i>
+                    </a>
+                    <div class="collapse <?= in_array($current, ['accurate_recap', '']) ? 'show' : ''; ?>" id="accuraterecapSubmenu">
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'accurate_recap') ? 'active' : ''; ?>" href="<?= base_url('accurate_recap'); ?>">Accurate Recap</a>
                     </div>
                 </div>
                 <div class="list-group-item p-0">

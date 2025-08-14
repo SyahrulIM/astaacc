@@ -308,17 +308,17 @@ class Comparison extends CI_Controller
     {
         // Ambil data detail faktur
         $this->db->select('
-        MAX(asd.total_faktur) AS shopee_total_faktur,
-        MAX(asd.discount) AS shopee_discount,x
-        MAX(asd.payment) AS shopee_payment,
-        MAX(asd.refund) AS shopee_refund,
+        MAX(atd.total_faktur) AS tiktok_total_faktur,
+        MAX(atd.discount) AS tiktok_discount,
+        MAX(atd.payment) AS tiktok_payment,
+        MAX(atd.refund) AS tiktok_refund,
         MAX(aad.total_faktur) AS accurate_total_faktur,
         MAX(aad.discount) AS accurate_discount,
         MAX(aad.payment) AS accurate_payment
     ');
-        $this->db->from('acc_shopee_detail asd');
-        $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
-        $this->db->where('asd.no_faktur', $no_faktur);
+        $this->db->from('acc_tiktok_detail atd');
+        $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = atd.no_faktur', 'left');
+        $this->db->where('atd.no_faktur', $no_faktur);
         $detail = $this->db->get()->row();
 
         if (!$detail) {
@@ -326,19 +326,19 @@ class Comparison extends CI_Controller
             return;
         }
 
-        // Ambil detail produk Shopee
+        // Ambil detail produk TikTok
         $this->db->distinct();
         $this->db->select('no_faktur, sku, name_product, price_after_discount');
         $this->db->where('no_faktur', $no_faktur);
-        $acc_shopee_detail_details = $this->db->get('acc_shopee_detail_details')->result();
+        $acc_tiktok_detail_details = $this->db->get('acc_tiktok_detail_details')->result();
 
-        // Ambil harga bottom per SKU dari tabel acc_shopee_bottom
+        // Ambil harga bottom per SKU dari tabel acc_tiktok_bottom (asumsi ada tabel serupa)
         $harga_bottom_map = [];
-        if (!empty($acc_shopee_detail_details)) {
-            $sku_list = array_column($acc_shopee_detail_details, 'sku');
+        if (!empty($acc_tiktok_detail_details)) {
+            $sku_list = array_column($acc_tiktok_detail_details, 'sku');
             $this->db->select('sku, price_bottom');
             $this->db->where_in('sku', $sku_list);
-            $bottoms = $this->db->get('acc_shopee_bottom')->result();
+            $bottoms = $this->db->get('acc_tiktok_bottom')->result();
             foreach ($bottoms as $b) {
                 $harga_bottom_map[$b->sku] = $b->price_bottom;
             }
@@ -348,21 +348,21 @@ class Comparison extends CI_Controller
         echo '
     <h5>Perbandingan Data - ' . $no_faktur . '</h5>
     <table class="table table-bordered mb-4">
-        <thead><tr><th></th><th>Shopee</th><th>Accurate</th></tr></thead>
-        <tr><th>Total Faktur</th><td>' . number_format($detail->shopee_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
-        <tr><th>Discount</th><td>' . number_format($detail->shopee_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
-        <tr><th>Pembayaran</th><td>' . number_format($detail->shopee_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
-        <tr><th>Refund</th><td>' . number_format($detail->shopee_refund) . '</td><td>0</td></tr>
+        <thead><tr><th></th><th>TikTok</th><th>Accurate</th></tr></thead>
+        <tr><th>Total Faktur</th><td>' . number_format($detail->tiktok_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
+        <tr><th>Discount</th><td>' . number_format($detail->tiktok_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
+        <tr><th>Pembayaran</th><td>' . number_format($detail->tiktok_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
+        <tr><th>Refund</th><td>' . number_format($detail->tiktok_refund) . '</td><td>0</td></tr>
     </table>';
 
         // Tampilkan detail SKU dan harga
         echo '
-    <h5>Detail Produk (Shopee & Bottom)</h5>
+    <h5>Detail Produk (TikTok & Bottom)</h5>
     <table class="table table-striped table-bordered">
         <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead>
         <tbody>';
 
-        foreach ($acc_shopee_detail_details as $item) {
+        foreach ($acc_tiktok_detail_details as $item) {
             $bottom = $harga_bottom_map[$item->sku] ?? '-';
             echo '<tr>
             <td>' . htmlspecialchars($item->sku) . '</td>
@@ -643,20 +643,41 @@ class Comparison extends CI_Controller
         $no_faktur = $this->input->post('no_faktur');
         $note = $this->input->post('note');
 
+        // First try to update in Shopee table
         $this->db->where('no_faktur', $no_faktur);
-        $result = $this->db->update('acc_shopee_detail', ['note' => $note]);
+        $shopee_updated = $this->db->update('acc_shopee_detail', ['note' => $note]);
 
-        if ($result) {
-            // Ambil data terbaru untuk dikembalikan
+        if ($this->db->affected_rows() > 0) {
             $updated_data = $this->db->get_where('acc_shopee_detail', ['no_faktur' => $no_faktur])->row();
             echo json_encode([
                 'success' => true,
                 'no_faktur' => $no_faktur,
-                'note' => $updated_data->note
+                'note' => $updated_data->note,
+                'source' => 'Shopee'
             ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan keterangan']);
+            return;
         }
+
+        // If not found in Shopee, try TikTok table
+        $this->db->where('no_faktur', $no_faktur);
+        $tiktok_updated = $this->db->update('acc_tiktok_detail', ['note' => $note]);
+
+        if ($this->db->affected_rows() > 0) {
+            $updated_data = $this->db->get_where('acc_tiktok_detail', ['no_faktur' => $no_faktur])->row();
+            echo json_encode([
+                'success' => true,
+                'no_faktur' => $no_faktur,
+                'note' => $updated_data->note,
+                'source' => 'TikTok'
+            ]);
+            return;
+        }
+
+        // If not found in either table
+        echo json_encode([
+            'success' => false,
+            'message' => 'Faktur tidak ditemukan di database Shopee maupun TikTok'
+        ]);
     }
 
     public function update_checking()
@@ -672,18 +693,40 @@ class Comparison extends CI_Controller
             return;
         }
 
+        // First try to update in Shopee table
         $this->db->where('no_faktur', $no_faktur);
-        $updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
+        $shopee_updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
 
-        if ($updated) {
+        if ($this->db->affected_rows() > 0) {
             echo json_encode([
                 'success' => true,
-                'message' => 'Status checking berhasil diperbarui',
-                'no_faktur' => $no_faktur
+                'message' => 'Status checking berhasil diperbarui (Shopee)',
+                'no_faktur' => $no_faktur,
+                'source' => 'Shopee'
             ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Gagal memperbarui status checking']);
+            return;
         }
+
+        // If not found in Shopee, try TikTok table
+        $this->db->where('no_faktur', $no_faktur);
+        $tiktok_updated = $this->db->update('acc_tiktok_detail', ['is_check' => 1]);
+
+        if ($this->db->affected_rows() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Status checking berhasil diperbarui (TikTok)',
+                'no_faktur' => $no_faktur,
+                'source' => 'TikTok'
+            ]);
+            return;
+        }
+
+        // If not found in either table
+        echo json_encode([
+            'success' => false,
+            'message' => 'Faktur tidak ditemukan di database Shopee maupun TikTok',
+            'no_faktur' => $no_faktur
+        ]);
     }
 
     public function update_checking_batch()
@@ -695,12 +738,71 @@ class Comparison extends CI_Controller
             return;
         }
 
+        // Initialize counters
+        $shopee_updated = 0;
+        $tiktok_updated = 0;
+        $not_found = [];
+
+        // Update Shopee orders
         $this->db->where_in('no_faktur', $faktur_list);
-        $updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
+        $this->db->update('acc_shopee_detail', ['is_check' => 1]);
+        $shopee_updated = $this->db->affected_rows();
+
+        // Update TikTok orders
+        $this->db->where_in('no_faktur', $faktur_list);
+        $this->db->update('acc_tiktok_detail', ['is_check' => 1]);
+        $tiktok_updated = $this->db->affected_rows();
+
+        // Check which invoices weren't found
+        $all_faktur = array_flip($faktur_list);
+
+        // Remove found Shopee invoices
+        if ($shopee_updated > 0) {
+            $found_shopee = $this->db->select('no_faktur')
+                ->from('acc_shopee_detail')
+                ->where_in('no_faktur', $faktur_list)
+                ->where('is_check', 1)
+                ->get()
+                ->result_array();
+
+            foreach ($found_shopee as $faktur) {
+                unset($all_faktur[$faktur['no_faktur']]);
+            }
+        }
+
+        // Remove found TikTok invoices
+        if ($tiktok_updated > 0) {
+            $found_tiktok = $this->db->select('no_faktur')
+                ->from('acc_tiktok_detail')
+                ->where_in('no_faktur', $faktur_list)
+                ->where('is_check', 1)
+                ->get()
+                ->result_array();
+
+            foreach ($found_tiktok as $faktur) {
+                unset($all_faktur[$faktur['no_faktur']]);
+            }
+        }
+
+        $not_found = array_keys($all_faktur);
+
+        $total_updated = $shopee_updated + $tiktok_updated;
 
         echo json_encode([
-            'success' => $updated,
-            'message' => $updated ? 'Status checking berhasil diperbarui' : 'Gagal memperbarui status'
+            'success' => $total_updated > 0,
+            'message' => sprintf(
+                'Berhasil update %d faktur (Shopee: %d, TikTok: %d). %d tidak ditemukan: %s',
+                $total_updated,
+                $shopee_updated,
+                $tiktok_updated,
+                count($not_found),
+                implode(', ', $not_found)
+            ),
+            'stats' => [
+                'shopee_updated' => $shopee_updated,
+                'tiktok_updated' => $tiktok_updated,
+                'not_found' => $not_found
+            ]
         ]);
     }
 }

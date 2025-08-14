@@ -479,13 +479,13 @@
                     row.css('background-color', ''); // Hapus style inline
 
                     // 2. Update status column
-                    row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                    row.find('td:eq(17)').html('<span class="badge bg-success">Allowed by Dir</span>');
 
                     // 3. Hapus tombol Final Dir
                     row.find('.btn-final-dir').remove();
 
                     // 4. Update status dir di kolom status
-                    row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                    row.find('td:eq(17)').html('<span class="badge bg-success">Allowed by Dir</span>');
 
                     showToast('Status Dir berhasil diupdate', 'success');
                 }
@@ -526,13 +526,13 @@
                         row.css('background-color', '');
 
                         // 2. Update status column
-                        row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                        row.find('td:eq(17)').html('<span class="badge bg-success">Allowed by Dir</span>');
 
                         // 3. Hapus tombol Final Dir
                         row.find('.btn-final-dir').remove();
 
                         // 4. Update status dir di kolom status
-                        row.find('td:eq(16)').html('<span class="badge bg-success">Allowed by Dir</span>');
+                        row.find('td:eq(17)').html('<span class="badge bg-success">Allowed by Dir</span>');
                     });
                     showToast(`${selected.length} faktur berhasil diupdate`, 'success');
                 }
@@ -573,7 +573,7 @@
                         $(`[data-faktur="${faktur}"]`).each(function() {
                             // Update the note in the table cell
                             const row = $(this).closest('tr');
-                            row.find('td:eq(14)').text(newNote || '-'); // Assuming note is in 15th column (0-based index 14)
+                            row.find('td:eq(15)').text(newNote || '-'); // Assuming note is in 15th column (0-based index 14)
 
                             // Update the data-note attribute on the edit button
                             row.find('.btn-edit-note').data('note', newNote);
@@ -594,7 +594,8 @@
             });
         });
     });
-    // Start tandai checking
+    // End
+    // Start Tandai Checking
     // Handle checking button click
     $(document).on('click', '.btn-checking', function() {
         const faktur = $(this).data('faktur');
@@ -621,7 +622,7 @@
                     // Update status check column (change to match your column index)
                     $(`tr td:has(button.btn-checking[data-faktur="${faktur}"])`)
                         .closest('tr')
-                        .find('td').eq(15) // Change this index to match your Status Check column
+                        .find('td').eq(16) // Change this index to match your Status Check column
                         .html('<span class="badge bg-success">Sudah</span>');
 
                     // Remove only the checking button with smooth fade effect
@@ -670,7 +671,7 @@
                 if (response.success) {
                     // Update UI untuk semua yang dipilih
                     selected.forEach(faktur => {
-                        $(`tr:has(input[value="${faktur}"])`).find('td:eq(15)').html('<span class="badge bg-success">Sudah</span>');
+                        $(`tr:has(input[value="${faktur}"])`).find('td:eq(16)').html('<span class="badge bg-success">Sudah</span>');
                         $(`button.btn-checking[data-faktur="${faktur}"]`).remove();
                     });
                     showToast(`${selected.length} faktur berhasil ditandai`, 'success');
