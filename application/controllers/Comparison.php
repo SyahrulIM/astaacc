@@ -306,63 +306,107 @@ class Comparison extends CI_Controller
 
     public function detail_ajax($no_faktur)
     {
-        // Ambil data detail faktur
-        $this->db->select('
-        MAX(atd.total_faktur) AS tiktok_total_faktur,
-        MAX(atd.discount) AS tiktok_discount,
-        MAX(atd.payment) AS tiktok_payment,
-        MAX(atd.refund) AS tiktok_refund,
-        MAX(aad.total_faktur) AS accurate_total_faktur,
-        MAX(aad.discount) AS accurate_discount,
-        MAX(aad.payment) AS accurate_payment
-    ');
-        $this->db->from('acc_tiktok_detail atd');
-        $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = atd.no_faktur', 'left');
-        $this->db->where('atd.no_faktur', $no_faktur);
-        $detail = $this->db->get()->row();
-
-        if (!$detail) {
-            echo '<div class="text-danger">Data tidak ditemukan.</div>';
-            return;
-        }
-
-        // Ambil detail produk TikTok
-        $this->db->distinct();
-        $this->db->select('no_faktur, sku, name_product, price_after_discount');
-        $this->db->where('no_faktur', $no_faktur);
-        $acc_tiktok_detail_details = $this->db->get('acc_tiktok_detail_details')->result();
-
-        // Ambil harga bottom per SKU dari tabel acc_tiktok_bottom (asumsi ada tabel serupa)
-        $harga_bottom_map = [];
-        if (!empty($acc_tiktok_detail_details)) {
-            $sku_list = array_column($acc_tiktok_detail_details, 'sku');
-            $this->db->select('sku, price_bottom');
-            $this->db->where_in('sku', $sku_list);
-            $bottoms = $this->db->get('acc_tiktok_bottom')->result();
-            foreach ($bottoms as $b) {
-                $harga_bottom_map[$b->sku] = $b->price_bottom;
+        // Cek sumber data marketplace
+        $source = null;
+        $cekShopee = $this->db->get_where('acc_shopee_detail', ['no_faktur' => $no_faktur])->row();
+        if ($cekShopee) {
+            $source = 'shopee';
+        } else {
+            $cekTiktok = $this->db->get_where('acc_tiktok_detail', ['no_faktur' => $no_faktur])->row();
+            if ($cekTiktok) {
+                $source = 'tiktok';
             }
         }
 
-        // Tampilkan data ringkasan
-        echo '
-    <h5>Perbandingan Data - ' . $no_faktur . '</h5>
+        if (!$source) {
+            echo '<div class="text-danger">Data tidak ditemukan di Shopee atau TikTok.</div>';
+            return;
+        }
+
+        if ($source == 'shopee') {
+            // Ambil data detail Shopee
+            $this->db->select('
+            MAX(sd.total_faktur) AS mp_total_faktur,
+            MAX(sd.discount) AS mp_discount,
+            MAX(sd.payment) AS mp_payment,
+            MAX(sd.refund) AS mp_refund,
+            MAX(aad.total_faktur) AS accurate_total_faktur,
+            MAX(aad.discount) AS accurate_discount,
+            MAX(aad.payment) AS accurate_payment
+        ');
+            $this->db->from('acc_shopee_detail sd');
+            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = sd.no_faktur', 'left');
+            $this->db->where('sd.no_faktur', $no_faktur);
+            $detail = $this->db->get()->row();
+
+            // Ambil detail SKU
+            $this->db->distinct();
+            $this->db->select('no_faktur, sku, name_product, price_after_discount');
+            $this->db->where('no_faktur', $no_faktur);
+            $sku_details = $this->db->get('acc_shopee_detail_details')->result();
+
+            // Ambil harga bottom
+            $harga_bottom_map = [];
+            if (!empty($sku_details)) {
+                $sku_list = array_column($sku_details, 'sku');
+                $this->db->select('sku, price_bottom');
+                $this->db->where_in('sku', $sku_list);
+                $bottoms = $this->db->get('acc_shopee_bottom')->result();
+                foreach ($bottoms as $b) {
+                    $harga_bottom_map[$b->sku] = $b->price_bottom;
+                }
+            }
+        } else {
+            // Ambil data detail TikTok
+            $this->db->select('
+            MAX(td.total_faktur) AS mp_total_faktur,
+            MAX(td.discount) AS mp_discount,
+            MAX(td.payment) AS mp_payment,
+            MAX(td.refund) AS mp_refund,
+            MAX(aad.total_faktur) AS accurate_total_faktur,
+            MAX(aad.discount) AS accurate_discount,
+            MAX(aad.payment) AS accurate_payment
+        ');
+            $this->db->from('acc_tiktok_detail td');
+            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = td.no_faktur', 'left');
+            $this->db->where('td.no_faktur', $no_faktur);
+            $detail = $this->db->get()->row();
+
+            // Ambil detail SKU
+            $this->db->distinct();
+            $this->db->select('no_faktur, sku, name_product, price_after_discount');
+            $this->db->where('no_faktur', $no_faktur);
+            $sku_details = $this->db->get('acc_tiktok_detail_details')->result();
+
+            // Ambil harga bottom
+            $harga_bottom_map = [];
+            if (!empty($sku_details)) {
+                $sku_list = array_column($sku_details, 'sku');
+                $this->db->select('sku, price_bottom');
+                $this->db->where_in('sku', $sku_list);
+                $bottoms = $this->db->get('acc_tiktok_bottom')->result();
+                foreach ($bottoms as $b) {
+                    $harga_bottom_map[$b->sku] = $b->price_bottom;
+                }
+            }
+        }
+
+        // Output Ringkasan
+        echo '<h5>Perbandingan Data (' . ucfirst($source) . ') - ' . $no_faktur . '</h5>
     <table class="table table-bordered mb-4">
-        <thead><tr><th></th><th>TikTok</th><th>Accurate</th></tr></thead>
-        <tr><th>Total Faktur</th><td>' . number_format($detail->tiktok_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
-        <tr><th>Discount</th><td>' . number_format($detail->tiktok_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
-        <tr><th>Pembayaran</th><td>' . number_format($detail->tiktok_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
-        <tr><th>Refund</th><td>' . number_format($detail->tiktok_refund) . '</td><td>0</td></tr>
+        <thead><tr><th></th><th>' . ucfirst($source) . '</th><th>Accurate</th></tr></thead>
+        <tr><th>Total Faktur</th><td>' . number_format($detail->mp_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
+        <tr><th>Discount</th><td>' . number_format($detail->mp_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
+        <tr><th>Pembayaran</th><td>' . number_format($detail->mp_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
+        <tr><th>Refund</th><td>' . number_format($detail->mp_refund) . '</td><td>0</td></tr>
     </table>';
 
-        // Tampilkan detail SKU dan harga
-        echo '
-    <h5>Detail Produk (TikTok & Bottom)</h5>
+        // Output SKU
+        echo '<h5>Detail Produk (' . ucfirst($source) . ' & Bottom)</h5>
     <table class="table table-striped table-bordered">
-        <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead>
-        <tbody>';
+        <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead><tbody>';
 
-        foreach ($acc_tiktok_detail_details as $item) {
+        foreach ($sku_details as $item) {
             $bottom = $harga_bottom_map[$item->sku] ?? '-';
             echo '<tr>
             <td>' . htmlspecialchars($item->sku) . '</td>

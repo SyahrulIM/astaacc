@@ -99,6 +99,8 @@
                                                         $row_style = 'style="background-color: #EE4D2D; color: white;"'; // Orange Shopee
                                                     } elseif (strtolower($arvalue->source) === 'tiktok') {
                                                         $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
+                                                    } else {
+                                                        $row_style = '';
                                                     }
                                                 ?>
                                                     <tr <?= $row_style ?>>
@@ -108,9 +110,12 @@
                                                             <?php if ($arvalue->source == 'tiktok') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Tiktok / Tokopedia
-                                                            <?php } else { ?>
+                                                            <?php } else if ($arvalue->source == 'shopee') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Shopee
+                                                            <?php } else { ?>
+                                                                <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                                Accurate
                                                             <?php } ?>
                                                         </td>
                                                         <?php if ($arvalue->type == 'income') { ?>
@@ -162,18 +167,23 @@
                                                         $row_style = 'style="background-color: #EE4D2D; color: white;"'; // Orange Shopee
                                                     } elseif (strtolower($ardvalue->source) === 'tiktok') {
                                                         $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
+                                                    } else {
+                                                        $row_style = '';
                                                     }
                                                 ?>
                                                     <tr <?= $row_style ?>>
                                                         <td><?= $ardkey + 1 ?></td>
                                                         <td><?= $ardvalue->no_faktur ?></td>
                                                         <td>
-                                                            <?php if ($ardvalue->source == 'tiktok') { ?>
+                                                            <?php if ($arvalue->source == 'tiktok') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Tiktok / Tokopedia
-                                                            <?php } else { ?>
+                                                            <?php } else if ($arvalue->source == 'shopee') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Shopee
+                                                            <?php } else { ?>
+                                                                <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                                Accurate
                                                             <?php } ?>
                                                         </td>
                                                         <td><?= $ardvalue->order_date ?></td>
