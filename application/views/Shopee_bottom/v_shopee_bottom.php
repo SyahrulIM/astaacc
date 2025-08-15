@@ -2,7 +2,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col">
-                        <h1 class="mt-4">Shopee Bottom Price</h1>
+                        <h1 class="mt-4">Bottom Price</h1>
                     </div>
                 </div>
 
@@ -10,7 +10,7 @@
                 <form action="<?= base_url('shopee_bottom/createBottom') ?>" method="post" enctype="multipart/form-data">
                     <div class="card mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <strong>Import Shopee Recap (xlsx)</strong>
+                            <strong>Import Bottom Price (xlsx)</strong>
                             <a href="<?= base_url('assets/template_excel/harga bottom online.xlsx') ?>" class="btn btn-sm btn-success" download>
                                 Download Template Bottom
                             </a>

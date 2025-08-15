@@ -91,12 +91,10 @@ class Recap extends CI_Controller
 
     public function createRecap()
     {
-        // Get input parameters
         $marketplace = $this->input->post('marketplace');
         $type_excel = $this->input->post('typeExcel');
         $file = $_FILES['file']['tmp_name'];
 
-        // Validate file
         if (empty($file)) {
             $this->session->set_flashdata('error', 'File tidak ditemukan.');
             redirect($marketplace . '_recap');
@@ -106,7 +104,6 @@ class Recap extends CI_Controller
         require APPPATH . '../vendor/autoload.php';
         $extension = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
 
-        // Load appropriate reader based on file extension
         if ($extension === 'csv' || $extension === 'txt') {
             $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
             $reader->setDelimiter($marketplace === 'shopee' ? "\t" : ",");
@@ -117,13 +114,12 @@ class Recap extends CI_Controller
         try {
             $spreadsheet = $reader->load($file);
 
-            // Common data for all marketplaces
             $header_data = [
                 'iduser' => $this->session->userdata('iduser'),
                 'created_by' => $this->session->userdata('username'),
                 'created_date' => date('Y-m-d H:i:s'),
                 'status' => 1,
-                'excel_type' => $type_excel // Added for all marketplaces
+                'excel_type' => $type_excel
             ];
 
             switch ($marketplace) {
@@ -132,14 +128,12 @@ class Recap extends CI_Controller
                     $id_header = $this->db->insert_id();
 
                     if ($type_excel === 'income') {
-                        // Process Shopee Income - look for sheets containing 'income'
                         $incomeSheets = [];
                         foreach ($spreadsheet->getSheetNames() as $sheetName) {
                             if (stripos($sheetName, 'income') !== false) {
                                 $incomeSheets[] = $sheetName;
                             }
                         }
-
                         if (empty($incomeSheets)) {
                             $this->session->set_flashdata('error', 'Tidak ditemukan sheet income dalam file.');
                             redirect('shopee_recap');
@@ -150,18 +144,15 @@ class Recap extends CI_Controller
                         foreach ($incomeSheets as $sheetName) {
                             $sheet = $spreadsheet->getSheetByName($sheetName);
                             $highestRow = $sheet->getHighestRow();
-
                             for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
                                 $noFaktur = $sheet->getCell('B' . $rowIndex)->getValue();
                                 if (empty($noFaktur)) continue;
-
                                 $orderDate = $sheet->getCell('E' . $rowIndex)->getFormattedValue();
                                 $payDate = $sheet->getCell('G' . $rowIndex)->getFormattedValue();
                                 $hargaAsli = floatval(str_replace(['.', ','], '', $sheet->getCell('H' . $rowIndex)->getValue()));
                                 $totalDiskon = floatval(str_replace(['.', ','], '', $sheet->getCell('I' . $rowIndex)->getValue()));
                                 $payment = floatval(str_replace(['.', ','], '', $sheet->getCell('AB' . $rowIndex)->getValue()));
                                 $refund = floatval(str_replace(['.', ','], '', $sheet->getCell('J' . $rowIndex)->getValue()));
-
                                 $total = $hargaAsli + $totalDiskon;
 
                                 $detail = [
@@ -180,22 +171,13 @@ class Recap extends CI_Controller
                                 $processedOrders++;
                             }
                         }
-
-                        $this->session->set_flashdata(
-                            $processedOrders > 0 ? 'success' : 'error',
-                            $processedOrders > 0
-                                ? "Data Shopee Income berhasil diimport ($processedOrders orders)."
-                                : 'Tidak ada data order yang ditemukan dalam sheet income.'
-                        );
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee Income berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan dalam sheet income.');
                     } else {
-                        // Process Shopee Order
                         $sheet = $spreadsheet->getActiveSheet();
                         $rows = $sheet->toArray(null, true, true, true);
                         $processedOrders = 0;
-
                         foreach ($rows as $i => $row) {
                             if ($i < 2 || empty($row['A'])) continue;
-
                             $price = floatval(str_replace('.', '', $row['Q']));
                             $fullAddress = isset($row['AT']) ? trim($row['AT']) : null;
                             preg_match('/(\d{5})(?!.*\d)/', $fullAddress, $matches);
@@ -217,13 +199,7 @@ class Recap extends CI_Controller
                             $this->db->insert('acc_shopee_detail_details', $detail_order);
                             $processedOrders++;
                         }
-
-                        $this->session->set_flashdata(
-                            $processedOrders > 0 ? 'success' : 'error',
-                            $processedOrders > 0
-                                ? "Data Shopee Order berhasil diimport ($processedOrders orders)."
-                                : 'Tidak ada data order yang ditemukan.'
-                        );
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee Order berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     }
                     break;
 
@@ -232,15 +208,12 @@ class Recap extends CI_Controller
                     $id_header = $this->db->insert_id();
 
                     if ($type_excel === 'income') {
-                        // Process TikTok Income
                         $sheet = $spreadsheet->getActiveSheet();
                         $highestRow = $sheet->getHighestRow();
                         $processedOrders = 0;
-
                         for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
                             $noFaktur = $sheet->getCell('A' . $rowIndex)->getValue();
                             if (empty($noFaktur)) continue;
-
                             $orderDateRaw = $sheet->getCell('C' . $rowIndex)->getFormattedValue();
                             $orderDate = date('Y-m-d', strtotime(str_replace('/', '-', $orderDateRaw)));
                             $payDateRaw = $sheet->getCell('D' . $rowIndex)->getFormattedValue();
@@ -265,22 +238,13 @@ class Recap extends CI_Controller
                             $this->db->insert('acc_tiktok_detail', $detail);
                             $processedOrders++;
                         }
-
-                        $this->session->set_flashdata(
-                            $processedOrders > 0 ? 'success' : 'error',
-                            $processedOrders > 0
-                                ? "Data TikTok Income berhasil diimpor ($processedOrders orders)."
-                                : 'Tidak ada data order yang ditemukan.'
-                        );
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Income berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     } else {
-                        // Process TikTok Order
                         $sheet = $spreadsheet->getActiveSheet();
                         $rows = $sheet->toArray(null, true, true, true);
                         $processedOrders = 0;
-
                         foreach ($rows as $i => $row) {
                             if ($i < 3 || empty($row['A'])) continue;
-
                             $price = floatval(str_replace('.', '', $row['P']));
                             $fullAddress = trim(($row['AV'] ?? '') . ', ' . ($row['AU'] ?? '') . ', ' . ($row['AT'] ?? ''));
                             $posCode = '';
@@ -301,26 +265,25 @@ class Recap extends CI_Controller
                             $this->db->insert('acc_tiktok_detail_details', $detail_order);
                             $processedOrders++;
                         }
-
-                        $this->session->set_flashdata(
-                            $processedOrders > 0 ? 'success' : 'error',
-                            $processedOrders > 0
-                                ? "Data TikTok Order berhasil diimpor ($processedOrders orders)."
-                                : 'Tidak ada data order yang ditemukan.'
-                        );
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Order berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     }
                     break;
 
                 case 'accurate':
-                    $this->db->insert('acc_accurate', $header_data);
+                    // Accurate tanpa type_excel
+                    $this->db->insert('acc_accurate', [
+                        'iduser' => $this->session->userdata('iduser'),
+                        'created_by' => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'status' => 1
+                    ]);
                     $id_header = $this->db->insert_id();
+
                     $sheet = $spreadsheet->getActiveSheet();
                     $rows = $sheet->toArray(null, true, true, true);
                     $processedOrders = 0;
-
                     foreach ($rows as $i => $row) {
                         if ($i < 6 || !$row['B']) continue;
-
                         $detail = [
                             'idacc_accurate' => $id_header,
                             'no_faktur' => $row['B'],
@@ -333,13 +296,7 @@ class Recap extends CI_Controller
                         $this->db->insert('acc_accurate_detail', $detail);
                         $processedOrders++;
                     }
-
-                    $this->session->set_flashdata(
-                        $processedOrders > 0 ? 'success' : 'error',
-                        $processedOrders > 0
-                            ? "Data Accurate berhasil diimport ($processedOrders orders)."
-                            : 'Tidak ada data order yang ditemukan.'
-                    );
+                    $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     break;
 
                 default:
@@ -349,9 +306,9 @@ class Recap extends CI_Controller
         } catch (Exception $e) {
             $this->session->set_flashdata('error', 'Error processing file: ' . $e->getMessage());
         }
-
-        redirect($marketplace . '_recap');
+        redirect('recap');
     }
+
 
     public function detail_faktur()
     {

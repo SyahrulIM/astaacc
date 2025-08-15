@@ -34,14 +34,14 @@
             <div class="list-group list-group-flush">
                 <a class="list-group-item list-group-item-action list-group-item-light p-3 <?= ($current == 'dashboard') ? 'active' : ''; ?>" href="<?php echo base_url('dashboard/'); ?>">Dashboard</a>
                 <div class="list-group-item p-0">
-                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['recap']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#recapSubmenu" role="button" aria-expanded="<?= in_array($current, ['recap']) ? 'true' : 'false'; ?>" aria-controls="recapSubmenu">
+                    <a class="list-group-item list-group-item-action list-group-item-light p-3 d-flex justify-content-between align-items-center <?= in_array($current, ['recap', 'shopee_bottom', 'additional']) ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#recapSubmenu" role="button" aria-expanded="<?= in_array($current, ['recap', 'shopee_bottom', 'additional']) ? 'true' : 'false'; ?>" aria-controls="recapSubmenu">
                         Data
                         <i class="fas fa-chevron-down small"></i>
                     </a>
-                    <div class="collapse <?= in_array($current, ['recap']) ? 'show' : ''; ?>" id="recapSubmenu">
+                    <div class="collapse <?= in_array($current, ['recap','shopee_bottom','additional']) ? 'show' : ''; ?>" id="recapSubmenu">
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'recap') ? 'active' : ''; ?>" href="<?= base_url('recap'); ?>">Import Payment</a>
                         <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_bottom') ? 'active' : ''; ?>" href="<?= base_url('shopee_bottom'); ?>">Import Bottom Price</a>
-                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'shopee_additional') ? 'active' : ''; ?>" href="<?= base_url('shopee_additional'); ?>">Additional Revenue</a>
+                        <a class="list-group-item list-group-item-action list-group-item-light ps-5 <?= ($current == 'additional') ? 'active' : ''; ?>" href="<?= base_url('additional'); ?>">Additional Revenue</a>
                     </div>
                 </div>
                 <div class="list-group-item p-0">

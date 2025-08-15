@@ -329,7 +329,15 @@
                             <td><input type="checkbox" class="select-row" value="<?= $row->no_faktur ?>"></td>
                             <td><?= $no++ ?></td>
                             <td><?= $row->no_faktur ?></td>
-                            <td><?= $row->source ?></td>
+                            <td>
+                                <?php if ($row->source == 'tiktok') { ?>
+                                    <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                    Tiktok / Tokopedia
+                                <?php } else { ?>
+                                    <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                    Shopee
+                                <?php } ?>
+                            </td>
                             <td><?= $row->shopee_order_date ?? '-' ?></td>
                             <td><?= $row->accurate_pay_date ?? '-' ?></td>
                             <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>

@@ -95,7 +95,7 @@ class Comparison extends CI_Controller
                     MAX(aad.total_faktur) AS accurate_total_faktur,
                     MAX(aad.discount) AS accurate_discount,
                     MAX(aad.payment) AS accurate_payment,
-                    'Shopee' AS source
+                    'shopee' AS source
                 FROM acc_shopee_detail asd
                 LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
                 {$whereShopee}
@@ -118,7 +118,7 @@ class Comparison extends CI_Controller
                     MAX(aad.total_faktur) AS accurate_total_faktur,
                     MAX(aad.discount) AS accurate_discount,
                     MAX(aad.payment) AS accurate_payment,
-                    'TikTok' AS source
+                    'tiktok' AS source
                 FROM acc_tiktok_detail atd
                 LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
                 {$whereTiktok}
