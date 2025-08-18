@@ -384,7 +384,7 @@ class Comparison extends CI_Controller
                 $sku_list = array_column($sku_details, 'sku');
                 $this->db->select('sku, price_bottom');
                 $this->db->where_in('sku', $sku_list);
-                $bottoms = $this->db->get('acc_tiktok_bottom')->result();
+                $bottoms = $this->db->get('acc_shopee_bottom')->result();
                 foreach ($bottoms as $b) {
                     $harga_bottom_map[$b->sku] = $b->price_bottom;
                 }
@@ -450,6 +450,9 @@ class Comparison extends CI_Controller
         require_once(APPPATH . '../vendor/autoload.php');
         $this->load->library('session');
 
+        $marketplace_filter = $this->input->get('marketplace');
+        $start_date = $this->input->get('start_date');
+        $end_date = $this->input->get('end_date');
         $order_start = $this->input->get('order_start');
         $order_end = $this->input->get('order_end');
         $status_filter = $this->input->get('status');
@@ -460,85 +463,141 @@ class Comparison extends CI_Controller
 
         $data_comparison = [];
 
-        if ($order_start && $order_end) {
-            $this->db->select('
-            asd.no_faktur,
-            asd.order_date AS shopee_order_date,
-            asd.pay_date AS shopee_pay_date,
-            asd.total_faktur AS shopee_total_faktur,
-            asd.discount AS shopee_discount,
-            asd.payment AS shopee_payment,
-            asd.refund AS shopee_refund,
-            asd.note AS note,
-            asd.is_check AS is_check,
-            asd.status_dir AS status_dir,
-            aad.pay_date AS accurate_pay_date,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
-            $this->db->from('acc_shopee_detail asd');
-            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = asd.no_faktur', 'left');
-            $this->db->where('asd.order_date >=', $order_start);
-            $this->db->where('asd.order_date <=', $order_end);
+        if (($start_date && $end_date) || ($order_start && $order_end)) {
+            $filterShopee = [];
+            $filterTiktok = [];
 
-            if ($type_status == 'retur') {
-                $this->db->where('asd.refund <', 0);
-            } elseif ($type_status == 'pembayaran') {
-                $this->db->where('asd.refund >', 0);
+            if ($marketplace_filter === 'Shopee') {
+                $filterTiktok[] = "1 = 0";
+            } elseif ($marketplace_filter === 'TikTok') {
+                $filterShopee[] = "1 = 0";
             }
 
-            $this->db->order_by('asd.no_faktur', 'asc');
-            $results = $this->db->get()->result();
+            // Date filters
+            if ($start_date && $end_date) {
+                $filterShopee[] = "asd.pay_date >= '{$start_date}'";
+                $filterShopee[] = "asd.pay_date <= '{$end_date}'";
+                $filterTiktok[] = "atd.pay_date >= '{$start_date}'";
+                $filterTiktok[] = "atd.pay_date <= '{$end_date}'";
+            }
+            if ($order_start && $order_end) {
+                $filterShopee[] = "asd.order_date >= '{$order_start}'";
+                $filterShopee[] = "asd.order_date <= '{$order_end}'";
+                $filterTiktok[] = "atd.order_date >= '{$order_start}'";
+                $filterTiktok[] = "atd.order_date <= '{$order_end}'";
+            }
+
+            if ($type_status == 'retur') {
+                $filterShopee[] = "asd.refund < 0";
+                $filterTiktok[] = "atd.refund < 0";
+            } elseif ($type_status == 'pembayaran') {
+                $filterShopee[] = "asd.refund > 0";
+                $filterTiktok[] = "atd.refund > 0";
+            }
+
+            $whereShopee = !empty($filterShopee) ? "WHERE " . implode(" AND ", $filterShopee) : "";
+            $whereTiktok = !empty($filterTiktok) ? "WHERE " . implode(" AND ", $filterTiktok) : "";
+
+            $sql = "
+            SELECT
+                asd.no_faktur,
+                MAX(asd.order_date) AS shopee_order_date,
+                MAX(asd.pay_date) AS shopee_pay_date,
+                MAX(asd.total_faktur) AS shopee_total_faktur,
+                MAX(asd.discount) AS shopee_discount,
+                MAX(asd.payment) AS shopee_payment,
+                MAX(asd.refund) AS shopee_refund,
+                MAX(asd.note) AS note,
+                MAX(asd.is_check) AS is_check,
+                MAX(asd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                'shopee' AS source
+            FROM acc_shopee_detail asd
+            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
+            {$whereShopee}
+            GROUP BY asd.no_faktur
+
+            UNION
+
+            SELECT
+                atd.no_faktur,
+                MAX(atd.order_date) AS shopee_order_date,
+                MAX(atd.pay_date) AS shopee_pay_date,
+                MAX(atd.total_faktur) AS shopee_total_faktur,
+                MAX(atd.discount) AS shopee_discount,
+                MAX(atd.payment) AS shopee_payment,
+                MAX(atd.refund) AS shopee_refund,
+                MAX(atd.note) AS note,
+                MAX(atd.is_check) AS is_check,
+                MAX(atd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                'tiktok' AS source
+            FROM acc_tiktok_detail atd
+            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
+            {$whereTiktok}
+            GROUP BY atd.no_faktur
+            ORDER BY no_faktur ASC
+        ";
+
+            $results = $this->db->query($sql)->result();
             $seen_faktur = [];
 
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
 
-                $sku_list = $this->db->select('sku')
-                    ->from('acc_shopee_detail_details')
+                $sku_list = $this->db
+                    ->select('sku')
+                    ->from($row->source == 'Shopee' ? 'acc_shopee_detail_details' : 'acc_tiktok_detail_details')
                     ->where('no_faktur', $row->no_faktur)
-                    ->get()->result();
-                $skus = array_column($sku_list, 'sku');
+                    ->get()
+                    ->result();
 
+                $skus = array_column($sku_list, 'sku');
                 $total_price_bottom = 0;
                 if (!empty($skus)) {
                     $this->db->select_sum('price_bottom', 'total_price_bottom');
                     $this->db->where_in('sku', $skus);
-                    $result = $this->db->get('acc_shopee_bottom')->row();
-                    $total_price_bottom = $result->total_price_bottom ?? 0;
+                    $result_bottom = $this->db->get('acc_shopee_bottom')->row();
+                    $total_price_bottom = $result_bottom->total_price_bottom ?? 0;
                 }
                 $row->total_price_bottom = $total_price_bottom;
 
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
-                $is_match = (
-                    ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
-                    ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
-                    ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)
-                );
-
-                $shopee = (float) ($row->shopee_total_faktur ?? 0);
-                $accurate = (float) ($row->accurate_payment ?? 0);
-
-                $pass_status_filter = empty($status_filter) ||
+                if (
+                    empty($status_filter) ||
                     ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) ||
-                    ($status_filter == 'Belum Bayar' && !$is_sudah_bayar);
+                    ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
+                ) {
 
-                $pass_matching_filter = empty($matching_status) ||
-                    ($matching_status == 'match' && $is_match) ||
-                    ($matching_status == 'mismatch' && !$is_match);
+                    $shopee = (float) ($row->shopee_total_faktur ?? 0);
+                    $accurate = (float) ($row->accurate_payment ?? 0);
+                    $is_retur = ($row->shopee_refund ?? 0) < 0;
 
-                $pass_ratio_filter = true;
-                if ($accurate > 0 && $shopee > 0) {
-                    $ratio = (($shopee - $accurate) / $accurate) * 100;
-                    if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) {
-                        $pass_ratio_filter = false;
+                    $is_match = (
+                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
+                        ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
+                        ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)
+                    );
+
+                    if (
+                        empty($matching_status) ||
+                        ($matching_status === 'match' && $is_match) ||
+                        ($matching_status === 'mismatch' && !$is_match)
+                    ) {
+                        if ($accurate > 0 && $shopee > 0) {
+                            $ratio = (($shopee - $accurate) / $accurate) * 100;
+                            if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
+                        }
+
+                        $data_comparison[] = $row;
+                        $seen_faktur[] = $row->no_faktur;
                     }
-                }
-
-                if ($pass_status_filter && $pass_matching_filter && $pass_ratio_filter) {
-                    $data_comparison[] = $row;
-                    $seen_faktur[] = $row->no_faktur;
                 }
             }
         }
@@ -548,13 +607,22 @@ class Comparison extends CI_Controller
         $sheet->setTitle("Comparison Report");
 
         // Header with company info and date range
-        $sheet->mergeCells('A1:O1');
-        $sheet->mergeCells('A2:O2');
-        $sheet->mergeCells('A3:O3');
+        $sheet->mergeCells('A1:T1');
+        $sheet->mergeCells('A2:T2');
+        $sheet->mergeCells('A3:T3');
 
         $sheet->setCellValue('A1', 'Astahomeware');
         $sheet->setCellValue('A2', 'Comparison Report');
-        $sheet->setCellValue('A3', 'Periode: ' . ($order_start ?? '-') . ' s.d. ' . ($order_end ?? '-'));
+
+        $dateRange = '';
+        if ($start_date && $end_date) {
+            $dateRange .= 'Payment Date: ' . $start_date . ' - ' . $end_date;
+        }
+        if ($order_start && $order_end) {
+            if ($dateRange) $dateRange .= ' | ';
+            $dateRange .= 'Order Date: ' . $order_start . ' - ' . $order_end;
+        }
+        $sheet->setCellValue('A3', $dateRange ?: 'All Dates');
 
         $sheet->getStyle('A1:A3')->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
@@ -571,31 +639,29 @@ class Comparison extends CI_Controller
         // Column headers
         $headers = [
             'A' => 'No',
-            'B' => 'Nomor Faktur',
-            'C' => 'Tanggal Pesanan (Shopee)',
-            'D' => 'Tanggal Pembayaran (Shopee)',
-            'E' => 'Total Faktur (Shopee)',
-            'F' => 'Discount (Shopee)',
-            'G' => 'Payment (Shopee)',
-            'H' => 'Refund (Shopee)',
-            'I' => 'Tanggal Pembayaran (ACC)',
-            'J' => 'Total Faktur (ACC)',
-            'K' => 'Discount (ACC)',
-            'L' => 'Payment (ACC)',
-            'M' => 'Selisih Ratio',
-            'N' => 'Type Faktur',
-            'O' => 'Status Matching',
-            'P' => 'Status Terbayar (ACC)',
-            'Q' => 'Invoice vs Bottom',
-            'R' => 'Keterangan',
-            'S' => 'Status Check',
+            'B' => 'Marketplace',
+            'C' => 'Nomor Faktur',
+            'D' => 'Tanggal Pesanan',
+            'E' => 'Tanggal Pembayaran',
+            'F' => 'Total Faktur',
+            'G' => 'Discount',
+            'H' => 'Payment',
+            'I' => 'Refund',
+            'J' => 'Tanggal Pembayaran (ACC)',
+            'K' => 'Total Faktur (ACC)',
+            'L' => 'Discount (ACC)',
+            'M' => 'Payment (ACC)',
+            'N' => 'Selisih Ratio',
+            'O' => 'Type Faktur',
+            'P' => 'Status Matching',
+            'Q' => 'Status Terbayar (ACC)',
+            'R' => 'Invoice vs Bottom',
+            'S' => 'Keterangan',
             'T' => 'Status Dir'
         ];
 
-        $col = 'A';
-        foreach ($headers as $header) {
+        foreach ($headers as $col => $header) {
             $sheet->setCellValue($col . '4', $header);
-            $col++;
         }
 
         // Data rows
@@ -606,32 +672,33 @@ class Comparison extends CI_Controller
             $ratio_diference = ($accurate_payment == 0) ? 0 : (($shopee_total - $accurate_payment) / $accurate_payment) * 100;
 
             $sheet->setCellValue("A$rowNumber", $rowNumber - 4);
-            $sheet->setCellValue("B$rowNumber", $row->no_faktur);
-            $sheet->setCellValue("C$rowNumber", $row->shopee_order_date ?? '-');
-            $sheet->setCellValue("D$rowNumber", $row->shopee_pay_date ?? '-');
-            $sheet->setCellValue("E$rowNumber", $shopee_total);
-            $sheet->setCellValue("F$rowNumber", $row->shopee_discount ?? 0);
-            $sheet->setCellValue("G$rowNumber", $row->shopee_payment ?? 0);
-            $sheet->setCellValue("H$rowNumber", $row->shopee_refund ?? 0);
-            $sheet->setCellValue("I$rowNumber", $row->accurate_pay_date ?? '-');
-            $sheet->setCellValue("J$rowNumber", $row->accurate_total_faktur ?? 0);
-            $sheet->setCellValue("K$rowNumber", $row->accurate_discount ?? 0);
-            $sheet->setCellValue("L$rowNumber", $accurate_payment);
-            $sheet->setCellValue("M$rowNumber", round($ratio_diference, 2) . '%');
-            $sheet->setCellValue("N$rowNumber", ($row->shopee_refund ?? 0) < 0 ? 'Retur' : 'Pembayaran');
+            $sheet->setCellValue("B$rowNumber", $row->source == 'shopee' ? 'Shopee' : 'TikTok');
+            $sheet->setCellValue("C$rowNumber", $row->no_faktur);
+            $sheet->setCellValue("D$rowNumber", $row->shopee_order_date ?? '-');
+            $sheet->setCellValue("E$rowNumber", $row->shopee_pay_date ?? '-');
+            $sheet->setCellValue("F$rowNumber", $shopee_total);
+            $sheet->setCellValue("G$rowNumber", $row->shopee_discount ?? 0);
+            $sheet->setCellValue("H$rowNumber", $row->shopee_payment ?? 0);
+            $sheet->setCellValue("I$rowNumber", $row->shopee_refund ?? 0);
+            $sheet->setCellValue("J$rowNumber", $row->accurate_pay_date ?? '-');
+            $sheet->setCellValue("K$rowNumber", $row->accurate_total_faktur ?? 0);
+            $sheet->setCellValue("L$rowNumber", $row->accurate_discount ?? 0);
+            $sheet->setCellValue("M$rowNumber", $accurate_payment);
+            $sheet->setCellValue("N$rowNumber", round($ratio_diference, 2) . '%');
+            $sheet->setCellValue("O$rowNumber", ($row->shopee_refund ?? 0) < 0 ? 'Retur' : 'Pembayaran');
 
-            $match = (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
-                ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
-                ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)) ? 'Mismatch' : 'Match';
-            $sheet->setCellValue("O$rowNumber", $match);
+            $match = (($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
+                ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
+                ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)) ? 'Match' : 'Mismatch';
+            $sheet->setCellValue("P$rowNumber", $match);
 
             $payment_status = !empty($row->accurate_payment) ? 'Sudah Bayar' : 'Belum Bayar';
-            $sheet->setCellValue("P$rowNumber", $payment_status);
+            $sheet->setCellValue("Q$rowNumber", $payment_status);
 
             $invoice_vs_bottom = ($row->total_price_bottom ?? 0) > $shopee_total ? '< Bottom' : 'Invoice >';
-            $sheet->setCellValue("Q$rowNumber", $invoice_vs_bottom);
-            $sheet->setCellValue("R$rowNumber", $row->note ?? '');
-            $sheet->setCellValue("S$rowNumber", $row->is_check ? 'Yes' : 'No');
+            $sheet->setCellValue("R$rowNumber", $invoice_vs_bottom);
+            $sheet->setCellValue("S$rowNumber", $row->note ?? '');
+
             if ($row->status_dir === 'Allowed') {
                 $status_dir = 'Allowed by Dir';
             } elseif (
@@ -654,7 +721,7 @@ class Comparison extends CI_Controller
         }
 
         // Number formatting for numeric columns
-        $numericColumns = ['E', 'F', 'G', 'H', 'J', 'K', 'L'];
+        $numericColumns = ['F', 'G', 'H', 'I', 'K', 'L', 'M'];
         foreach ($numericColumns as $col) {
             $sheet->getStyle($col . '5:' . $col . ($rowNumber - 1))
                 ->getNumberFormat()

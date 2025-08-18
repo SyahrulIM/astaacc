@@ -180,7 +180,7 @@ class Recap extends CI_Controller
                                 $orderDate = $sheet->getCell('E' . $rowIndex)->getFormattedValue();
                                 $payDate = $sheet->getCell('G' . $rowIndex)->getFormattedValue();
                                 $hargaAsli = floatval(str_replace(['.', ','], '', $sheet->getCell('H' . $rowIndex)->getValue()));
-                                $totalDiskon = floatval(str_replace(['.', ','], '', $sheet->getCell('I' . $rowIndex)->getValue()));
+                                $totalDiskon = abs(floatval(str_replace(['.', ','], '', $sheet->getCell('I' . $rowIndex)->getValue())));
                                 $payment = floatval(str_replace(['.', ','], '', $sheet->getCell('AB' . $rowIndex)->getValue()));
                                 $refund = floatval(str_replace(['.', ','], '', $sheet->getCell('J' . $rowIndex)->getValue()));
                                 $total = $hargaAsli + $totalDiskon;
@@ -250,7 +250,8 @@ class Recap extends CI_Controller
                             $payDate = date('Y-m-d', strtotime(str_replace('/', '-', $payDateRaw)));
                             $totalFaktur = $sheet->getCell('H' . $rowIndex)->getValue();
                             $payment = $sheet->getCell('F' . $rowIndex)->getValue();
-                            $discount = $sheet->getCell('N' . $rowIndex)->getValue();
+                            $discountRaw = $sheet->getCell('N' . $rowIndex)->getValue();
+                            $discount = is_numeric($discountRaw) ? abs($discountRaw) : str_replace('-', '', $discountRaw);
                             $refund = $sheet->getCell('AT' . $rowIndex)->getValue();
 
                             $detail = [

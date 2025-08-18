@@ -175,10 +175,10 @@
                                                         <td><?= $ardkey + 1 ?></td>
                                                         <td><?= $ardvalue->no_faktur ?></td>
                                                         <td>
-                                                            <?php if ($arvalue->source == 'tiktok') { ?>
+                                                            <?php if ($ardvalue->source == 'tiktok') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Tiktok / Tokopedia
-                                                            <?php } else if ($arvalue->source == 'shopee') { ?>
+                                                            <?php } else if ($ardvalue->source == 'shopee') { ?>
                                                                 <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                                                 Shopee
                                                             <?php } else { ?>
