@@ -183,7 +183,9 @@ class Recap extends CI_Controller
                                 $totalDiskon = abs(floatval(str_replace(['.', ','], '', $sheet->getCell('I' . $rowIndex)->getValue())));
                                 $payment = floatval(str_replace(['.', ','], '', $sheet->getCell('AB' . $rowIndex)->getValue()));
                                 $refund = floatval(str_replace(['.', ','], '', $sheet->getCell('J' . $rowIndex)->getValue()));
+                                $income = floatval(str_replace(['.', ','], '', $sheet->getCell('AD' . $rowIndex)->getValue()));
                                 $total = $hargaAsli - $totalDiskon;
+                                $discount = $total - $income;
 
                                 $detail = [
                                     'idacc_shopee' => $id_header,
@@ -193,7 +195,7 @@ class Recap extends CI_Controller
                                     'total_faktur' => $total,
                                     'pay' => $total,
                                     'payment' => $payment,
-                                    'discount' => $totalDiskon,
+                                    'discount' => $discount,
                                     'refund' => $refund,
                                     'is_check' => 0
                                 ];
