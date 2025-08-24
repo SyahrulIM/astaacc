@@ -194,7 +194,7 @@ class Recap extends CI_Controller
                                     'pay_date' => $payDate ? date('Y-m-d', strtotime($payDate)) : null,
                                     'total_faktur' => $total,
                                     'pay' => $total,
-                                    'payment' => $payment,
+                                    'payment' => $income,
                                     'discount' => $discount,
                                     'refund' => $refund,
                                     'is_check' => 0

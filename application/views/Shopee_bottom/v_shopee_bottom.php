@@ -42,6 +42,43 @@
                 <?php endif; ?>
                 <!-- End -->
 
+                <!-- Modal Tambah Bottom Price -->
+                <div class="modal fade" id="addBottom" tabindex="-1" aria-labelledby="addBottomLabel" aria-hidden="true">
+                    <form id="formAddBottom" method="post" action="<?php echo base_url('shopee_bottom/addBottom') ?>">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5">Tambah Bottom Price</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="alertMessage"></div>
+                                    <div class="mb-3">
+                                        <label for="sku" class="form-label">SKU</label>
+                                        <input type="text" class="form-control" id="sku" name="sku" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="bottom" class="form-label">Bottom Price</label>
+                                        <input type="number" class="form-control" id="bottom" name="bottom" required>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!-- End -->
+
+                <div class="row mt-4">
+                    <div class="col">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBottom">
+                            <i class="fa-solid fa-plus"></i> Tambah Bottom Price
+                        </button>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col">
                         <table id="tableproduct" class="display" style="width:100%">
@@ -93,6 +130,45 @@
                             }
                         }
                     });
+                });
+                document.getElementById('formAddBottom').addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+
+                    fetch(this.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest' // Tambahkan header ini
+                            }
+                        })
+                        .then(response => {
+                            // Cek jika response adalah JSON
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.includes('application/json')) {
+                                return response.json();
+                            } else {
+                                return response.text().then(text => {
+                                    throw new Error('Expected JSON, got: ' + text.substring(0, 100));
+                                });
+                            }
+                        })
+                        .then(data => {
+                            if (data.status === 'success') {
+                                alert(data.message);
+                                this.reset();
+                                // Tutup modal Bootstrap
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('addBottom'));
+                                modal.hide();
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Terjadi kesalahan: ' + error.message);
+                        });
                 });
             </script>
             </body>

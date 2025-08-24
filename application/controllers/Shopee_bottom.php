@@ -24,7 +24,7 @@ class Shopee_bottom extends CI_Controller
         // End
         $data = [
             'title' => $title,
-            'acc_shopee_bottom' => $acc_shopee_bottom 
+            'acc_shopee_bottom' => $acc_shopee_bottom
         ];
 
         $this->load->view('theme/v_head', $data);
@@ -64,5 +64,30 @@ class Shopee_bottom extends CI_Controller
         }
 
         redirect('shopee_bottom');
+    }
+
+    public function addBottom()
+    {
+        $sku = $this->input->post('sku');
+        $bottom = $this->input->post('bottom');
+
+        $sku_exist = $this->db->where('sku', $sku)->get('acc_shopee_bottom')->row();
+
+        if ($sku_exist) {
+            echo json_encode(['status' => 'error', 'message' => 'SKU sudah terdaftar']);
+            return; // Tambahkan return
+        } else {
+            $this->db->insert('acc_shopee_bottom', [
+                'sku' => $sku,
+                'bottom' => $bottom,
+                'created_date' => date('Y-m-d H:i:s'),
+                'created_by' => $this->session->userdata('username'),
+                'updated_date' => date('Y-m-d H:i:s'),
+                'updated_by' => $this->session->userdata('username'),
+                'status' => 1
+            ]);
+            echo json_encode(['status' => 'success', 'message' => 'Bottom Price berhasil ditambahkan']);
+            return; // Tambahkan return
+        }
     }
 }

@@ -79,14 +79,10 @@
             <hr>
             <div class="row">
                 <div class="col text-center">
-                    <h3>Summary</h3>
+                    <h3>Summary - Marketplace <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h3>
                 </div>
             </div>
             <div class="row">
-                <div class="col">
-                    <h5>Marketplace</h5>
-                    <h5> : <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h5>
-                </div>
                 <div class="col">
                     <h5>Grand total Nominal Invoice</h5>
                     <h5> : <?= number_format($grand_total_invoice) ?></h5>
@@ -129,7 +125,7 @@
             <hr>
             <div class="row">
                 <div class="col text-center mb-4">
-                    <h3>Summary</h3>
+                    <h3>Summary - Marketplace <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h3>
                     <font size='4'>Setelah Dikurangi Retur</font>
                 </div>
             </div>
