@@ -11,9 +11,9 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <strong>Import Recap (xlsx)</strong>
                             <div class="d-flex flex-wrap gap-2">
-                                <h5>
+                                <strong>
                                     Template:
-                                </h5>
+                                </strong>
                                 <a href="<?= base_url('assets/template_excel/accurate/pembayaran_faktur_suryajayamakmur_250828155006.xlsx') ?>" class="btn btn-sm btn-success" download>
                                     <i class="fas fa-file-excel"></i> Income (Accurate)
                                 </a>
