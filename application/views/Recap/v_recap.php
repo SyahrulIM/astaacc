@@ -10,12 +10,24 @@
                     <div class="card mt-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <strong>Import Recap (xlsx)</strong>
-                            <div>
-                                <a href="<?= base_url('assets/template_excel/Income.sudah dilepas.id.20250101_20250630.xlsx') ?>" class="btn btn-sm btn-success me-2" download>
-                                    <i class="fas fa-file-excel"></i> Download Template Income
+                            <div class="d-flex flex-wrap gap-2">
+                                <h5>
+                                    Template:
+                                </h5>
+                                <a href="<?= base_url('assets/template_excel/accurate/pembayaran_faktur_suryajayamakmur_250828155006.xlsx') ?>" class="btn btn-sm btn-success" download>
+                                    <i class="fas fa-file-excel"></i> Income (Accurate)
                                 </a>
-                                <a href="<?= base_url('assets/template_excel/Order.completed.20250501_20250531.xlsx') ?>" class="btn btn-sm btn-info" download>
-                                    <i class="fas fa-file-excel"></i> Download Template Order
+                                <a href="<?= base_url('assets/template_excel/shopee/Income.sudah dilepas.id.20250801_20250822.xlsx') ?>" class="btn btn-sm btn-success" download>
+                                    <i class="fas fa-file-excel"></i> Income (Shopee)
+                                </a>
+                                <a href="<?= base_url('assets/template_excel/shopee/Order.completed.20250801_20250820.xlsx') ?>" class="btn btn-sm btn-info" download>
+                                    <i class="fas fa-file-excel"></i> Order (Shopee)
+                                </a>
+                                <a href="<?= base_url('assets/template_excel/tiktok/income_20250823043937.xlsx') ?>" class="btn btn-sm btn-success" download>
+                                    <i class="fas fa-file-excel"></i> Income (Tiktok)
+                                </a>
+                                <a href="<?= base_url('assets/template_excel/tiktok/Selesai pesanan-2025-08-20-14_38.xlsx') ?>" class="btn btn-sm btn-info" download>
+                                    <i class="fas fa-file-excel"></i> Selesai (Tiktok)
                                 </a>
                             </div>
                         </div>
