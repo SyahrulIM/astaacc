@@ -68,26 +68,59 @@ class Shopee_bottom extends CI_Controller
 
     public function addBottom()
     {
+        // Get the form data
         $sku = $this->input->post('sku');
         $bottom = $this->input->post('bottom');
 
-        $sku_exist = $this->db->where('sku', $sku)->get('acc_shopee_bottom')->row();
+        // Validate input
+        if (empty($sku) || empty($bottom)) {
+            $response = [
+                'status' => 'error',
+                'message' => 'SKU and Bottom Price are required.'
+            ];
+            echo json_encode($response);
+            return;
+        }
 
-        if ($sku_exist) {
-            echo json_encode(['status' => 'error', 'message' => 'SKU sudah terdaftar']);
-            return; // Tambahkan return
+        // Check if SKU already exists
+        $this->db->where('sku', $sku);
+        $existing = $this->db->get('acc_shopee_bottom')->row();
+
+        if ($existing) {
+            // Update existing record
+            $data = [
+                'price_bottom' => (float) $bottom,
+                'updated_date' => date('Y-m-d H:i:s'),
+                'updated_by' => $this->session->userdata('username')
+            ];
+
+            $this->db->where('sku', $sku);
+            $this->db->update('acc_shopee_bottom', $data);
+
+            $response = [
+                'status' => 'success',
+                'message' => 'Bottom price updated successfully.'
+            ];
         } else {
-            $this->db->insert('acc_shopee_bottom', [
+            // Insert new record
+            $data = [
                 'sku' => $sku,
-                'bottom' => $bottom,
+                'price_bottom' => (float) $bottom,
                 'created_date' => date('Y-m-d H:i:s'),
                 'created_by' => $this->session->userdata('username'),
                 'updated_date' => date('Y-m-d H:i:s'),
                 'updated_by' => $this->session->userdata('username'),
                 'status' => 1
-            ]);
-            echo json_encode(['status' => 'success', 'message' => 'Bottom Price berhasil ditambahkan']);
-            return; // Tambahkan return
+            ];
+
+            $this->db->insert('acc_shopee_bottom', $data);
+
+            $response = [
+                'status' => 'success',
+                'message' => 'Bottom price added successfully.'
+            ];
         }
+
+        echo json_encode($response);
     }
 }
