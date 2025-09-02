@@ -49,34 +49,31 @@ class Additional extends CI_Controller
         $year = $this->input->post('year');
         $additional_revenue = $this->input->post('additional_revenue');
         $marketplace = $this->input->post('marketplace');
-        if (!$additional_revenue) {
+
+        // Jika kosong tapi bukan 0, set ke 0
+        if ($additional_revenue === '' || $additional_revenue === null) {
             $additional_revenue = 0;
         }
 
+        // Validasi wajib
+        if (!$month || !$year) {
+            $this->session->set_flashdata('error', 'Semua field harus diisi!');
+            redirect('additional');
+            return;
+        }
+
+        $start_date = date("Y-m-d", strtotime("$year-$month-01"));
+        $end_date = date("Y-m-t", strtotime($start_date));
+        $now = date('Y-m-d H:i:s');
+        $username = $this->session->userdata('username');
+
         if ($marketplace == 'shopee') {
-            if ($additional_revenue == '') {
-                $additional_revenue = 0;
-            }
-            if (!$month || !$year || !$additional_revenue) {
-                $this->session->set_flashdata('error', 'Semua field harus diisi!');
-                redirect('additional');
-                return;
-            }
-
-            $start_date = date("Y-m-d", strtotime("$year-$month-01"));
-            $end_date = date("Y-m-t", strtotime($start_date));
-
-            // Cek apakah data untuk bulan dan tahun tersebut sudah ada
             $existing = $this->db->get_where('acc_shopee_additional', [
                 'start_date' => $start_date,
                 'end_date' => $end_date
             ])->row();
 
-            $now = date('Y-m-d H:i:s');
-            $username = $this->session->userdata('username');
-
             if ($existing) {
-                // Update data
                 $this->db->where('idacc_shopee_additional', $existing->idacc_shopee_additional);
                 $this->db->update('acc_shopee_additional', [
                     'additional_revenue' => $additional_revenue,
@@ -85,7 +82,6 @@ class Additional extends CI_Controller
                 ]);
                 $this->session->set_flashdata('success', 'Data berhasil diupdate untuk periode tersebut.');
             } else {
-                // Insert baru
                 $this->db->insert('acc_shopee_additional', [
                     'additional_revenue' => $additional_revenue,
                     'start_date' => $start_date,
@@ -97,26 +93,12 @@ class Additional extends CI_Controller
                 $this->session->set_flashdata('success', 'Data berhasil ditambahkan.');
             }
         } else {
-            if (!$month || !$year || !$additional_revenue) {
-                $this->session->set_flashdata('error', 'Semua field harus diisi!');
-                redirect('additional');
-                return;
-            }
-
-            $start_date = date("Y-m-d", strtotime("$year-$month-01"));
-            $end_date = date("Y-m-t", strtotime($start_date));
-
-            // Cek apakah data untuk bulan dan tahun tersebut sudah ada
             $existing = $this->db->get_where('acc_tiktok_additional', [
                 'start_date' => $start_date,
                 'end_date' => $end_date
             ])->row();
 
-            $now = date('Y-m-d H:i:s');
-            $username = $this->session->userdata('username');
-
             if ($existing) {
-                // Update data
                 $this->db->where('idacc_tiktok_additional', $existing->idacc_tiktok_additional);
                 $this->db->update('acc_tiktok_additional', [
                     'additional_revenue' => $additional_revenue,
@@ -125,7 +107,6 @@ class Additional extends CI_Controller
                 ]);
                 $this->session->set_flashdata('success', 'Data berhasil diupdate untuk periode tersebut.');
             } else {
-                // Insert baru
                 $this->db->insert('acc_tiktok_additional', [
                     'additional_revenue' => $additional_revenue,
                     'start_date' => $start_date,
@@ -137,6 +118,7 @@ class Additional extends CI_Controller
                 $this->session->set_flashdata('success', 'Data berhasil ditambahkan.');
             }
         }
+
         redirect('additional');
     }
 }
