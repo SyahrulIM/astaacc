@@ -20,100 +20,108 @@ class Recap extends CI_Controller
 
         // Header recap (tanpa detail)
         $acc_recap = $this->db->query("
-        SELECT 
-            user.full_name AS full_name,
-            acc_shopee.created_date AS created_date,
-            acc_shopee.idacc_shopee AS id_data,
-            acc_shopee.excel_type AS type,
-            'shopee' AS source
-        FROM acc_shopee
-        JOIN user ON user.iduser=acc_shopee.iduser
+            SELECT 
+                user.full_name AS full_name,
+                acc_shopee.created_date AS created_date,
+                acc_shopee.idacc_shopee AS id_data,
+                acc_shopee.excel_type AS type,
+                'shopee' AS source
+            FROM acc_shopee
+            JOIN user ON user.iduser=acc_shopee.iduser
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            acc_tiktok.created_date AS created_date,
-            acc_tiktok.idacc_tiktok AS id_data,
-            acc_tiktok.excel_type AS type,
-            'tiktok' AS source
-        FROM acc_tiktok
-        JOIN user ON user.iduser=acc_tiktok.iduser
+            SELECT 
+                user.full_name AS full_name,
+                acc_tiktok.created_date AS created_date,
+                acc_tiktok.idacc_tiktok AS id_data,
+                acc_tiktok.excel_type AS type,
+                'tiktok' AS source
+            FROM acc_tiktok
+            JOIN user ON user.iduser=acc_tiktok.iduser
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            acc_accurate.created_date AS created_date,
-            acc_accurate.idacc_accurate AS id_data,
-            NULL AS type,
-            'accurate' AS source
-        FROM acc_accurate
-        JOIN user ON user.iduser=acc_accurate.iduser
+            SELECT 
+                user.full_name AS full_name,
+                acc_accurate.created_date AS created_date,
+                acc_accurate.idacc_accurate AS id_data,
+                NULL AS type,
+                'accurate' AS source
+            FROM acc_accurate
+            JOIN user ON user.iduser=acc_accurate.iduser
 
-        ORDER BY created_date DESC
-    ")->result();
+            ORDER BY created_date DESC
+        ")->result();
 
-        // Detail recap
+        // Detail recap (ambil id_detail terbesar kalau ada duplikat no_faktur)
         $acc_recap_detail = $this->db->query("
-        SELECT 
-            d.no_faktur,
-            MAX(d.pay_date) AS pay_date,
-            MAX(d.total_faktur) AS total_faktur,
-            MAX(d.pay) AS pay,
-            MAX(d.discount) AS discount,
-            MAX(d.payment) AS payment,
-            MAX(d.order_date) AS order_date,
-            MAX(d.refund) AS refund,
-            NULL AS id_detail,         -- tambahkan untuk konsistensi
-            'shopee' AS source
-        FROM acc_shopee_detail d
-        JOIN acc_shopee s ON s.idacc_shopee=d.idacc_shopee
-        JOIN user u ON u.iduser=s.iduser
-        GROUP BY d.no_faktur
+            SELECT 
+                d.no_faktur,
+                d.pay_date,
+                d.total_faktur,
+                d.pay,
+                d.discount,
+                d.payment,
+                d.order_date,
+                d.refund,
+                d.idacc_shopee_detail AS id_detail,
+                'shopee' AS source
+            FROM acc_shopee_detail d
+            JOIN (
+                SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
+                FROM acc_shopee_detail
+                GROUP BY no_faktur
+            ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
+            JOIN acc_shopee s ON s.idacc_shopee=d.idacc_shopee
+            JOIN user u ON u.iduser=s.iduser
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            d.no_faktur,
-            MAX(d.pay_date) AS pay_date,
-            MAX(d.total_faktur) AS total_faktur,
-            MAX(d.pay) AS pay,
-            MAX(d.discount) AS discount,
-            MAX(d.payment) AS payment,
-            MAX(d.order_date) AS order_date,
-            MAX(d.refund) AS refund,
-            NULL AS id_detail,         -- konsisten dengan Shopee
-            'tiktok' AS source
-        FROM acc_tiktok_detail d
-        JOIN acc_tiktok t ON t.idacc_tiktok=d.idacc_tiktok
-        JOIN user u ON u.iduser=t.iduser
-        GROUP BY d.no_faktur
+            SELECT 
+                d.no_faktur,
+                d.pay_date,
+                d.total_faktur,
+                d.pay,
+                d.discount,
+                d.payment,
+                d.order_date,
+                d.refund,
+                d.idacc_tiktok_detail AS id_detail,
+                'tiktok' AS source
+            FROM acc_tiktok_detail d
+            JOIN (
+                SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
+                FROM acc_tiktok_detail
+                GROUP BY no_faktur
+            ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
+            JOIN acc_tiktok t ON t.idacc_tiktok=d.idacc_tiktok
+            JOIN user u ON u.iduser=t.iduser
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            d.no_faktur,
-            d.pay_date,
-            d.total_faktur,
-            d.pay,
-            d.discount,
-            d.payment,
-            NULL AS order_date,
-            NULL AS refund,
-            d.idacc_accurate_detail AS id_detail,
-            'accurate' AS source
-        FROM acc_accurate_detail d
-        JOIN (
-            SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-            FROM acc_accurate_detail
-            GROUP BY no_faktur
-        ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
-        JOIN acc_accurate a ON a.idacc_accurate=d.idacc_accurate
-        JOIN user u ON u.iduser=a.iduser
+            SELECT 
+                d.no_faktur,
+                d.pay_date,
+                d.total_faktur,
+                d.pay,
+                d.discount,
+                d.payment,
+                NULL AS order_date,
+                NULL AS refund,
+                d.idacc_accurate_detail AS id_detail,
+                'accurate' AS source
+            FROM acc_accurate_detail d
+            JOIN (
+                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                FROM acc_accurate_detail
+                GROUP BY no_faktur
+            ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
+            JOIN acc_accurate a ON a.idacc_accurate=d.idacc_accurate
+            JOIN user u ON u.iduser=a.iduser
 
-        ORDER BY pay_date DESC;
-    ")->result();
+            ORDER BY pay_date DESC
+        ")->result();
 
         $data = [
             'title' => $title,
