@@ -82,71 +82,47 @@ class Comparison extends CI_Controller
             $sql = "
                 SELECT
                     asd.no_faktur,
-                    asd.order_date AS shopee_order_date,
-                    asd.pay_date AS shopee_pay_date,
-                    asd.total_faktur AS shopee_total_faktur,
-                    asd.discount AS shopee_discount,
-                    asd.payment AS shopee_payment,
-                    asd.refund AS shopee_refund,
-                    asd.note AS note,
-                    asd.is_check AS is_check,
-                    asd.status_dir AS status_dir,
-                    aad.pay_date AS accurate_pay_date,
-                    aad.total_faktur AS accurate_total_faktur,
-                    aad.discount AS accurate_discount,
-                    aad.payment AS accurate_payment,
+                    MAX(asd.order_date) AS shopee_order_date,
+                    MAX(asd.pay_date) AS shopee_pay_date,
+                    MAX(asd.total_faktur) AS shopee_total_faktur,
+                    MAX(asd.discount) AS shopee_discount,
+                    MAX(asd.payment) AS shopee_payment,
+                    MAX(asd.refund) AS shopee_refund,
+                    MAX(asd.note) AS note,
+                    MAX(asd.is_check) AS is_check,
+                    MAX(asd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
                     'shopee' AS source
                 FROM acc_shopee_detail asd
-                JOIN (
-                    SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
-                    FROM acc_shopee_detail
-                    GROUP BY no_faktur
-                ) x ON asd.no_faktur = x.no_faktur AND asd.idacc_shopee_detail = x.max_id
-                LEFT JOIN (
-                    SELECT a1.*
-                    FROM acc_accurate_detail a1
-                    JOIN (
-                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                        FROM acc_accurate_detail
-                        GROUP BY no_faktur
-                    ) y ON a1.no_faktur = y.no_faktur AND a1.idacc_accurate_detail = y.max_id
-                ) aad ON aad.no_faktur = asd.no_faktur
+                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
                 {$whereShopee}
+                GROUP BY asd.no_faktur
 
                 UNION
 
                 SELECT
                     atd.no_faktur,
-                    atd.order_date AS shopee_order_date,
-                    atd.pay_date AS shopee_pay_date,
-                    atd.total_faktur AS shopee_total_faktur,
-                    atd.discount AS shopee_discount,
-                    atd.payment AS shopee_payment,
-                    atd.refund AS shopee_refund,
-                    atd.note AS note,
-                    atd.is_check AS is_check,
-                    atd.status_dir AS status_dir,
-                    aad.pay_date AS accurate_pay_date,
-                    aad.total_faktur AS accurate_total_faktur,
-                    aad.discount AS accurate_discount,
-                    aad.payment AS accurate_payment,
+                    MAX(atd.order_date) AS shopee_order_date,
+                    MAX(atd.pay_date) AS shopee_pay_date,
+                    MAX(atd.total_faktur) AS shopee_total_faktur,
+                    MAX(atd.discount) AS shopee_discount,
+                    MAX(atd.payment) AS shopee_payment,
+                    MAX(atd.refund) AS shopee_refund,
+                    MAX(atd.note) AS note,
+                    MAX(atd.is_check) AS is_check,
+                    MAX(atd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
                     'tiktok' AS source
                 FROM acc_tiktok_detail atd
-                JOIN (
-                    SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
-                    FROM acc_tiktok_detail
-                    GROUP BY no_faktur
-                ) x ON atd.no_faktur = x.no_faktur AND atd.idacc_tiktok_detail = x.max_id
-                LEFT JOIN (
-                    SELECT a1.*
-                    FROM acc_accurate_detail a1
-                    JOIN (
-                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                        FROM acc_accurate_detail
-                        GROUP BY no_faktur
-                    ) y ON a1.no_faktur = y.no_faktur AND a1.idacc_accurate_detail = y.max_id
-                ) aad ON aad.no_faktur = atd.no_faktur
+                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
                 {$whereTiktok}
+                GROUP BY atd.no_faktur
 
                 ORDER BY no_faktur ASC
             ";

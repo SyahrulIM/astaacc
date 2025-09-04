@@ -381,12 +381,12 @@
                             <?php } else { ?>
                                 <td>-</td>
                             <?php } ?>
-                            <?php if ($row->is_check == 0) { ?>
-                                <td><span class="badge bg-warning">Belum</span></td>
-                            <?php } else if ($row->is_check == 1) { ?>
+                            <?php if ($row->is_check == 1) { ?>
                                 <td><span class="badge bg-success">Sudah</span></td>
-                            <?php } else { ?>
+                            <?php } else if ($row->is_check == 0 && empty($highlight)) { ?>
                                 <td><span class="badge bg-success">Safe</span></td>
+                            <?php } else if ($row->is_check == 0) { ?>
+                                <td><span class="badge bg-warning">Belum</span></td>
                             <?php } ?>
                             <td>
                                 <?php
