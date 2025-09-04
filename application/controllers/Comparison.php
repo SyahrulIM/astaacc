@@ -151,31 +151,32 @@ class Comparison extends CI_Controller
 
                 $sku_list = $this->db
                     ->select('sku')
-                    ->from($row->source == 'Shopee' ? 'acc_shopee_detail_details' : 'acc_tiktok_detail_details')
+                    ->from($row->source == 'shopee' ? 'acc_shopee_detail_details' : 'acc_tiktok_detail_details')
                     ->where('no_faktur', $row->no_faktur)
                     ->get()
                     ->result();
-
                 $skus = array_column($sku_list, 'sku');
                 $total_price_bottom = 0;
+
                 if (!empty($skus)) {
-                    // Ambil id terbaru per sku
                     $this->db->select('b.sku, b.price_bottom');
                     $this->db->from('acc_shopee_bottom b');
                     $this->db->join(
                         '(SELECT sku, MAX(idacc_shopee_bottom) as max_id 
                             FROM acc_shopee_bottom 
                             WHERE sku IN ("' . implode('","', $skus) . '") 
-                            GROUP BY sku) as latest',
+                            GROUP BY sku) latest',
                         'b.sku = latest.sku AND b.idacc_shopee_bottom = latest.max_id',
-                        'inner'
+                        'inner',
+                        false // penting biar subquery tidak di-escape oleh CI
                     );
                     $query = $this->db->get()->result();
 
                     foreach ($query as $item) {
-                        $total_price_bottom += (int)$item->price_bottom;
+                        $total_price_bottom += (int) $item->price_bottom;
                     }
                 }
+
                 $row->total_price_bottom = $total_price_bottom;
 
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
@@ -296,6 +297,10 @@ class Comparison extends CI_Controller
                 $additional_revenue = $shopee + $tiktok;
             }
         }
+
+        // echo '<pre>';
+        // print_r($data_comparison);
+        // die;
 
         $data = [
             'title' => 'Comparison',
@@ -425,13 +430,22 @@ class Comparison extends CI_Controller
             $sku_details = $this->db->get()->result();
         }
 
-        // Ambil harga bottom
         $harga_bottom_map = [];
         if (!empty($sku_details)) {
             $sku_list = array_column($sku_details, 'sku');
-            $this->db->select('sku, price_bottom');
-            $this->db->where_in('sku', $sku_list);
-            $bottoms = $this->db->get('acc_shopee_bottom')->result();
+
+            $this->db->select('b.sku, b.price_bottom');
+            $this->db->from('acc_shopee_bottom b');
+            $this->db->join(
+                '(SELECT sku, MAX(idacc_shopee_bottom) as max_id 
+          FROM acc_shopee_bottom 
+          WHERE sku IN ("' . implode('","', $sku_list) . '") 
+          GROUP BY sku) latest',
+                'b.sku = latest.sku AND b.idacc_shopee_bottom = latest.max_id',
+                'inner'
+            );
+            $bottoms = $this->db->get()->result();
+
             foreach ($bottoms as $b) {
                 $harga_bottom_map[$b->sku] = $b->price_bottom;
             }
