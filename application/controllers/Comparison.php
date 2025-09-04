@@ -97,7 +97,15 @@ class Comparison extends CI_Controller
                     MAX(aad.payment) AS accurate_payment,
                     'shopee' AS source
                 FROM acc_shopee_detail asd
-                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = asd.no_faktur
                 {$whereShopee}
                 GROUP BY asd.no_faktur
 
@@ -120,7 +128,15 @@ class Comparison extends CI_Controller
                     MAX(aad.payment) AS accurate_payment,
                     'tiktok' AS source
                 FROM acc_tiktok_detail atd
-                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = atd.no_faktur
                 {$whereTiktok}
                 GROUP BY atd.no_faktur
 
