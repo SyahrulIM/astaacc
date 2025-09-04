@@ -82,47 +82,72 @@ class Comparison extends CI_Controller
             $sql = "
                 SELECT
                     asd.no_faktur,
-                    MAX(asd.order_date) AS shopee_order_date,
-                    MAX(asd.pay_date) AS shopee_pay_date,
-                    MAX(asd.total_faktur) AS shopee_total_faktur,
-                    MAX(asd.discount) AS shopee_discount,
-                    MAX(asd.payment) AS shopee_payment,
-                    MAX(asd.refund) AS shopee_refund,
-                    MAX(asd.note) AS note,
-                    MAX(asd.is_check) AS is_check,
-                    MAX(asd.status_dir) AS status_dir,
-                    MAX(aad.pay_date) AS accurate_pay_date,
-                    MAX(aad.total_faktur) AS accurate_total_faktur,
-                    MAX(aad.discount) AS accurate_discount,
-                    MAX(aad.payment) AS accurate_payment,
+                    asd.order_date AS shopee_order_date,
+                    asd.pay_date AS shopee_pay_date,
+                    asd.total_faktur AS shopee_total_faktur,
+                    asd.discount AS shopee_discount,
+                    asd.payment AS shopee_payment,
+                    asd.refund AS shopee_refund,
+                    asd.note AS note,
+                    asd.is_check AS is_check,
+                    asd.status_dir AS status_dir,
+                    aad.pay_date AS accurate_pay_date,
+                    aad.total_faktur AS accurate_total_faktur,
+                    aad.discount AS accurate_discount,
+                    aad.payment AS accurate_payment,
                     'shopee' AS source
                 FROM acc_shopee_detail asd
-                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
+                JOIN (
+                    SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
+                    FROM acc_shopee_detail
+                    GROUP BY no_faktur
+                ) x ON asd.no_faktur = x.no_faktur AND asd.idacc_shopee_detail = x.max_id
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) y ON a1.no_faktur = y.no_faktur AND a1.idacc_accurate_detail = y.max_id
+                ) aad ON aad.no_faktur = asd.no_faktur
                 {$whereShopee}
-                GROUP BY asd.no_faktur
 
                 UNION
 
                 SELECT
                     atd.no_faktur,
-                    MAX(atd.order_date) AS shopee_order_date,
-                    MAX(atd.pay_date) AS shopee_pay_date,
-                    MAX(atd.total_faktur) AS shopee_total_faktur,
-                    MAX(atd.discount) AS shopee_discount,
-                    MAX(atd.payment) AS shopee_payment,
-                    MAX(atd.refund) AS shopee_refund,
-                    MAX(atd.note) AS note,
-                    MAX(atd.is_check) AS is_check,
-                    MAX(atd.status_dir) AS status_dir,
-                    MAX(aad.pay_date) AS accurate_pay_date,
-                    MAX(aad.total_faktur) AS accurate_total_faktur,
-                    MAX(aad.discount) AS accurate_discount,
-                    MAX(aad.payment) AS accurate_payment,
+                    atd.order_date AS shopee_order_date,
+                    atd.pay_date AS shopee_pay_date,
+                    atd.total_faktur AS shopee_total_faktur,
+                    atd.discount AS shopee_discount,
+                    atd.payment AS shopee_payment,
+                    atd.refund AS shopee_refund,
+                    atd.note AS note,
+                    atd.is_check AS is_check,
+                    atd.status_dir AS status_dir,
+                    aad.pay_date AS accurate_pay_date,
+                    aad.total_faktur AS accurate_total_faktur,
+                    aad.discount AS accurate_discount,
+                    aad.payment AS accurate_payment,
                     'tiktok' AS source
                 FROM acc_tiktok_detail atd
-                LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
+                JOIN (
+                    SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
+                    FROM acc_tiktok_detail
+                    GROUP BY no_faktur
+                ) x ON atd.no_faktur = x.no_faktur AND atd.idacc_tiktok_detail = x.max_id
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) y ON a1.no_faktur = y.no_faktur AND a1.idacc_accurate_detail = y.max_id
+                ) aad ON aad.no_faktur = atd.no_faktur
                 {$whereTiktok}
-                GROUP BY atd.no_faktur
+
                 ORDER BY no_faktur ASC
             ";
 
@@ -142,10 +167,22 @@ class Comparison extends CI_Controller
                 $skus = array_column($sku_list, 'sku');
                 $total_price_bottom = 0;
                 if (!empty($skus)) {
-                    $this->db->select_sum('price_bottom', 'total_price_bottom');
-                    $this->db->where_in('sku', $skus);
-                    $result_bottom = $this->db->get('acc_shopee_bottom')->row();
-                    $total_price_bottom = $result_bottom->total_price_bottom ?? 0;
+                    // Ambil id terbaru per sku
+                    $this->db->select('b.sku, b.price_bottom');
+                    $this->db->from('acc_shopee_bottom b');
+                    $this->db->join(
+                        '(SELECT sku, MAX(idacc_shopee_bottom) as max_id 
+                            FROM acc_shopee_bottom 
+                            WHERE sku IN ("' . implode('","', $skus) . '") 
+                            GROUP BY sku) as latest',
+                        'b.sku = latest.sku AND b.idacc_shopee_bottom = latest.max_id',
+                        'inner'
+                    );
+                    $query = $this->db->get()->result();
+
+                    foreach ($query as $item) {
+                        $total_price_bottom += (int)$item->price_bottom;
+                    }
                 }
                 $row->total_price_bottom = $total_price_bottom;
 
@@ -242,28 +279,23 @@ class Comparison extends CI_Controller
             $additional_revenue = 0;
 
             if ($marketplace_filter == 'Shopee') {
-                // Shopee only
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
                 $additional_data = $this->db->get('acc_shopee_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
             } elseif ($marketplace_filter == 'TikTok') {
-                // TikTok only
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
                 $additional_data = $this->db->get('acc_tiktok_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
             } else {
-                // All marketplaces → sum both
-                // Shopee
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
                 $shopee = $this->db->get('acc_shopee_additional')->row()->additional_revenue ?? 0;
 
-                // TikTok
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
@@ -324,86 +356,108 @@ class Comparison extends CI_Controller
         }
 
         if ($source == 'shopee') {
-            // Ambil data detail Shopee
+            // Ambil row terakhir Shopee + Accurate terakhir
             $this->db->select('
-            MAX(sd.total_faktur) AS mp_total_faktur,
-            MAX(sd.discount) AS mp_discount,
-            MAX(sd.payment) AS mp_payment,
-            MAX(sd.refund) AS mp_refund,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment
+            sd.no_faktur,
+            sd.total_faktur,
+            sd.discount,
+            sd.payment,
+            sd.refund,
+            aad.total_faktur AS accurate_total_faktur,
+            aad.discount AS accurate_discount,
+            aad.payment AS accurate_payment
         ');
             $this->db->from('acc_shopee_detail sd');
-            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = sd.no_faktur', 'left');
-            $this->db->where('sd.no_faktur', $no_faktur);
+            $this->db->join(
+                "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
+                "sd.no_faktur = x.no_faktur",
+                "left"
+            );
+            $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
+            $this->db->where("sd.idacc_shopee_detail = (
+            SELECT MAX(idacc_shopee_detail) 
+            FROM acc_shopee_detail 
+            WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+        )");
             $detail = $this->db->get()->row();
 
-            // Ambil detail SKU
-            $this->db->distinct();
-            $this->db->select('no_faktur, sku, name_product, price_after_discount');
-            $this->db->where('no_faktur', $no_faktur);
-            $sku_details = $this->db->get('acc_shopee_detail_details')->result();
-
-            // Ambil harga bottom
-            $harga_bottom_map = [];
-            if (!empty($sku_details)) {
-                $sku_list = array_column($sku_details, 'sku');
-                $this->db->select('sku, price_bottom');
-                $this->db->where_in('sku', $sku_list);
-                $bottoms = $this->db->get('acc_shopee_bottom')->result();
-                foreach ($bottoms as $b) {
-                    $harga_bottom_map[$b->sku] = $b->price_bottom;
-                }
-            }
+            // Ambil detail SKU Shopee (unik per SKU)
+            $this->db->select('d.no_faktur, d.sku, d.name_product, d.price_after_discount');
+            $this->db->from('acc_shopee_detail_details d');
+            $this->db->join(
+                "(SELECT sku, MAX(idacc_shopee_detail_details) AS max_id 
+                FROM acc_shopee_detail_details 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . " 
+                GROUP BY sku) x",
+                "d.idacc_shopee_detail_details = x.max_id"
+            );
+            $sku_details = $this->db->get()->result();
         } else {
-            // Ambil data detail TikTok
+            // Ambil row terakhir TikTok + Accurate terakhir
             $this->db->select('
-            MAX(td.total_faktur) AS mp_total_faktur,
-            MAX(td.discount) AS mp_discount,
-            MAX(td.payment) AS mp_payment,
-            MAX(td.refund) AS mp_refund,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment
+            td.no_faktur,
+            td.total_faktur,
+            td.discount,
+            td.payment,
+            td.refund,
+            aad.total_faktur AS accurate_total_faktur,
+            aad.discount AS accurate_discount,
+            aad.payment AS accurate_payment
         ');
             $this->db->from('acc_tiktok_detail td');
-            $this->db->join('acc_accurate_detail aad', 'aad.no_faktur = td.no_faktur', 'left');
-            $this->db->where('td.no_faktur', $no_faktur);
+            $this->db->join(
+                "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
+                "td.no_faktur = x.no_faktur",
+                "left"
+            );
+            $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
+            $this->db->where("td.idacc_tiktok_detail = (
+            SELECT MAX(idacc_tiktok_detail) 
+            FROM acc_tiktok_detail 
+            WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+        )");
             $detail = $this->db->get()->row();
 
-            // Ambil detail SKU
-            $this->db->distinct();
-            $this->db->select('no_faktur, sku, name_product, price_after_discount');
-            $this->db->where('no_faktur', $no_faktur);
-            $sku_details = $this->db->get('acc_tiktok_detail_details')->result();
+            // Ambil detail SKU TikTok (unik per SKU)
+            $this->db->select('d.no_faktur, d.sku, d.name_product, d.price_after_discount');
+            $this->db->from('acc_tiktok_detail_details d');
+            $this->db->join(
+                "(SELECT sku, MAX(idacc_tiktok_detail_details) AS max_id 
+                    FROM acc_tiktok_detail_details 
+                    WHERE no_faktur = " . $this->db->escape($no_faktur) . " 
+                    GROUP BY sku) x",
+                "d.idacc_tiktok_detail_details = x.max_id"
+            );
+            $sku_details = $this->db->get()->result();
+        }
 
-            // Ambil harga bottom
-            $harga_bottom_map = [];
-            if (!empty($sku_details)) {
-                $sku_list = array_column($sku_details, 'sku');
-                $this->db->select('sku, price_bottom');
-                $this->db->where_in('sku', $sku_list);
-                $bottoms = $this->db->get('acc_shopee_bottom')->result();
-                foreach ($bottoms as $b) {
-                    $harga_bottom_map[$b->sku] = $b->price_bottom;
-                }
+        // Ambil harga bottom
+        $harga_bottom_map = [];
+        if (!empty($sku_details)) {
+            $sku_list = array_column($sku_details, 'sku');
+            $this->db->select('sku, price_bottom');
+            $this->db->where_in('sku', $sku_list);
+            $bottoms = $this->db->get('acc_shopee_bottom')->result();
+            foreach ($bottoms as $b) {
+                $harga_bottom_map[$b->sku] = $b->price_bottom;
             }
         }
 
         // Output Ringkasan
         echo '<h5>Perbandingan Data (' . ucfirst($source) . ') - ' . $no_faktur . '</h5>
-    <table class="table table-bordered mb-4">
-        <thead><tr><th></th><th>' . ucfirst($source) . '</th><th>Accurate</th></tr></thead>
-        <tr><th>Total Faktur</th><td>' . number_format($detail->mp_total_faktur) . '</td><td>' . number_format($detail->accurate_total_faktur) . '</td></tr>
-        <tr><th>Discount</th><td>' . number_format($detail->mp_discount) . '</td><td>' . number_format($detail->accurate_discount) . '</td></tr>
-        <tr><th>Pembayaran</th><td>' . number_format($detail->mp_payment) . '</td><td>' . number_format($detail->accurate_payment) . '</td></tr>
-        <tr><th>Refund</th><td>' . number_format($detail->mp_refund) . '</td><td>0</td></tr>
-    </table>';
+        <table class="table table-bordered mb-4">
+            <thead><tr><th></th><th>' . ucfirst($source) . '</th><th>Accurate</th></tr></thead>
+            <tr><th>Total Faktur</th><td>' . number_format($detail->total_faktur ?? 0) . '</td><td>' . number_format($detail->accurate_total_faktur ?? 0) . '</td></tr>
+            <tr><th>Discount</th><td>' . number_format($detail->discount ?? 0) . '</td><td>' . number_format($detail->accurate_discount ?? 0) . '</td></tr>
+            <tr><th>Pembayaran</th><td>' . number_format($detail->payment ?? 0) . '</td><td>' . number_format($detail->accurate_payment ?? 0) . '</td></tr>
+            <tr><th>Refund</th><td>' . number_format($detail->refund ?? 0) . '</td><td>0</td></tr>
+        </table>';
 
         // Output SKU
         echo '<h5>Detail Produk (' . ucfirst($source) . ' & Bottom)</h5>
-    <table class="table table-striped table-bordered">
+        <table class="table table-striped table-bordered">
         <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead><tbody>';
 
         foreach ($sku_details as $item) {

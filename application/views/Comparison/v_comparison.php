@@ -294,7 +294,7 @@
                             <font size="2">ACC</font>
                         </th>
                         <th>
-                            Invoice vs Bottom
+                            Payment vs Bottom
                         </th>
                         <th>Keterangan</th>
                         <th>Status Check</th>
@@ -315,9 +315,7 @@
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
                         }
                         $highlight = (
-                            ($ratio_diference > $ratio_limit ||
-                                ($row->shopee_refund ?? 0) < 0 ||
-                                ($row->total_price_bottom ?? 0) > ($row->shopee_total_faktur ?? 0))
+                            ($ratio_diference > $ratio_limit)
                             && ($row->status_dir !== 'Allowed')
                         ) ? 'style="background-color: #f8d7da;"' : '';
                     ?>
@@ -370,12 +368,12 @@
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <?php if ($row->total_price_bottom > $row->shopee_total_faktur) { ?>
+                                <?php if ($row->total_price_bottom > $row->accurate_payment) { ?>
                                     <span class="badge bg-warning">
                                         < Bottom</span>
                                         <?php } else { ?>
                                             <span class="badge bg-success">
-                                                Invoice ></span>
+                                                Payment ></span>
                                         <?php } ?>
                             </td>
                             <?php if (isset($row->note)) { ?>
@@ -385,8 +383,10 @@
                             <?php } ?>
                             <?php if ($row->is_check == 0) { ?>
                                 <td><span class="badge bg-warning">Belum</span></td>
-                            <?php } else { ?>
+                            <?php } else if ($row->is_check == 1) { ?>
                                 <td><span class="badge bg-success">Sudah</span></td>
+                            <?php } else { ?>
+                                <td><span class="badge bg-success">Safe</span></td>
                             <?php } ?>
                             <td>
                                 <?php
@@ -444,7 +444,7 @@
                 }
             },
             columnDefs: [{
-                targets: 0, // index kolom checkbox
+                targets: 0,
                 orderable: false
             }]
         });

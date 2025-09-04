@@ -19,12 +19,21 @@ class Bottom extends CI_Controller
         $title = 'Bottom';
 
         // Start acc_shopee_bottom
-        $this->db->select('sku, price_bottom');
-        $acc_shopee_bottom = $this->db->get('acc_shopee_bottom')->result();
+        $this->db->select('b.sku, b.idacc_shopee_bottom, b.price_bottom');
+        $this->db->from('acc_shopee_bottom b');
+        $this->db->join(
+            '(SELECT sku, MAX(idacc_shopee_bottom) as max_id 
+        FROM acc_shopee_bottom 
+        GROUP BY sku) as latest',
+            'b.sku = latest.sku AND b.idacc_shopee_bottom = latest.max_id',
+            'inner'
+        );
+        $acc_shopee_bottom = $this->db->get()->result();
         // End
+
         $data = [
             'title' => $title,
-            'acc_shopee_bottom' => $acc_shopee_bottom 
+            'acc_shopee_bottom' => $acc_shopee_bottom
         ];
 
         $this->load->view('theme/v_head', $data);

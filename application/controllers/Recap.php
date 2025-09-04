@@ -18,7 +18,6 @@ class Recap extends CI_Controller
     {
         $title = 'Import Payment';
 
-        // Header recap (tanpa detail)
         $acc_recap = $this->db->query("
             SELECT 
                 user.full_name AS full_name,
@@ -54,7 +53,6 @@ class Recap extends CI_Controller
             ORDER BY created_date DESC
         ")->result();
 
-        // Detail recap (ambil id_detail terbesar kalau ada duplikat no_faktur)
         $acc_recap_detail = $this->db->query("
             SELECT 
                 d.no_faktur,
@@ -355,7 +353,6 @@ class Recap extends CI_Controller
         }
         redirect('recap');
     }
-
 
     public function detail_faktur()
     {
