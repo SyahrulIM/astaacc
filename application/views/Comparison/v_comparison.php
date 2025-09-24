@@ -330,7 +330,7 @@
                     $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                     foreach ($data_comparison as $row) :
                         // Hitung Selisih Ratio
-                        if ($row->shopee_total_faktur == 0 && $row->accurate_payment == 0) {
+                        if (!$row->accurate_payment) {
                             $ratio_diference = 0; // tidak ada transaksi
                         } else {
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100;
@@ -367,7 +367,7 @@
                         <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
                         <td class="dt-type-numeric">
                             <?php
-                                if ($row->shopee_total_faktur == 0 && $row->accurate_payment == 0) {
+                                if (!$row->accurate_payment) {
                                     echo '0%';
                                 } else {
                                     echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100, 2) . '%';
