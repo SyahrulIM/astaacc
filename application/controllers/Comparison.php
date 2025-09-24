@@ -181,9 +181,7 @@ class Comparison extends CI_Controller
 
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
                 if (
-                    empty($status_filter) ||
-                    ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) ||
-                    ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
+                    empty($status_filter) || ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) || ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
                 ) {
 
                     $shopee = (float) ($row->shopee_total_faktur ?? 0);
@@ -191,15 +189,10 @@ class Comparison extends CI_Controller
                     $is_retur = ($row->shopee_refund ?? 0) < 0;
 
                     $is_match = (
-                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
-                        ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
-                        ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)
-                    );
+                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) && ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) && ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0));
 
                     if (
-                        empty($matching_status) ||
-                        ($matching_status === 'match' && $is_match) ||
-                        ($matching_status === 'mismatch' && !$is_match)
+                        empty($matching_status) || ($matching_status === 'match' && $is_match) || ($matching_status === 'mismatch' && !$is_match)
                     ) {
 
                         if ($row->source == 'TikTok') {
@@ -221,7 +214,8 @@ class Comparison extends CI_Controller
                             }
 
                             if ($accurate > 0 && $shopee > 0) {
-                                $ratio = (($shopee - $accurate) / $accurate) * 100;
+                                // $ratio = (($shopee - $accurate) / $accurate) * 100;
+                                $ratio = (($shopee - $accurate) / $shopee) * 100;
                                 if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
                                 if ($ratio > $ratio_limit) {
                                     $exceed_ratio_count_tiktok++;
@@ -249,7 +243,8 @@ class Comparison extends CI_Controller
                             }
 
                             if ($accurate > 0 && $shopee > 0) {
-                                $ratio = (($shopee - $accurate) / $accurate) * 100;
+                                // $ratio = (($shopee - $accurate) / $accurate) * 100;
+                                $ratio = (($shopee - $accurate) / $shopee) * 100;
                                 if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
                                 if ($ratio > $ratio_limit) {
                                     $exceed_ratio_count++;
@@ -471,7 +466,7 @@ class Comparison extends CI_Controller
             echo '<tr>
             <td>' . htmlspecialchars($item->sku) . '</td>
             <td>' . htmlspecialchars($item->name_product) . '</td>
-            <td>' . number_format((float)$item->price_after_discount) . '</td>
+            <td>' . number_format((float) $item->price_after_discount) . '</td>
             <td>' . (is_numeric($bottom) ? number_format($bottom) : '-') . '</td>
         </tr>';
         }
@@ -630,9 +625,7 @@ class Comparison extends CI_Controller
 
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
                 if (
-                    empty($status_filter) ||
-                    ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) ||
-                    ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
+                    empty($status_filter) || ($status_filter == 'Sudah Bayar' && $is_sudah_bayar) || ($status_filter == 'Belum Bayar' && !$is_sudah_bayar)
                 ) {
 
                     $shopee = (float) ($row->shopee_total_faktur ?? 0);
@@ -640,15 +633,10 @@ class Comparison extends CI_Controller
                     $is_retur = ($row->shopee_refund ?? 0) < 0;
 
                     $is_match = (
-                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
-                        ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
-                        ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)
-                    );
+                        ($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) && ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) && ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0));
 
                     if (
-                        empty($matching_status) ||
-                        ($matching_status === 'match' && $is_match) ||
-                        ($matching_status === 'mismatch' && !$is_match)
+                        empty($matching_status) || ($matching_status === 'match' && $is_match) || ($matching_status === 'mismatch' && !$is_match)
                     ) {
                         if ($accurate > 0 && $shopee > 0) {
                             $ratio = (($shopee - $accurate) / $accurate) * 100;
@@ -747,9 +735,7 @@ class Comparison extends CI_Controller
             $sheet->setCellValue("N$rowNumber", round($ratio_diference, 2) . '%');
             $sheet->setCellValue("O$rowNumber", ($row->shopee_refund ?? 0) < 0 ? 'Retur' : 'Pembayaran');
 
-            $match = (($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) &&
-                ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) &&
-                ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)) ? 'Match' : 'Mismatch';
+            $match = (($row->accurate_total_faktur ?? 0) == ($row->shopee_total_faktur ?? 0) && ($row->accurate_discount ?? 0) == ($row->shopee_discount ?? 0) && ($row->accurate_payment ?? 0) == ($row->shopee_payment ?? 0)) ? 'Match' : 'Mismatch';
             $sheet->setCellValue("P$rowNumber", $match);
 
             $payment_status = !empty($row->accurate_payment) ? 'Sudah Bayar' : 'Belum Bayar';
@@ -762,9 +748,7 @@ class Comparison extends CI_Controller
             if ($row->status_dir === 'Allowed') {
                 $status_dir = 'Allowed by Dir';
             } elseif (
-                $ratio_diference > $ratio_limit ||
-                ($row->shopee_refund ?? 0) < 0 ||
-                ($row->total_price_bottom ?? 0) > $shopee_total
+                $ratio_diference > $ratio_limit || ($row->shopee_refund ?? 0) < 0 || ($row->total_price_bottom ?? 0) > $shopee_total
             ) {
                 $status_dir = 'Unsafe';
             } else {

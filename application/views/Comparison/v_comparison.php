@@ -95,12 +95,22 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice - $grand_total_payment) ?></h5>
                 </div>
-                <div class="col">
+                <!-- <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
                         <?php
                         echo $grand_total_payment > 0
                             ? round((($grand_total_invoice - $grand_total_payment) / $grand_total_payment) * 100, 2)
+                            : 0;
+                        ?>%
+                    </h5>
+                </div> -->
+                <div class="col">
+                    <h5>Ratio Selisih</h5>
+                    <h5> :
+                        <?php
+                        echo $grand_total_invoice > 0
+                            ? round((($grand_total_invoice - $grand_total_payment) / $grand_total_invoice) * 100, 2)
                             : 0;
                         ?>%
                     </h5>
@@ -142,12 +152,22 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice_after_retur - $grand_total_payment_after_retur) ?></h5>
                 </div>
-                <div class="col">
+                <!-- <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
                         <?php
                         echo $grand_total_payment_after_retur > 0
                             ? round((($grand_total_invoice_after_retur - $grand_total_payment_after_retur) / $grand_total_payment_after_retur) * 100, 2)
+                            : 0;
+                        ?>%
+                    </h5>
+                </div> -->
+                <div class="col">
+                    <h5>Ratio Selisih</h5>
+                    <h5> :
+                        <?php
+                        echo $grand_total_invoice_after_retur > 0
+                            ? round((($grand_total_invoice_after_retur - $grand_total_payment_after_retur) / $grand_total_invoice_after_retur) * 100, 2)
                             : 0;
                         ?>%
                     </h5>
@@ -174,17 +194,17 @@
 
     <!-- Flash messages -->
     <?php if ($this->session->flashdata('error')) : ?>
-        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-            <?= $this->session->flashdata('error') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <?= $this->session->flashdata('error') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     <?php endif; ?>
 
     <?php if ($this->session->flashdata('success')) : ?>
-        <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-            <?= $this->session->flashdata('success') ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+        <?= $this->session->flashdata('success') ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
     <?php endif; ?>
     <!-- End -->
 
@@ -309,87 +329,102 @@
                     $no = 1;
                     $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                     foreach ($data_comparison as $row) :
-                        if ($row->accurate_payment == 0) {
+                        // if ($row->accurate_payment == 0) {
+                        //     $ratio_diference = 0;
+                        // } else {
+                        //     $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
+                        // }
+                        if ($row->shopee_total_faktur == 0) {
                             $ratio_diference = 0;
                         } else {
-                            $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
+                            $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100;
                         }
-                        $highlight = (
-                            ($ratio_diference > $ratio_limit)
-                            && ($row->status_dir !== 'Allowed')
-                        ) ? 'style="background-color: #f8d7da;"' : '';
-                    ?>
-                        <tr <?= $highlight ?>>
-                            <td><input type="checkbox" class="select-row" value="<?= $row->no_faktur ?>"></td>
-                            <td><?= $no++ ?></td>
-                            <td><?= $row->no_faktur ?></td>
-                            <td>
-                                <?php if ($row->source == 'tiktok') { ?>
-                                    <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                    Tiktok / Tokopedia
-                                <?php } else { ?>
-                                    <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                    Shopee
-                                <?php } ?>
-                            </td>
-                            <td><?= $row->shopee_order_date ?? '-' ?></td>
-                            <td><?= $row->accurate_pay_date ?? '-' ?></td>
-                            <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
-                            <td><?= number_format($row->accurate_payment ?? 0) ?></td>
-                            <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
-                            <td class="dt-type-numeric"><?php
-                                                        if ($row->accurate_payment == 0) {
-                                                            echo '0%';
-                                                        } else {
-                                                            echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100) . '%';
-                                                        }
-                                                        ?></td>
-                            <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
-                            <td>
-                                <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
-                            </td>
-                            <td>
-                                <?php
-                                if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0) ||
-                                    ($row->accurate_discount ?? 0) != ($row->shopee_discount ?? 0) ||
-                                    ($row->accurate_payment ?? 0) != ($row->shopee_payment ?? 0)
+                        if (
+                            $ratio_diference > $ratio_limit
+                            && $row->status_dir !== 'Allowed'
+                            && $row->shopee_total_faktur != $row->accurate_payment
+                        ) {
+
+                            $highlight = 'style="background-color: #f8d7da;"';
+                        } else {
+                            $highlight = '';
+                        }
+                        ?>
+                    <tr <?= $highlight ?>>
+                        <td><input type="checkbox" class="select-row" value="<?= $row->no_faktur ?>"></td>
+                        <td><?= $no++ ?></td>
+                        <td><?= $row->no_faktur ?></td>
+                        <td>
+                            <?php if ($row->source == 'tiktok') { ?>
+                            <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            Tiktok / Tokopedia
+                            <?php } else { ?>
+                            <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            Shopee
+                            <?php } ?>
+                        </td>
+                        <td><?= $row->shopee_order_date ?? '-' ?></td>
+                        <td><?= $row->accurate_pay_date ?? '-' ?></td>
+                        <td><?= number_format($row->shopee_total_faktur ?? 0) ?></td>
+                        <td><?= number_format($row->accurate_payment ?? 0) ?></td>
+                        <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
+                        <td class="dt-type-numeric">
+                            <?php
+                                // if ($row->accurate_payment == 0) {
+                                //     echo '0%';
+                                // } else {
+                                //     echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100) . '%';
+                                // }
+                                if ($row->accurate_payment == 0) {
+                                    echo '0%';
+                                } else {
+                                    echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100) . '%';
+                                }
+                                ?>
+                        </td>
+                        <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
+                        <td>
+                            <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
+                        </td>
+                        <td>
+                            <?php
+                                if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0)
                                 ) {
                                     echo '<span class="badge bg-warning">Mismatch</span>';
                                 } else {
                                     echo '<span class="badge bg-success">Match</span>';
                                 }
                                 ?>
-                            </td>
-                            <td>
-                                <?php if (!empty($row->accurate_payment)) : ?>
-                                    <span class="badge bg-success">Sudah Bayar</span>
-                                <?php else : ?>
-                                    <span class="badge bg-warning">Belum Bayar</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if ($row->total_price_bottom > $row->accurate_payment) { ?>
-                                    <span class="badge bg-warning">
-                                        < Bottom</span>
-                                        <?php } else { ?>
-                                            <span class="badge bg-success">
-                                                Payment ></span>
-                                        <?php } ?>
-                            </td>
-                            <?php if (isset($row->note)) { ?>
-                                <td><?= $row->note; ?></td>
-                            <?php } else { ?>
-                                <td>-</td>
+                        </td>
+                        <td>
+                            <?php if (!empty($row->accurate_payment)) : ?>
+                            <span class="badge bg-success">Sudah Bayar</span>
+                            <?php else : ?>
+                            <span class="badge bg-warning">Belum Bayar</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <?php if ($row->total_price_bottom > $row->accurate_payment) { ?>
+                            <span class="badge bg-warning">
+                                < Bottom</span> <?php } else { ?> <span class="badge bg-success">
+                                    Payment >
+                            </span>
                             <?php } ?>
-                            <?php if ($row->is_check == 1) { ?>
-                                <td><span class="badge bg-success">Sudah</span></td>
-                            <?php } else if ($row->is_check == 0 && empty($highlight)) { ?>
-                                <td><span class="badge bg-success">Safe</span></td>
-                            <?php } else if ($row->is_check == 0) { ?>
-                                <td><span class="badge bg-warning">Belum</span></td>
-                            <?php } ?>
-                            <td>
-                                <?php
+                        </td>
+                        <?php if (isset($row->note)) { ?>
+                        <td><?= $row->note; ?></td>
+                        <?php } else { ?>
+                        <td>-</td>
+                        <?php } ?>
+                        <?php if ($row->is_check == 1) { ?>
+                        <td><span class="badge bg-success">Sudah</span></td>
+                        <?php } else if ($row->is_check == 0 && empty($highlight)) { ?>
+                        <td><span class="badge bg-success">Safe</span></td>
+                        <?php } else if ($row->is_check == 0) { ?>
+                        <td><span class="badge bg-warning">Belum</span></td>
+                        <?php } ?>
+                        <td>
+                            <?php
                                 if ($row->status_dir === 'Allowed') {
                                     echo '<span class="badge bg-success">Allowed by Dir</span>';
                                 } elseif ($highlight) {
@@ -398,22 +433,22 @@
                                     echo '<span class="badge bg-success">Safe</span>';
                                 }
                                 ?>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>"><i class="fa-solid fa-list"></i> Detail</button>
-                                <button type="button" class="btn btn-sm btn-info btn-edit-note" data-faktur="<?= $row->no_faktur ?>" data-note="<?= htmlspecialchars($row->note ?? '') ?>"><i class="fa-solid fa-file-pen"></i> Edit Keterangan</button>
-                                <?php if ($highlight) { ?>
-                                    <a href="#" class="btn btn-sm btn-primary btn-final-dir" data-faktur="<?= $row->no_faktur ?>" onclick="return confirm('Yakin ingin set status Allowed untuk faktur ini?')">
-                                        <i class="fa-solid fa-check-double"></i> Final Dir
-                                    </a>
-                                <?php } ?>
-                                <?php if ($row->is_check == 0) { ?>
-                                    <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
-                                        <i class="fa-solid fa-check"></i> Tandai Checking
-                                    </button>
-                                <?php } ?>
-                            </td>
-                        </tr>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success detail-btn" data-faktur="<?= $row->no_faktur ?>"><i class="fa-solid fa-list"></i> Detail</button>
+                            <button type="button" class="btn btn-sm btn-info btn-edit-note" data-faktur="<?= $row->no_faktur ?>" data-note="<?= htmlspecialchars($row->note ?? '') ?>"><i class="fa-solid fa-file-pen"></i> Edit Keterangan</button>
+                            <?php if ($highlight) { ?>
+                            <a href="#" class="btn btn-sm btn-primary btn-final-dir" data-faktur="<?= $row->no_faktur ?>" onclick="return confirm('Yakin ingin set status Allowed untuk faktur ini?')">
+                                <i class="fa-solid fa-check-double"></i> Final Dir
+                            </a>
+                            <?php } ?>
+                            <?php if ($row->is_check == 0) { ?>
+                            <button class="btn btn-xs btn-info btn-checking" data-faktur="<?= $row->no_faktur ?>">
+                                <i class="fa-solid fa-check"></i> Tandai Checking
+                            </button>
+                            <?php } ?>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
