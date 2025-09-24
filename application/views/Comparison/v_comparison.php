@@ -329,22 +329,19 @@
                     $no = 1;
                     $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
                     foreach ($data_comparison as $row) :
-                        // if ($row->accurate_payment == 0) {
-                        //     $ratio_diference = 0;
-                        // } else {
-                        //     $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100;
-                        // }
-                        if ($row->shopee_total_faktur == 0) {
-                            $ratio_diference = 0;
+                        // Hitung Selisih Ratio
+                        if ($row->shopee_total_faktur == 0 && $row->accurate_payment == 0) {
+                            $ratio_diference = 0; // tidak ada transaksi
                         } else {
                             $ratio_diference = (($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100;
                         }
+
+                        // Tentukan highlight
                         if (
                             $ratio_diference > $ratio_limit
                             && $row->status_dir !== 'Allowed'
                             && $row->shopee_total_faktur != $row->accurate_payment
                         ) {
-
                             $highlight = 'style="background-color: #f8d7da;"';
                         } else {
                             $highlight = '';
@@ -370,26 +367,20 @@
                         <td><?= $this->input->get('ratio') ?: 0 ?>%</td>
                         <td class="dt-type-numeric">
                             <?php
-                                // if ($row->accurate_payment == 0) {
-                                //     echo '0%';
-                                // } else {
-                                //     echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->accurate_payment) * 100) . '%';
-                                // }
-                                if ($row->accurate_payment == 0) {
+                                if ($row->shopee_total_faktur == 0 && $row->accurate_payment == 0) {
                                     echo '0%';
                                 } else {
-                                    echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100) . '%';
+                                    echo number_format((($row->shopee_total_faktur - $row->accurate_payment) / $row->shopee_total_faktur) * 100, 2) . '%';
                                 }
                                 ?>
                         </td>
-                        <td><?= number_format($row->shopee_total_faktur - $row->accurate_payment ?? 0) ?></td>
+                        <td><?= number_format(($row->shopee_total_faktur ?? 0) - ($row->accurate_payment ?? 0)) ?></td>
                         <td>
                             <?= ($row->shopee_refund ?? 0) < 0 ? '<span class="badge bg-warning">Retur</span>' : '<span class="badge bg-success">Pembayaran</span>' ?>
                         </td>
                         <td>
                             <?php
-                                if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0)
-                                ) {
+                                if (($row->accurate_total_faktur ?? 0) != ($row->shopee_total_faktur ?? 0)) {
                                     echo '<span class="badge bg-warning">Mismatch</span>';
                                 } else {
                                     echo '<span class="badge bg-success">Match</span>';
@@ -406,8 +397,7 @@
                         <td>
                             <?php if ($row->total_price_bottom > $row->accurate_payment) { ?>
                             <span class="badge bg-warning">
-                                < Bottom</span> <?php } else { ?> <span class="badge bg-success">
-                                    Payment >
+                                < Bottom</span> <?php } else { ?> <span class="badge bg-success">Payment >
                             </span>
                             <?php } ?>
                         </td>
