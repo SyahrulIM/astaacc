@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asta Warehouse - Login</title>
+  <title>Asta Acol - Login</title>
   <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="<?php echo base_url('assets/image/favicon.ico'); ?>">
@@ -27,10 +27,10 @@
             </div>
 
             <!-- Display Flashdata Message for Login Failure -->
-            <?php if ($this->session->flashdata('error')): ?>
-              <div class="alert alert-danger" role="alert">
-                <?php echo $this->session->flashdata('error'); ?>
-              </div>
+            <?php if ($this->session->flashdata('error')) : ?>
+            <div class="alert alert-danger" role="alert">
+              <?php echo $this->session->flashdata('error'); ?>
+            </div>
             <?php endif; ?>
 
             <form action="<?php echo base_url('auth/login'); ?>" method="post">
