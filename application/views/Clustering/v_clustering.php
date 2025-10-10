@@ -34,17 +34,17 @@
 
                 <!-- Flash messages -->
                 <?php if ($this->session->flashdata('error')) : ?>
-                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                        <?= $this->session->flashdata('error') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                    <?= $this->session->flashdata('error') ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <?php endif; ?>
 
                 <?php if ($this->session->flashdata('success')) : ?>
-                    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                        <?= $this->session->flashdata('success') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                    <?= $this->session->flashdata('success') ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <?php endif; ?>
                 <!-- End -->
 
@@ -113,39 +113,39 @@
                                     </th>
                                     <th>Jumlah Faktur</th>
                                     <?php if (!isset($filter_mode) || $filter_mode !== 'district') : ?>
-                                        <th>Action</th>
+                                    <th>Action</th>
                                     <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php $no = 1;
                                 foreach ($clustering_data as $row) : ?>
-                                    <tr>
-                                        <td><?= $no++ ?></td>
-                                        <td><?= $row->label ?? 'Tidak diketahui' ?></td>
-                                        <td><?= $row->jumlah_no_faktur ?></td>
+                                <tr>
+                                    <td><?= $no++ ?></td>
+                                    <td><?= $row->label ?? 'Tidak diketahui' ?></td>
+                                    <td><?= $row->jumlah_no_faktur ?></td>
 
-                                        <?php if (!isset($filter_mode)) : ?>
-                                            <td>
-                                                <a href="<?= base_url('clustering/province?prov_id=' . $row->prov_id . '&prov_name=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
-                                                    Lihat Kota
-                                                </a>
-                                                <button class="btn btn-sm btn-success btn-produk" data-prov-id="<?= $row->prov_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="prov">
-                                                    Lihat Produk
-                                                </button>
-                                            </td>
-                                        <?php elseif ($filter_mode === 'city') : ?>
-                                            <td>
-                                                <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&city_name=' . urlencode($row->label) . '&prov_id=' . $this->input->get('prov_id') . '&prov_name=' . urlencode($this->input->get('prov_name')) . '&order_start=' . $order_start . '&order_end=' . $order_end) ?>" class="btn btn-sm btn-primary">
-                                                    Lihat Kecamatan
-                                                </a>
-                                                <button class="btn btn-sm btn-success btn-produk" data-city-id="<?= $row->city_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="city">
-                                                    Lihat Produk
-                                                </button>
-                                            </td>
-                                        <?php endif; ?>
+                                    <?php if (!isset($filter_mode)) : ?>
+                                    <td>
+                                        <a href="<?= base_url('clustering/province?prov_id=' . $row->prov_id . '&prov_name=' . urlencode($row->label) . '&order_start=' . $this->input->get('order_start') . '&order_end=' . $this->input->get('order_end')) ?>" class="btn btn-sm btn-primary">
+                                            Lihat Kota
+                                        </a>
+                                        <button class="btn btn-sm btn-success btn-produk" data-prov-id="<?= $row->prov_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="prov">
+                                            Lihat Produk
+                                        </button>
+                                    </td>
+                                    <?php elseif ($filter_mode === 'city') : ?>
+                                    <td>
+                                        <a href="<?= base_url('clustering/district?city_id=' . $row->city_id . '&city_name=' . urlencode($row->label) . '&prov_id=' . $this->input->get('prov_id') . '&prov_name=' . urlencode($this->input->get('prov_name')) . '&order_start=' . $order_start . '&order_end=' . $order_end) ?>" class="btn btn-sm btn-primary">
+                                            Lihat Kecamatan
+                                        </a>
+                                        <button class="btn btn-sm btn-success btn-produk" data-city-id="<?= $row->city_id ?>" data-label="<?= $row->label ?>" data-order-start="<?= $order_start ?>" data-order-end="<?= $order_end ?>" data-type="city">
+                                            Lihat Produk
+                                        </button>
+                                    </td>
+                                    <?php endif; ?>
 
-                                    </tr>
+                                </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
@@ -276,9 +276,10 @@
                     $.ajax({
                         url: url,
                         method: 'GET',
+                        dataType: 'json', // <-- penting
                         success: function(res) {
                             $('#produk-loading').hide();
-                            if (res.length > 0) {
+                            if (res && res.length > 0) {
                                 let html = '';
                                 res.forEach((item, index) => {
                                     html += `
@@ -294,8 +295,9 @@
                                 $('#tableProduk tbody').html('<tr><td colspan="4" class="text-center">Tidak ada data</td></tr>');
                             }
                         },
-                        error: function() {
+                        error: function(xhr, status, error) {
                             $('#produk-loading').hide();
+                            console.error("Error:", error); // biar ketahuan errornya
                             $('#tableProduk tbody').html('<tr><td colspan="4" class="text-danger text-center">Gagal memuat data</td></tr>');
                         }
                     });
