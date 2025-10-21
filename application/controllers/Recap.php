@@ -18,50 +18,55 @@ class Recap extends CI_Controller
     {
         $title = 'Import Payment';
 
+        // Query untuk recap data
         $acc_recap = $this->db->query("
-            SELECT 
-                user.full_name AS full_name,
-                acc_shopee.created_date AS created_date,
-                acc_shopee.idacc_shopee AS id_data,
-                acc_shopee.excel_type AS type,
-                'shopee' AS source
-            FROM acc_shopee
-            JOIN user ON user.iduser=acc_shopee.iduser
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_shopee.idacc_shopee AS id_data,
+            acc_shopee.excel_type AS type,
+            'shopee' AS source
+        FROM acc_shopee
+        JOIN user ON user.iduser = acc_shopee.iduser
+        WHERE acc_shopee.created_date IS NOT NULL
 
-            UNION ALL
+        UNION ALL
 
-            SELECT 
-                user.full_name AS full_name,
-                acc_tiktok.created_date AS created_date,
-                acc_tiktok.idacc_tiktok AS id_data,
-                acc_tiktok.excel_type AS type,
-                'tiktok' AS source
-            FROM acc_tiktok
-            JOIN user ON user.iduser=acc_tiktok.iduser
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_tiktok.idacc_tiktok AS id_data,
+            acc_tiktok.excel_type AS type,
+            'tiktok' AS source
+        FROM acc_tiktok
+        JOIN user ON user.iduser = acc_tiktok.iduser
+        WHERE acc_tiktok.created_date IS NOT NULL
 
-            UNION ALL
+        UNION ALL
 
-            SELECT 
-                user.full_name AS full_name,
-                acc_accurate.created_date AS created_date,
-                acc_accurate.idacc_accurate AS id_data,
-                NULL AS type,
-                'accurate' AS source
-            FROM acc_accurate
-            JOIN user ON user.iduser=acc_accurate.iduser
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_accurate.idacc_accurate AS id_data,
+            'accurate' AS type,  -- Diubah dari NULL menjadi string
+            'accurate' AS source
+        FROM acc_accurate
+        JOIN user ON user.iduser = acc_accurate.iduser
+        WHERE acc_accurate.created_date IS NOT NULL
 
-            ORDER BY created_date DESC
-        ")->result();
+        ORDER BY created_date DESC
+    ")->result();
 
+        // Query untuk detail data
         $acc_recap_detail = $this->db->query("
             SELECT 
                 d.no_faktur,
-                d.pay_date,
+                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
                 d.total_faktur,
                 d.pay,
                 d.discount,
                 d.payment,
-                d.order_date,
+                DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
                 d.refund,
                 d.idacc_shopee_detail AS id_detail,
                 'shopee' AS source
@@ -71,19 +76,20 @@ class Recap extends CI_Controller
                 FROM acc_shopee_detail
                 GROUP BY no_faktur
             ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
-            JOIN acc_shopee s ON s.idacc_shopee=d.idacc_shopee
-            JOIN user u ON u.iduser=s.iduser
+            JOIN acc_shopee s ON s.idacc_shopee = d.idacc_shopee
+            JOIN user u ON u.iduser = s.iduser
+            WHERE d.pay_date IS NOT NULL
 
             UNION ALL
 
             SELECT 
                 d.no_faktur,
-                d.pay_date,
+                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
                 d.total_faktur,
                 d.pay,
                 d.discount,
                 d.payment,
-                d.order_date,
+                DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
                 d.refund,
                 d.idacc_tiktok_detail AS id_detail,
                 'tiktok' AS source
@@ -93,14 +99,15 @@ class Recap extends CI_Controller
                 FROM acc_tiktok_detail
                 GROUP BY no_faktur
             ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
-            JOIN acc_tiktok t ON t.idacc_tiktok=d.idacc_tiktok
-            JOIN user u ON u.iduser=t.iduser
+            JOIN acc_tiktok t ON t.idacc_tiktok = d.idacc_tiktok
+            JOIN user u ON u.iduser = t.iduser
+            WHERE d.pay_date IS NOT NULL
 
             UNION ALL
 
             SELECT 
                 d.no_faktur,
-                d.pay_date,
+                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
                 d.total_faktur,
                 d.pay,
                 d.discount,
@@ -115,8 +122,9 @@ class Recap extends CI_Controller
                 FROM acc_accurate_detail
                 GROUP BY no_faktur
             ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
-            JOIN acc_accurate a ON a.idacc_accurate=d.idacc_accurate
-            JOIN user u ON u.iduser=a.iduser
+            JOIN acc_accurate a ON a.idacc_accurate = d.idacc_accurate
+            JOIN user u ON u.iduser = a.iduser
+            WHERE d.pay_date IS NOT NULL
 
             ORDER BY pay_date DESC
         ")->result();
@@ -211,7 +219,14 @@ class Recap extends CI_Controller
                                     'refund' => $refund,
                                     'is_check' => 0
                                 ];
-                                $this->db->insert('acc_shopee_detail', $detail);
+
+                                // Upsert
+                                $exists = $this->db->get_where('acc_shopee_detail', ['no_faktur' => $noFaktur])->row();
+                                if ($exists) {
+                                    $this->db->where('no_faktur', $noFaktur)->update('acc_shopee_detail', $detail);
+                                } else {
+                                    $this->db->insert('acc_shopee_detail', $detail);
+                                }
                                 $processedOrders++;
                             }
                         }
@@ -240,7 +255,14 @@ class Recap extends CI_Controller
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
                             ];
-                            $this->db->insert('acc_shopee_detail_details', $detail_order);
+
+                            // Upsert
+                            $exists = $this->db->get_where('acc_shopee_detail_details', ['no_faktur' => $row['A']])->row();
+                            if ($exists) {
+                                $this->db->where('no_faktur', $row['A'])->update('acc_shopee_detail_details', $detail_order);
+                            } else {
+                                $this->db->insert('acc_shopee_detail_details', $detail_order);
+                            }
                             $processedOrders++;
                         }
                         $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee Order berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
@@ -280,7 +302,14 @@ class Recap extends CI_Controller
                                 'refund' => $refund,
                                 'is_check' => 0
                             ];
-                            $this->db->insert('acc_tiktok_detail', $detail);
+
+                            // Upsert
+                            $exists = $this->db->get_where('acc_tiktok_detail', ['no_faktur' => $noFaktur])->row();
+                            if ($exists) {
+                                $this->db->where('no_faktur', $noFaktur)->update('acc_tiktok_detail', $detail);
+                            } else {
+                                $this->db->insert('acc_tiktok_detail', $detail);
+                            }
                             $processedOrders++;
                         }
                         $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Income berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
@@ -307,7 +336,14 @@ class Recap extends CI_Controller
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
                             ];
-                            $this->db->insert('acc_tiktok_detail_details', $detail_order);
+
+                            // Upsert
+                            $exists = $this->db->get_where('acc_tiktok_detail_details', ['no_faktur' => $row['A']])->row();
+                            if ($exists) {
+                                $this->db->where('no_faktur', $row['A'])->update('acc_tiktok_detail_details', $detail_order);
+                            } else {
+                                $this->db->insert('acc_tiktok_detail_details', $detail_order);
+                            }
                             $processedOrders++;
                         }
                         $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Order berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
@@ -315,7 +351,6 @@ class Recap extends CI_Controller
                     break;
 
                 case 'accurate':
-                    // Accurate tanpa type_excel
                     $this->db->insert('acc_accurate', [
                         'iduser' => $this->session->userdata('iduser'),
                         'created_by' => $this->session->userdata('username'),
@@ -338,7 +373,14 @@ class Recap extends CI_Controller
                             'discount' => str_replace(',', '', $row['N']),
                             'payment' => str_replace(',', '', $row['P'])
                         ];
-                        $this->db->insert('acc_accurate_detail', $detail);
+
+                        // Upsert
+                        $exists = $this->db->get_where('acc_accurate_detail', ['no_faktur' => $row['B']])->row();
+                        if ($exists) {
+                            $this->db->where('no_faktur', $row['B'])->update('acc_accurate_detail', $detail);
+                        } else {
+                            $this->db->insert('acc_accurate_detail', $detail);
+                        }
                         $processedOrders++;
                     }
                     $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
