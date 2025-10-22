@@ -7,35 +7,6 @@
                 </div>
                 <div class="row">
                     <div class="col">
-                        <div class="card shadow-sm p-3 mb-3">
-                            <form method="get">
-                                <input type="hidden" name="idacc_shopee" value="<?= $this->input->get('idacc_shopee') ?>">
-                                <div class="row align-items-end">
-                                    <div class="col-md-2">
-                                        <label for="persen" class="form-label">Pembayaran dari Total Faktur</label>
-                                        <div style="position: relative; display: inline-block;">
-                                            <input type="number" step="1" min="0" max="100" class="form-control" name="persen" value="<?= $this->input->get('persen') ?>" style="padding-right: 30px;">
-                                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6c757d;">%</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="date_from" class="form-label">Dari Tanggal</label>
-                                        <input type="date" class="form-control" name="date_from" value="<?= $this->input->get('date_from') ?>">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="date_to" class="form-label">Sampai Tanggal</label>
-                                        <input type="date" class="form-control" name="date_to" value="<?= $this->input->get('date_to') ?>">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button type="submit" class="btn btn-primary w-100">Cari</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
                         <table id="tableproduct" class="display" style="width:100%">
                             <thead>
                                 <tr>
@@ -49,24 +20,16 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php
-                                $persen = is_numeric($persen_input) ? floatval($persen_input) / 100 : null;
-
-                                foreach ($acc_shopee_detail as $asdkey => $asdvalue) {
-                                    $style = '';
-                                    if ($persen !== null && $asdvalue->payment < ($persen * $asdvalue->total_faktur)) {
-                                        $style = 'style="background-color: #f8d7da;"';
-                                    }
-                                ?>
-                                    <tr <?= $style ?>>
-                                        <td><?= $asdkey + 1 ?></td>
-                                        <td><?= $asdvalue->no_faktur ?></td>
-                                        <td><?= $asdvalue->pay_date ?></td>
-                                        <td><?= number_format($asdvalue->total_faktur) ?></td>
-                                        <td><?= number_format($asdvalue->pay) ?></td>
-                                        <td><?= number_format($asdvalue->discount) ?></td>
-                                        <td><?= number_format($asdvalue->payment) ?></td>
-                                    </tr>
+                                <?php foreach ($acc_shopee_detail as $asdkey => $asdvalue) { ?>
+                                <tr>
+                                    <td><?= $asdkey + 1 ?></td>
+                                    <td><?= $asdvalue->no_faktur ?></td>
+                                    <td><?= $asdvalue->pay_date ?></td>
+                                    <td><?= number_format($asdvalue->total_faktur) ?></td>
+                                    <td><?= number_format($asdvalue->pay) ?></td>
+                                    <td><?= number_format($asdvalue->discount) ?></td>
+                                    <td><?= number_format($asdvalue->payment) ?></td>
+                                </tr>
                                 <?php } ?>
                             </tbody>
                         </table>

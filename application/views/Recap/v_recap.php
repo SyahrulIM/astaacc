@@ -60,17 +60,17 @@
                 <!-- End -->
                 <!-- Flash messages -->
                 <?php if ($this->session->flashdata('error')) : ?>
-                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                        <?= $this->session->flashdata('error') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                    <?= $this->session->flashdata('error') ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <?php endif; ?>
 
                 <?php if ($this->session->flashdata('success')) : ?>
-                    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                        <?= $this->session->flashdata('success') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                    <?= $this->session->flashdata('success') ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <?php endif; ?>
                 <!-- End -->
                 <div class="row">
@@ -114,36 +114,36 @@
                                                     } else {
                                                         $row_style = '';
                                                     }
-                                                ?>
-                                                    <tr <?= $row_style ?>>
-                                                        <td><?= $arkey + 1 ?></td>
-                                                        <td><?= $arvalue->full_name ?></td>
-                                                        <td>
-                                                            <?php if ($arvalue->source == 'tiktok') { ?>
-                                                                <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Tiktok / Tokopedia
-                                                            <?php } else if ($arvalue->source == 'shopee') { ?>
-                                                                <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Shopee
-                                                            <?php } else { ?>
-                                                                <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Accurate
-                                                            <?php } ?>
-                                                        </td>
-                                                        <?php if ($arvalue->type == 'income') { ?>
-                                                            <td>Income</td>
-                                                        <?php } else if ($arvalue->type == 'order') { ?>
-                                                            <td>Order</td>
+                                                    ?>
+                                                <tr <?= $row_style ?>>
+                                                    <td><?= $arkey + 1 ?></td>
+                                                    <td><?= $arvalue->full_name ?></td>
+                                                    <td>
+                                                        <?php if ($arvalue->source == 'tiktok') { ?>
+                                                        <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Tiktok / Tokopedia
+                                                        <?php } else if ($arvalue->source == 'shopee') { ?>
+                                                        <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Shopee
                                                         <?php } else { ?>
-                                                            <td>Selesai</td>
+                                                        <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Accurate
                                                         <?php } ?>
-                                                        <td><?= $arvalue->created_date ?></td>
-                                                        <td>
-                                                            <a href="<?php echo base_url('recap/detail_acc?idacc_recap=' . $arvalue->id_data) ?>">
-                                                                <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
-                                                            </a>
-                                                        </td>
-                                                    </tr>
+                                                    </td>
+                                                    <?php if ($arvalue->type == 'income') { ?>
+                                                    <td>Income</td>
+                                                    <?php } else if ($arvalue->type == 'order') { ?>
+                                                    <td>Order</td>
+                                                    <?php } else { ?>
+                                                    <td>Selesai</td>
+                                                    <?php } ?>
+                                                    <td><?= $arvalue->created_date ?></td>
+                                                    <td>
+                                                        <a href="<?php echo base_url('recap/detail_payment?idacc_recap=' . $arvalue->id_data . '&marketplace=' . $arvalue->source) ?>">
+                                                            <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
+                                                        </a>
+                                                    </td>
+                                                </tr>
                                                 <?php } ?>
                                             </tbody>
                                         </table>
@@ -182,35 +182,37 @@
                                                     } else {
                                                         $row_style = '';
                                                     }
-                                                ?>
-                                                    <tr <?= $row_style ?>>
-                                                        <td><?= $ardkey + 1 ?></td>
-                                                        <td><?= $ardvalue->no_faktur ?></td>
-                                                        <td>
-                                                            <?php if ($ardvalue->source == 'tiktok') { ?>
-                                                                <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Tiktok / Tokopedia
-                                                            <?php } else if ($ardvalue->source == 'shopee') { ?>
-                                                                <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Shopee
-                                                            <?php } else { ?>
-                                                                <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                                                Accurate
-                                                            <?php } ?>
-                                                        </td>
-                                                        <td><?= $ardvalue->order_date ?></td>
-                                                        <td><?= $ardvalue->pay_date ?></td>
-                                                        <td><?= number_format($ardvalue->total_faktur) ?></td>
-                                                        <td><?= number_format($ardvalue->pay) ?></td>
-                                                        <td><?= number_format($ardvalue->discount) ?></td>
-                                                        <td><?= number_format($ardvalue->refund) ?></td>
-                                                        <td><?= number_format($ardvalue->payment) ?></td>
-                                                        <td>
-                                                            <a href="<?= base_url('recap/detail_faktur?no_faktur=' . $ardvalue->no_faktur) ?>">
-                                                                <button type="button" class="btn btn-success">Detail Faktur</button>
-                                                            </a>
-                                                        </td>
-                                                    </tr>
+                                                    ?>
+                                                <tr <?= $row_style ?>>
+                                                    <td><?= $ardkey + 1 ?></td>
+                                                    <td><?= $ardvalue->no_faktur ?></td>
+                                                    <td>
+                                                        <?php if ($ardvalue->source == 'tiktok') { ?>
+                                                        <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Tiktok / Tokopedia
+                                                        <?php } else if ($ardvalue->source == 'shopee') { ?>
+                                                        <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Shopee
+                                                        <?php } else { ?>
+                                                        <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                                        Accurate
+                                                        <?php } ?>
+                                                    </td>
+                                                    <td><?= $ardvalue->order_date ?></td>
+                                                    <td><?= $ardvalue->pay_date ?></td>
+                                                    <td><?= number_format($ardvalue->total_faktur) ?></td>
+                                                    <td><?= number_format($ardvalue->pay) ?></td>
+                                                    <td><?= number_format($ardvalue->discount) ?></td>
+                                                    <td><?= number_format($ardvalue->refund) ?></td>
+                                                    <td><?= number_format($ardvalue->payment) ?></td>
+                                                    <td>
+                                                        <?php if ($ardvalue->source === 'tiktok' || $ardvalue->source === 'shopee') { ?>
+                                                        <a href="<?= base_url('recap/detail_faktur?no_faktur=' . $ardvalue->no_faktur . '&marketplace=' . $ardvalue->source) ?> ">
+                                                            <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
+                                                        </a>
+                                                        <?php } ?>
+                                                    </td>
+                                                </tr>
                                                 <?php } ?>
                                             </tbody>
                                         </table>

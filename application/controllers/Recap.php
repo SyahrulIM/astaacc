@@ -399,11 +399,15 @@ class Recap extends CI_Controller
     public function detail_faktur()
     {
         $no_faktur = $this->input->get('no_faktur');
+        $marketplace = $this->input->get('marketplace');
 
-        $this->db->distinct();
         $this->db->select('no_faktur, sku, name_product, price_after_discount');
         $this->db->where('no_faktur', $no_faktur);
-        $acc_shopee_detail_details = $this->db->get('acc_shopee_detail_details')->result();
+        if ($marketplace === 'tiktok') {
+            $acc_shopee_detail_details = $this->db->get('acc_tiktok_detail_details')->result();
+        } else {
+            $acc_shopee_detail_details = $this->db->get('acc_shopee_detail_details')->result();
+        }
 
         $data = [
             'title' => 'Shopee Recap',
@@ -412,5 +416,31 @@ class Recap extends CI_Controller
 
         $this->load->view('theme/v_head', $data);
         $this->load->view('shopee_recap/v_shopee_recap_detail_details');
+    }
+
+    public function detail_payment()
+    {
+        $idacc_recap = $this->input->get('idacc_recap');
+        $marketplace = $this->input->get('marketplace');
+
+        $this->db->select('no_faktur, pay_date, total_faktur, pay, discount, payment');
+        if ($marketplace === 'accurate') {
+            $this->db->where('idacc_accurate', $idacc_recap);
+            $acc_shopee_detail = $this->db->get('acc_accurate_detail')->result();
+        } else if ($marketplace === 'tiktok') {
+            $this->db->where('idacc_tiktok', $idacc_recap);
+            $acc_shopee_detail = $this->db->get('acc_tiktok_detail')->result();
+        } else if ($marketplace === 'shopee') {
+            $this->db->where('idacc_shopee', $idacc_recap);
+            $acc_shopee_detail = $this->db->get('acc_shopee_detail')->result();
+        }
+
+        $data = [
+            'title' => 'Shopee Recap',
+            'acc_shopee_detail' => $acc_shopee_detail
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('shopee_recap/v_shopee_recap_detail');
     }
 }
