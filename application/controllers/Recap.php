@@ -288,7 +288,7 @@ class Recap extends CI_Controller
                             $payment = $sheet->getCell('F' . $rowIndex)->getValue();
                             $discountRaw = $sheet->getCell('N' . $rowIndex)->getValue();
                             $discount = is_numeric($discountRaw) ? abs($discountRaw) : str_replace('-', '', $discountRaw);
-                            $refund = $sheet->getCell('AT' . $rowIndex)->getValue();
+                            $refund = $sheet->getCell('K' . $rowIndex)->getValue();
 
                             $detail = [
                                 'idacc_tiktok' => $id_header,
