@@ -217,7 +217,12 @@ class Recap extends CI_Controller
                                     'payment' => $income,
                                     'discount' => $discount,
                                     'refund' => $refund,
-                                    'is_check' => 0
+                                    'is_check' => 0,
+                                    'created_date' => date('Y-m-d H:i:s'),
+                                    'created_by' => $this->session->userdata('username'),
+                                    'updated_date' => date('Y-m-d H:i:s'),
+                                    'updated_by' => $this->session->userdata('username'),
+                                    'status' => 1
                                 ];
 
                                 // Upsert
@@ -300,7 +305,12 @@ class Recap extends CI_Controller
                                 'payment' => $payment,
                                 'discount' => $discount,
                                 'refund' => $refund,
-                                'is_check' => 0
+                                'is_check' => 0,
+                                'created_date' => date('Y-m-d H:i:s'),
+                                'created_by' => $this->session->userdata('username'),
+                                'updated_date' => date('Y-m-d H:i:s'),
+                                'updated_by' => $this->session->userdata('username'),
+                                'status' => 1
                             ];
 
                             // Upsert
