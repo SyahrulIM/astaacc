@@ -20,7 +20,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($acc_shopee_detail as $asdkey => $asdvalue) { ?>
+                                <?php foreach ($acc_detail as $asdkey => $asdvalue) { ?>
                                 <tr>
                                     <td><?= $asdkey + 1 ?></td>
                                     <td><?= $asdvalue->no_faktur ?></td>

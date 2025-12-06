@@ -2,7 +2,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col">
-                        <h1 class="mt-4">Detail Faktur - <?php echo $this->input->get('no_faktur')?></h1>
+                        <h1 class="mt-4">Detail Faktur - <?php echo $this->input->get('no_faktur') ?></h1>
                     </div>
                 </div>
                 <div class="row">
@@ -18,13 +18,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($acc_shopee_detail_details as $asddkey => $asddvalue){?>
+                                <?php foreach ($acc_detail_detail as $asddkey => $asddvalue) { ?>
                                 <tr>
-                                    <td><?= $asddkey+1?></td>
-                                    <td><?= $asddvalue->no_faktur?></td>
-                                    <td><?= $asddvalue->sku?></td>
-                                    <td><?= $asddvalue->name_product?></td>
-                                    <td><?= $asddvalue->price_after_discount?></td>
+                                    <td><?= $asddkey + 1 ?></td>
+                                    <td><?= $asddvalue->no_faktur ?></td>
+                                    <td><?= $asddvalue->sku ?></td>
+                                    <td><?= $asddvalue->name_product ?></td>
+                                    <td><?= $asddvalue->price_after_discount ?></td>
                                 </tr>
                                 <?php } ?>
                             </tbody>

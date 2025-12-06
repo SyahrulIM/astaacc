@@ -439,8 +439,9 @@ class Recap extends CI_Controller
                     $rows = $sheet->toArray(null, true, true, true);
                     $processedOrders = 0;
 
-                    // Create an array to store order data by order number
+                    // Create arrays to store order data
                     $orderData = [];
+                    $orderDetails = []; // Store order details (product info)
 
                     foreach ($rows as $i => $row) {
                         if ($i < 2) continue; // Start from row 2
@@ -452,7 +453,7 @@ class Recap extends CI_Controller
                         $feeName = trim($row['D'] ?? ''); // Nama biaya
                         $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
 
-                        // Clean up fee name (remove line breaks and extra spaces)
+                        // Clean up fee name
                         $feeName = preg_replace('/\s+/', ' ', $feeName);
 
                         // Initialize order data if not exists
@@ -461,9 +462,9 @@ class Recap extends CI_Controller
                                 'no_faktur' => $orderNumber,
                                 'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
                                 'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
-                                'total_faktur' => 0, // Omset Penjualan (will sum all entries)
-                                'total_sum' => 0, // Sum of all fees including negative values
-                                'discount_sum' => 0, // Sum of discount-related fees
+                                'total_faktur' => 0,
+                                'total_sum' => 0,
+                                'discount_sum' => 0,
                                 'refund' => 0,
                                 'fee_details' => []
                             ];
@@ -475,28 +476,53 @@ class Recap extends CI_Controller
                             'amount' => $amount
                         ];
 
-                        // Sum all amounts for total calculation (pay = sum of all fees)
+                        // Sum all amounts
                         $orderData[$orderNumber]['total_sum'] += $amount;
 
-                        // Check fee type and handle accordingly
+                        // Check fee type
                         if (strpos($feeName, 'Omset Penjualan') !== false) {
-                            // SUM all Omset Penjualan entries (they should be positive)
                             $orderData[$orderNumber]['total_faktur'] += abs($amount);
                         } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
-                            // Sum all discount-related fees (they're negative in Excel)
                             $orderData[$orderNumber]['discount_sum'] += abs($amount);
+                        }
+
+                        // Store order details (product information)
+                        // Only store once per unique order number + SKU combination
+                        $sku = trim($row['L'] ?? ''); // Column L: SKU Penjual
+                        $productName = trim($row['T'] ?? ''); // Column T: Nama Produk
+
+                        if ($sku && $productName) {
+                            $key = $orderNumber . '_' . $sku;
+                            if (!isset($orderDetails[$key])) {
+                                // Get product price from Omset Penjualan row
+                                $price = 0;
+                                if (strpos($feeName, 'Omset Penjualan') !== false) {
+                                    $price = abs($amount);
+                                }
+
+                                // Get address information if available
+                                // Note: Lazada Excel might not have address columns like Shopee/TikTok
+                                // Adjust column letters based on your Lazada Excel structure
+                                $address = '';
+                                $posCode = '';
+
+                                $orderDetails[$key] = [
+                                    'no_faktur' => $orderNumber,
+                                    'sku' => $sku,
+                                    'name_product' => $productName,
+                                    'price_after_discount' => $price,
+                                    'address' => $address,
+                                    'pos_code' => $posCode
+                                ];
+                            }
                         }
                     }
 
                     // Process each order
                     foreach ($orderData as $orderNumber => $data) {
-                        // Calculate pay (sum of all fees - this should give us the net amount)
                         $pay = $data['total_sum'];
                         $total_faktur = $data['total_faktur'];
                         $discount = $data['discount_sum'];
-
-                        // Debug output to verify calculations
-                        error_log("Order: $orderNumber, Total Sum (pay): $pay, Total Faktur: $total_faktur, Discount: $discount");
 
                         $detail = [
                             'idacc_lazada' => $id_header,
@@ -504,9 +530,9 @@ class Recap extends CI_Controller
                             'order_date' => $data['order_date'],
                             'pay_date' => $data['pay_date'],
                             'total_faktur' => $total_faktur,
-                            'pay' => $pay, // Sum of all fees (net amount)
-                            'discount' => $discount, // Sum of discount-related fees
-                            'payment' => $pay, // Payment sama dengan pay
+                            'pay' => $pay,
+                            'discount' => $discount,
+                            'payment' => $pay,
                             'refund' => $data['refund'],
                             'is_check' => 0,
                             'created_date' => date('Y-m-d H:i:s'),
@@ -516,13 +542,47 @@ class Recap extends CI_Controller
                             'status' => 1
                         ];
 
-                        // Upsert
+                        // Upsert main order detail
                         $exists = $this->db->get_where('acc_lazada_detail', ['no_faktur' => $orderNumber])->row();
                         if ($exists) {
                             $this->db->where('no_faktur', $orderNumber)->update('acc_lazada_detail', $detail);
                         } else {
                             $this->db->insert('acc_lazada_detail', $detail);
                         }
+
+                        // Insert order details (product information)
+                        foreach ($orderDetails as $key => $productDetail) {
+                            if ($productDetail['no_faktur'] === $orderNumber) {
+                                $detail_order = [
+                                    'no_faktur' => $productDetail['no_faktur'],
+                                    'sku' => $productDetail['sku'],
+                                    'name_product' => $productDetail['name_product'],
+                                    'price_after_discount' => $productDetail['price_after_discount'],
+                                    'address' => $productDetail['address'],
+                                    'pos_code' => $productDetail['pos_code'],
+                                    'created_date' => date('Y-m-d H:i:s'),
+                                    'created_by' => $this->session->userdata('username'),
+                                    'updated_date' => date('Y-m-d H:i:s'),
+                                    'updated_by' => $this->session->userdata('username'),
+                                    'status' => 1
+                                ];
+
+                                // Upsert order details
+                                $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
+                                    'no_faktur' => $productDetail['no_faktur'],
+                                    'sku' => $productDetail['sku']
+                                ])->row();
+
+                                if ($existsDetail) {
+                                    $this->db->where('no_faktur', $productDetail['no_faktur'])
+                                        ->where('sku', $productDetail['sku'])
+                                        ->update('acc_lazada_detail_details', $detail_order);
+                                } else {
+                                    $this->db->insert('acc_lazada_detail_details', $detail_order);
+                                }
+                            }
+                        }
+
                         $processedOrders++;
                     }
 
@@ -553,16 +613,14 @@ class Recap extends CI_Controller
         if ($marketplace === 'tiktok') {
             $acc_detail_details = $this->db->get('acc_tiktok_detail_details')->result();
         } elseif ($marketplace === 'lazada') {
-            // If you have a separate table for Lazada order details, add it here
-            // For now, we'll use the same as shopee or return empty
-            $acc_detail_details = []; // Adjust based on your actual table structure
+            $acc_detail_details = [];
         } else {
             $acc_detail_details = $this->db->get('acc_shopee_detail_details')->result();
         }
 
         $data = [
             'title' => ucfirst($marketplace) . ' Recap',
-            'acc_detail_details' => $acc_detail_details
+            'acc_detail_detail' => $acc_detail_details
         ];
 
         $this->load->view('theme/v_head', $data);
