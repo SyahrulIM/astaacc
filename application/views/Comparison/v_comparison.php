@@ -20,6 +20,7 @@
                         <option value="">Semua</option>
                         <option value="Shopee" <?= ($marketplace_filter === 'Shopee' ? 'selected' : '') ?>>Shopee</option>
                         <option value="TikTok" <?= ($marketplace_filter === 'TikTok' ? 'selected' : '') ?>>TikTok</option>
+                        <option value="Lazada" <?= ($marketplace_filter === 'Lazada' ? 'selected' : '') ?>>Lazada</option>
                     </select>
                 </div>
 
@@ -355,9 +356,12 @@
                             <?php if ($row->source == 'tiktok') { ?>
                             <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                             Tiktok / Tokopedia
-                            <?php } else { ?>
+                            <?php } else if ($row->source == 'shopee') { ?>
                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                             Shopee
+                            <?php } else if ($row->source == 'lazada') { ?>
+                            <img src="https://cdn.brandfetch.io/idlM7RX-66/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            Lazada
                             <?php } ?>
                         </td>
                         <td><?= $row->shopee_order_date ?? '-' ?></td>
