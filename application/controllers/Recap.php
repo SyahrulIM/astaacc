@@ -431,166 +431,144 @@ class Recap extends CI_Controller
                     $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     break;
 
-                case 'lazada':
-                    $this->db->insert('acc_lazada', $header_data);
-                    $id_header = $this->db->insert_id();
+case 'lazada':
+    $this->db->insert('acc_lazada', $header_data);
+    $id_header = $this->db->insert_id();
 
-                    $sheet = $spreadsheet->getActiveSheet();
-                    $rows = $sheet->toArray(null, true, true, true);
-                    $processedOrders = 0;
+    $sheet = $spreadsheet->getActiveSheet();
+    $rows = $sheet->toArray(null, true, true, true);
+    $processedOrders = 0;
 
-                    // Create arrays to store order data
-                    $orderData = [];
-                    $orderDetails = []; // Store order details (product info)
+    // Create arrays to store order data
+    $orderData = [];
+    $orderDetails = []; // Store order details (product info)
 
-                    foreach ($rows as $i => $row) {
-                        if ($i < 2) continue; // Start from row 2
+    foreach ($rows as $i => $row) {
+        if ($i < 2) continue; // Start from row 2
 
-                        // Get order number from column K (Nomor Pesanan)
-                        $orderNumber = trim($row['K'] ?? '');
-                        if (empty($orderNumber)) continue;
+        // Get order number from column K (Nomor Pesanan)
+        $orderNumber = trim($row['K'] ?? '');
+        if (empty($orderNumber)) continue;
 
-                        $feeName = trim($row['D'] ?? ''); // Nama biaya
-                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
+        $feeName = trim($row['D'] ?? ''); // Nama biaya
+        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
 
-                        // Clean up fee name
-                        $feeName = preg_replace('/\s+/', ' ', $feeName);
+        // Clean up fee name
+        $feeName = preg_replace('/\s+/', ' ', $feeName);
 
-                        // Initialize order data if not exists
-                        if (!isset($orderData[$orderNumber])) {
-                            $orderData[$orderNumber] = [
-                                'no_faktur' => $orderNumber,
-                                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
-                                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
-                                'total_faktur' => 0,
-                                'total_sum' => 0,
-                                'discount_sum' => 0,
-                                'refund' => 0,
-                                'fee_details' => []
-                            ];
-                        }
+        // Initialize order data if not exists
+        if (!isset($orderData[$orderNumber])) {
+            $orderData[$orderNumber] = [
+                'no_faktur' => $orderNumber,
+                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
+                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
+                'total_faktur' => 0,
+                'total_sum' => 0,
+                'discount_sum' => 0,
+                'refund' => 0,
+                'fee_details' => [],
+                'omset_details' => [] // Store multiple omset entries
+            ];
+        }
 
-                        // Store fee details
-                        $orderData[$orderNumber]['fee_details'][] = [
-                            'name' => $feeName,
-                            'amount' => $amount
-                        ];
+        // Store fee details
+        $orderData[$orderNumber]['fee_details'][] = [
+            'name' => $feeName,
+            'amount' => $amount
+        ];
 
-                        // Sum all amounts
-                        $orderData[$orderNumber]['total_sum'] += $amount;
+        // Sum all amounts
+        $orderData[$orderNumber]['total_sum'] += $amount;
 
-                        // Check fee type
-                        if (strpos($feeName, 'Omset Penjualan') !== false) {
-                            $orderData[$orderNumber]['total_faktur'] += abs($amount);
-                        } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
-                            $orderData[$orderNumber]['discount_sum'] += abs($amount);
-                        }
+        // Check fee type
+        if (strpos($feeName, 'Omset Penjualan') !== false) {
+            // Store each omset entry separately
+            $orderData[$orderNumber]['omset_details'][] = [
+                'amount' => abs($amount),
+                'sku' => trim($row['L'] ?? ''), // Column L: SKU Penjual
+                'product_name' => trim($row['T'] ?? '') // Column T: Nama Produk
+            ];
+            $orderData[$orderNumber]['total_faktur'] += abs($amount);
+        } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
+            $orderData[$orderNumber]['discount_sum'] += abs($amount);
+        }
+    }
 
-                        // Store order details (product information)
-                        // Only store once per unique order number + SKU combination
-                        $sku = trim($row['L'] ?? ''); // Column L: SKU Penjual
-                        $productName = trim($row['T'] ?? ''); // Column T: Nama Produk
+    // Process each order
+    foreach ($orderData as $orderNumber => $data) {
+        $pay = $data['total_sum'];
+        $total_faktur = $data['total_faktur'];
+        $discount = $data['discount_sum'];
 
-                        if ($sku && $productName) {
-                            $key = $orderNumber . '_' . $sku;
-                            if (!isset($orderDetails[$key])) {
-                                // Get product price from Omset Penjualan row
-                                $price = 0;
-                                if (strpos($feeName, 'Omset Penjualan') !== false) {
-                                    $price = abs($amount);
-                                }
+        $detail = [
+            'idacc_lazada' => $id_header,
+            'no_faktur' => $orderNumber,
+            'order_date' => $data['order_date'],
+            'pay_date' => $data['pay_date'],
+            'total_faktur' => $total_faktur,
+            'pay' => $pay,
+            'discount' => $discount,
+            'payment' => $pay,
+            'refund' => $data['refund'],
+            'is_check' => 0,
+            'created_date' => date('Y-m-d H:i:s'),
+            'created_by' => $this->session->userdata('username'),
+            'updated_date' => date('Y-m-d H:i:s'),
+            'updated_by' => $this->session->userdata('username'),
+            'status' => 1
+        ];
 
-                                // Get address information if available
-                                // Note: Lazada Excel might not have address columns like Shopee/TikTok
-                                // Adjust column letters based on your Lazada Excel structure
-                                $address = '';
-                                $posCode = '';
+        // Upsert main order detail
+        $exists = $this->db->get_where('acc_lazada_detail', ['no_faktur' => $orderNumber])->row();
+        if ($exists) {
+            $this->db->where('no_faktur', $orderNumber)->update('acc_lazada_detail', $detail);
+        } else {
+            $this->db->insert('acc_lazada_detail', $detail);
+        }
 
-                                $orderDetails[$key] = [
-                                    'no_faktur' => $orderNumber,
-                                    'sku' => $sku,
-                                    'name_product' => $productName,
-                                    'price_after_discount' => $price,
-                                    'address' => $address,
-                                    'pos_code' => $posCode
-                                ];
-                            }
-                        }
+        // Insert order details for each omset entry (product information)
+        if (!empty($data['omset_details'])) {
+            foreach ($data['omset_details'] as $omset) {
+                if (!empty($omset['sku']) && !empty($omset['product_name'])) {
+                    $detail_order = [
+                        'no_faktur' => $orderNumber,
+                        'sku' => $omset['sku'],
+                        'name_product' => $omset['product_name'],
+                        'price_after_discount' => $omset['amount'],
+                        'address' => '', // Lazada Excel might not have address
+                        'pos_code' => '',
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'created_by' => $this->session->userdata('username'),
+                        'updated_date' => date('Y-m-d H:i:s'),
+                        'updated_by' => $this->session->userdata('username'),
+                        'status' => 1
+                    ];
+
+                    // Upsert order details - check by no_faktur AND sku
+                    $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
+                        'no_faktur' => $orderNumber,
+                        'sku' => $omset['sku']
+                    ])->row();
+
+                    if ($existsDetail) {
+                        $this->db->where('no_faktur', $orderNumber)
+                            ->where('sku', $omset['sku'])
+                            ->update('acc_lazada_detail_details', $detail_order);
+                    } else {
+                        $this->db->insert('acc_lazada_detail_details', $detail_order);
                     }
+                }
+            }
+        }
 
-                    // Process each order
-                    foreach ($orderData as $orderNumber => $data) {
-                        $pay = $data['total_sum'];
-                        $total_faktur = $data['total_faktur'];
-                        $discount = $data['discount_sum'];
+        $processedOrders++;
+    }
 
-                        $detail = [
-                            'idacc_lazada' => $id_header,
-                            'no_faktur' => $orderNumber,
-                            'order_date' => $data['order_date'],
-                            'pay_date' => $data['pay_date'],
-                            'total_faktur' => $total_faktur,
-                            'pay' => $pay,
-                            'discount' => $discount,
-                            'payment' => $pay,
-                            'refund' => $data['refund'],
-                            'is_check' => 0,
-                            'created_date' => date('Y-m-d H:i:s'),
-                            'created_by' => $this->session->userdata('username'),
-                            'updated_date' => date('Y-m-d H:i:s'),
-                            'updated_by' => $this->session->userdata('username'),
-                            'status' => 1
-                        ];
-
-                        // Upsert main order detail
-                        $exists = $this->db->get_where('acc_lazada_detail', ['no_faktur' => $orderNumber])->row();
-                        if ($exists) {
-                            $this->db->where('no_faktur', $orderNumber)->update('acc_lazada_detail', $detail);
-                        } else {
-                            $this->db->insert('acc_lazada_detail', $detail);
-                        }
-
-                        // Insert order details (product information)
-                        foreach ($orderDetails as $key => $productDetail) {
-                            if ($productDetail['no_faktur'] === $orderNumber) {
-                                $detail_order = [
-                                    'no_faktur' => $productDetail['no_faktur'],
-                                    'sku' => $productDetail['sku'],
-                                    'name_product' => $productDetail['name_product'],
-                                    'price_after_discount' => $productDetail['price_after_discount'],
-                                    'address' => $productDetail['address'],
-                                    'pos_code' => $productDetail['pos_code'],
-                                    'created_date' => date('Y-m-d H:i:s'),
-                                    'created_by' => $this->session->userdata('username'),
-                                    'updated_date' => date('Y-m-d H:i:s'),
-                                    'updated_by' => $this->session->userdata('username'),
-                                    'status' => 1
-                                ];
-
-                                // Upsert order details
-                                $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
-                                    'no_faktur' => $productDetail['no_faktur'],
-                                    'sku' => $productDetail['sku']
-                                ])->row();
-
-                                if ($existsDetail) {
-                                    $this->db->where('no_faktur', $productDetail['no_faktur'])
-                                        ->where('sku', $productDetail['sku'])
-                                        ->update('acc_lazada_detail_details', $detail_order);
-                                } else {
-                                    $this->db->insert('acc_lazada_detail_details', $detail_order);
-                                }
-                            }
-                        }
-
-                        $processedOrders++;
-                    }
-
-                    $this->session->set_flashdata(
-                        $processedOrders > 0 ? 'success' : 'error',
-                        $processedOrders > 0 ? "Data Lazada berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.'
-                    );
-                    break;
+    $this->session->set_flashdata(
+        $processedOrders > 0 ? 'success' : 'error',
+        $processedOrders > 0 ? "Data Lazada berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.'
+    );
+    break;
 
                 default:
                     $this->session->set_flashdata('error', 'Marketplace tidak dikenali.');

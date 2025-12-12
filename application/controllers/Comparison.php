@@ -249,8 +249,10 @@ class Comparison extends CI_Controller
                 }
 
                 // Add to totals
-                $grand_total_invoice += $shopee;
-                $grand_total_payment += $accurate;
+                if ($row->accurate_payment) {
+                    $grand_total_invoice += $shopee;
+                    $grand_total_payment += $accurate;
+                }
 
                 if ($is_retur) {
                     $grand_total_invoice_retur += $shopee;

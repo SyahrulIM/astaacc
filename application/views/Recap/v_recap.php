@@ -132,7 +132,7 @@
                                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Shopee
                                             <?php } else if ($arvalue->source == 'lazada') { ?>
-                                            <img src="https://cdn.brandfetch.io/idlM7RX-66/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                            <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Lazada
                                             <?php } else { ?>
                                             <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
@@ -162,7 +162,6 @@
                     </div>
                 </div>
 
-                <!-- Tab 2: all (example filter - you can adjust based on backend or JS) -->
                 <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
                     <div class="row mt-3">
                         <div class="col">
@@ -187,11 +186,11 @@
                                         // Tentukan warna background per baris
                                         $row_style = '';
                                         if (strtolower($ardvalue->source) === 'shopee') {
-                                            $row_style = 'style="background-color: #EE4D2D; color: white;"'; // Orange Shopee
+                                            $row_style = 'style="background-color: #EE4D2D; color: white;"';
                                         } elseif (strtolower($ardvalue->source) === 'tiktok') {
-                                            $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
+                                            $row_style = 'style="background-color: #5da96a; color: white;"';
                                         } elseif (strtolower($ardvalue->source) === 'lazada') {
-                                            $row_style = 'style="background-color: #0F146D; color: white;"'; // Blue Lazada
+                                            $row_style = 'style="background-color: #0F146D; color: white;"';
                                         } else {
                                             $row_style = '';
                                         }
@@ -207,7 +206,7 @@
                                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Shopee
                                             <?php } else if ($ardvalue->source == 'lazada') { ?>
-                                            <img src="https://cdn.brandfetch.io/idlM7RX-66/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                            <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Lazada
                                             <?php } else { ?>
                                             <img src="https://penjovalonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">

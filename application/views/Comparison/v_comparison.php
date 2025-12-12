@@ -96,16 +96,6 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice - $grand_total_payment) ?></h5>
                 </div>
-                <!-- <div class="col">
-                    <h5>Ratio Selisih</h5>
-                    <h5> :
-                        <?php
-                        echo $grand_total_payment > 0
-                            ? round((($grand_total_invoice - $grand_total_payment) / $grand_total_payment) * 100, 2)
-                            : 0;
-                        ?>%
-                    </h5>
-                </div> -->
                 <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
