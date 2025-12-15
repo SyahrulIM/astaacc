@@ -19,150 +19,169 @@ class Recap extends CI_Controller
         $title = 'Import Payment';
 
         // Query untuk recap data
+        // Query untuk recap data
         $acc_recap = $this->db->query("
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_shopee.idacc_shopee AS id_data,
-            acc_shopee.excel_type AS type,
-            'shopee' AS source
-        FROM acc_shopee
-        JOIN user ON user.iduser = acc_shopee.iduser
-        WHERE acc_shopee.created_date IS NOT NULL
+    SELECT 
+        user.full_name AS full_name,
+        DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+        acc_shopee.idacc_shopee AS id_data,
+        acc_shopee.excel_type AS type,
+        CASE 
+            WHEN acc_shopee.is_kotime = 1 THEN 'shopee_kotime'
+            ELSE 'shopee'
+        END AS source
+    FROM acc_shopee
+    JOIN user ON user.iduser = acc_shopee.iduser
+    WHERE acc_shopee.created_date IS NOT NULL
 
-        UNION ALL
+    UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_tiktok.idacc_tiktok AS id_data,
-            acc_tiktok.excel_type AS type,
-            'tiktok' AS source
-        FROM acc_tiktok
-        JOIN user ON user.iduser = acc_tiktok.iduser
-        WHERE acc_tiktok.created_date IS NOT NULL
+    SELECT 
+        user.full_name AS full_name,
+        DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+        acc_tiktok.idacc_tiktok AS id_data,
+        acc_tiktok.excel_type AS type,
+        CASE 
+            WHEN acc_tiktok.is_kotime = 1 THEN 'tiktok_kotime'
+            ELSE 'tiktok'
+        END AS source
+    FROM acc_tiktok
+    JOIN user ON user.iduser = acc_tiktok.iduser
+    WHERE acc_tiktok.created_date IS NOT NULL
 
-        UNION ALL
+    UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_accurate.idacc_accurate AS id_data,
-            'accurate' AS type,
-            'accurate' AS source
-        FROM acc_accurate
-        JOIN user ON user.iduser = acc_accurate.iduser
-        WHERE acc_accurate.created_date IS NOT NULL
+    SELECT 
+        user.full_name AS full_name,
+        DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+        acc_accurate.idacc_accurate AS id_data,
+        'accurate' AS type,
+        'accurate' AS source
+    FROM acc_accurate
+    JOIN user ON user.iduser = acc_accurate.iduser
+    WHERE acc_accurate.created_date IS NOT NULL
 
-        UNION ALL
+    UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_lazada.idacc_lazada AS id_data,
-            acc_lazada.excel_type AS type,
-            'lazada' AS source
-        FROM acc_lazada
-        JOIN user ON user.iduser = acc_lazada.iduser
-        WHERE acc_lazada.created_date IS NOT NULL
+    SELECT 
+        user.full_name AS full_name,
+        DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+        acc_lazada.idacc_lazada AS id_data,
+        acc_lazada.excel_type AS type,
+        CASE 
+            WHEN acc_lazada.is_kotime = 1 THEN 'lazada_kotime'
+            ELSE 'lazada'
+        END AS source
+    FROM acc_lazada
+    JOIN user ON user.iduser = acc_lazada.iduser
+    WHERE acc_lazada.created_date IS NOT NULL
 
-        ORDER BY created_date DESC
-    ")->result();
+    ORDER BY created_date DESC
+")->result();
 
         // Query untuk detail data
         $acc_recap_detail = $this->db->query("
-            SELECT 
-                d.no_faktur,
-                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-                d.total_faktur,
-                d.pay,
-                d.discount,
-                d.payment,
-                DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-                d.refund,
-                d.idacc_shopee_detail AS id_detail,
-                'shopee' AS source
-            FROM acc_shopee_detail d
-            JOIN (
-                SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
-                FROM acc_shopee_detail
-                GROUP BY no_faktur
-            ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
-            JOIN acc_shopee s ON s.idacc_shopee = d.idacc_shopee
-            JOIN user u ON u.iduser = s.iduser
-            WHERE d.pay_date IS NOT NULL
+    SELECT 
+        d.no_faktur,
+        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+        d.total_faktur,
+        d.pay,
+        d.discount,
+        d.payment,
+        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+        d.refund,
+        d.idacc_shopee_detail AS id_detail,
+        CASE 
+            WHEN s.is_kotime = 1 THEN 'shopee_kotime'
+            ELSE 'shopee'
+        END AS source
+    FROM acc_shopee_detail d
+    JOIN (
+        SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
+        FROM acc_shopee_detail
+        GROUP BY no_faktur
+    ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
+    JOIN acc_shopee s ON s.idacc_shopee = d.idacc_shopee
+    JOIN user u ON u.iduser = s.iduser
+    WHERE d.pay_date IS NOT NULL
 
-            UNION ALL
+    UNION ALL
 
-            SELECT 
-                d.no_faktur,
-                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-                d.total_faktur,
-                d.pay,
-                d.discount,
-                d.payment,
-                DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-                d.refund,
-                d.idacc_tiktok_detail AS id_detail,
-                'tiktok' AS source
-            FROM acc_tiktok_detail d
-            JOIN (
-                SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
-                FROM acc_tiktok_detail
-                GROUP BY no_faktur
-            ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
-            JOIN acc_tiktok t ON t.idacc_tiktok = d.idacc_tiktok
-            JOIN user u ON u.iduser = t.iduser
-            WHERE d.pay_date IS NOT NULL
+    SELECT 
+        d.no_faktur,
+        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+        d.total_faktur,
+        d.pay,
+        d.discount,
+        d.payment,
+        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+        d.refund,
+        d.idacc_tiktok_detail AS id_detail,
+        CASE 
+            WHEN t.is_kotime = 1 THEN 'tiktok_kotime'
+            ELSE 'tiktok'
+        END AS source
+    FROM acc_tiktok_detail d
+    JOIN (
+        SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
+        FROM acc_tiktok_detail
+        GROUP BY no_faktur
+    ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
+    JOIN acc_tiktok t ON t.idacc_tiktok = d.idacc_tiktok
+    JOIN user u ON u.iduser = t.iduser
+    WHERE d.pay_date IS NOT NULL
 
-            UNION ALL
+    UNION ALL
 
-            SELECT 
-                d.no_faktur,
-                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-                d.total_faktur,
-                d.pay,
-                d.discount,
-                d.payment,
-                NULL AS order_date,
-                NULL AS refund,
-                d.idacc_accurate_detail AS id_detail,
-                'accurate' AS source
-            FROM acc_accurate_detail d
-            JOIN (
-                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                FROM acc_accurate_detail
-                GROUP BY no_faktur
-            ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
-            JOIN acc_accurate a ON a.idacc_accurate = d.idacc_accurate
-            JOIN user u ON u.iduser = a.iduser
-            WHERE d.pay_date IS NOT NULL
+    SELECT 
+        d.no_faktur,
+        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+        d.total_faktur,
+        d.pay,
+        d.discount,
+        d.payment,
+        NULL AS order_date,
+        NULL AS refund,
+        d.idacc_accurate_detail AS id_detail,
+        'accurate' AS source
+    FROM acc_accurate_detail d
+    JOIN (
+        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+        FROM acc_accurate_detail
+        GROUP BY no_faktur
+    ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
+    JOIN acc_accurate a ON a.idacc_accurate = d.idacc_accurate
+    JOIN user u ON u.iduser = a.iduser
+    WHERE d.pay_date IS NOT NULL
 
-            UNION ALL
+    UNION ALL
 
-            SELECT 
-                d.no_faktur,
-                DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-                d.total_faktur,
-                d.pay,
-                d.discount,
-                d.payment,
-                DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-                d.refund,
-                d.idacc_lazada_detail AS id_detail,
-                'lazada' AS source
-            FROM acc_lazada_detail d
-            JOIN (
-                SELECT no_faktur, MAX(idacc_lazada_detail) AS max_id
-                FROM acc_lazada_detail
-                GROUP BY no_faktur
-            ) x ON d.no_faktur = x.no_faktur AND d.idacc_lazada_detail = x.max_id
-            JOIN acc_lazada l ON l.idacc_lazada = d.idacc_lazada
-            JOIN user u ON u.iduser = l.iduser
-            WHERE d.pay_date IS NOT NULL
+    SELECT 
+        d.no_faktur,
+        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+        d.total_faktur,
+        d.pay,
+        d.discount,
+        d.payment,
+        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+        d.refund,
+        d.idacc_lazada_detail AS id_detail,
+        CASE 
+            WHEN l.is_kotime = 1 THEN 'lazada_kotime'
+            ELSE 'lazada'
+        END AS source
+    FROM acc_lazada_detail d
+    JOIN (
+        SELECT no_faktur, MAX(idacc_lazada_detail) AS max_id
+        FROM acc_lazada_detail
+        GROUP BY no_faktur
+    ) x ON d.no_faktur = x.no_faktur AND d.idacc_lazada_detail = x.max_id
+    JOIN acc_lazada l ON l.idacc_lazada = d.idacc_lazada
+    JOIN user u ON u.iduser = l.iduser
+    WHERE d.pay_date IS NOT NULL
 
-            ORDER BY pay_date DESC
-        ")->result();
+    ORDER BY pay_date DESC
+")->result();
 
         $data = [
             'title' => $title,
@@ -182,7 +201,7 @@ class Recap extends CI_Controller
 
         if (empty($file)) {
             $this->session->set_flashdata('error', 'File tidak ditemukan.');
-            redirect($marketplace . '_recap');
+            redirect('recap'); // Fixed: redirect to 'recap' instead of $marketplace . '_recap'
             return;
         }
 
@@ -199,15 +218,20 @@ class Recap extends CI_Controller
         try {
             $spreadsheet = $reader->load($file);
 
+            // Determine if it's a kotime version
+            $is_kotime = strpos($marketplace, '_kotime') !== false;
+            $base_marketplace = $is_kotime ? str_replace('_kotime', '', $marketplace) : $marketplace;
+
             $header_data = [
                 'iduser' => $this->session->userdata('iduser'),
                 'created_by' => $this->session->userdata('username'),
                 'created_date' => date('Y-m-d H:i:s'),
                 'status' => 1,
-                'excel_type' => $type_excel
+                'excel_type' => $type_excel,
+                'is_kotime' => $is_kotime ? 1 : 0  // Add is_kotime to header data
             ];
 
-            switch ($marketplace) {
+            switch ($base_marketplace) {
                 case 'shopee':
                     $this->db->insert('acc_shopee', $header_data);
                     $id_header = $this->db->insert_id();
@@ -221,7 +245,7 @@ class Recap extends CI_Controller
                         }
                         if (empty($incomeSheets)) {
                             $this->session->set_flashdata('error', 'Tidak ditemukan sheet income dalam file.');
-                            redirect('shopee_recap');
+                            redirect('recap'); // Fixed: redirect to 'recap'
                             return;
                         }
 
@@ -260,17 +284,23 @@ class Recap extends CI_Controller
                                     'status' => 1
                                 ];
 
-                                // Upsert
-                                $exists = $this->db->get_where('acc_shopee_detail', ['no_faktur' => $noFaktur])->row();
+                                // Upsert - Add is_kotime condition to where clause
+                                $exists = $this->db->get_where('acc_shopee_detail', [
+                                    'no_faktur' => $noFaktur,
+                                    'idacc_shopee' => $id_header
+                                ])->row();
+
                                 if ($exists) {
-                                    $this->db->where('no_faktur', $noFaktur)->update('acc_shopee_detail', $detail);
+                                    $this->db->where('no_faktur', $noFaktur)
+                                        ->where('idacc_shopee', $id_header)
+                                        ->update('acc_shopee_detail', $detail);
                                 } else {
                                     $this->db->insert('acc_shopee_detail', $detail);
                                 }
                                 $processedOrders++;
                             }
                         }
-                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee Income berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan dalam sheet income.');
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee " . ($is_kotime ? "Kotime" : "Asta") . " Income berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan dalam sheet income.');
                     } else {
                         $sheet = $spreadsheet->getActiveSheet();
                         $rows = $sheet->toArray(null, true, true, true);
@@ -296,16 +326,22 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert
-                            $exists = $this->db->get_where('acc_shopee_detail_details', ['no_faktur' => $row['A']])->row();
+                            // Upsert - Since acc_shopee_detail_details doesn't have is_kotime, link via idacc_shopee
+                            $exists = $this->db->get_where('acc_shopee_detail_details', [
+                                'no_faktur' => $row['A'],
+                                'idacc_shopee' => $id_header
+                            ])->row();
+
                             if ($exists) {
-                                $this->db->where('no_faktur', $row['A'])->update('acc_shopee_detail_details', $detail_order);
+                                $this->db->where('no_faktur', $row['A'])
+                                    ->where('idacc_shopee', $id_header)
+                                    ->update('acc_shopee_detail_details', $detail_order);
                             } else {
                                 $this->db->insert('acc_shopee_detail_details', $detail_order);
                             }
                             $processedOrders++;
                         }
-                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee Order berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Shopee " . ($is_kotime ? "Kotime" : "Asta") . " Order berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     }
                     break;
 
@@ -348,16 +384,22 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert
-                            $exists = $this->db->get_where('acc_tiktok_detail', ['no_faktur' => $noFaktur])->row();
+                            // Upsert - Add idacc_tiktok condition
+                            $exists = $this->db->get_where('acc_tiktok_detail', [
+                                'no_faktur' => $noFaktur,
+                                'idacc_tiktok' => $id_header
+                            ])->row();
+
                             if ($exists) {
-                                $this->db->where('no_faktur', $noFaktur)->update('acc_tiktok_detail', $detail);
+                                $this->db->where('no_faktur', $noFaktur)
+                                    ->where('idacc_tiktok', $id_header)
+                                    ->update('acc_tiktok_detail', $detail);
                             } else {
                                 $this->db->insert('acc_tiktok_detail', $detail);
                             }
                             $processedOrders++;
                         }
-                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Income berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok " . ($is_kotime ? "Kotime" : "Asta") . " Income berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     } else {
                         $sheet = $spreadsheet->getActiveSheet();
                         $rows = $sheet->toArray(null, true, true, true);
@@ -382,26 +424,28 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert
-                            $exists = $this->db->get_where('acc_tiktok_detail_details', ['no_faktur' => $row['A']])->row();
+                            // Upsert - Add idacc_tiktok condition
+                            $exists = $this->db->get_where('acc_tiktok_detail_details', [
+                                'no_faktur' => $row['A'],
+                                'idacc_tiktok' => $id_header
+                            ])->row();
+
                             if ($exists) {
-                                $this->db->where('no_faktur', $row['A'])->update('acc_tiktok_detail_details', $detail_order);
+                                $this->db->where('no_faktur', $row['A'])
+                                    ->where('idacc_tiktok', $id_header)
+                                    ->update('acc_tiktok_detail_details', $detail_order);
                             } else {
                                 $this->db->insert('acc_tiktok_detail_details', $detail_order);
                             }
                             $processedOrders++;
                         }
-                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok Order berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
+                        $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data TikTok " . ($is_kotime ? "Kotime" : "Asta") . " Order berhasil diimpor ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     }
                     break;
 
                 case 'accurate':
-                    $this->db->insert('acc_accurate', [
-                        'iduser' => $this->session->userdata('iduser'),
-                        'created_by' => $this->session->userdata('username'),
-                        'created_date' => date('Y-m-d H:i:s'),
-                        'status' => 1
-                    ]);
+                    $header_data['is_kotime'] = $is_kotime ? 1 : 0;
+                    $this->db->insert('acc_accurate', $header_data);
                     $id_header = $this->db->insert_id();
 
                     $sheet = $spreadsheet->getActiveSheet();
@@ -419,156 +463,169 @@ class Recap extends CI_Controller
                             'payment' => str_replace(',', '', $row['P'])
                         ];
 
-                        // Upsert
-                        $exists = $this->db->get_where('acc_accurate_detail', ['no_faktur' => $row['B']])->row();
+                        // Upsert - Add idacc_accurate condition
+                        $exists = $this->db->get_where('acc_accurate_detail', [
+                            'no_faktur' => $row['B'],
+                            'idacc_accurate' => $id_header
+                        ])->row();
+
                         if ($exists) {
-                            $this->db->where('no_faktur', $row['B'])->update('acc_accurate_detail', $detail);
+                            $this->db->where('no_faktur', $row['B'])
+                                ->where('idacc_accurate', $id_header)
+                                ->update('acc_accurate_detail', $detail);
                         } else {
                             $this->db->insert('acc_accurate_detail', $detail);
                         }
                         $processedOrders++;
                     }
-                    $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
+                    $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate " . ($is_kotime ? "Kotime" : "Asta") . " berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     break;
 
-case 'lazada':
-    $this->db->insert('acc_lazada', $header_data);
-    $id_header = $this->db->insert_id();
+                case 'lazada':
+                    $this->db->insert('acc_lazada', $header_data);
+                    $id_header = $this->db->insert_id();
 
-    $sheet = $spreadsheet->getActiveSheet();
-    $rows = $sheet->toArray(null, true, true, true);
-    $processedOrders = 0;
+                    $sheet = $spreadsheet->getActiveSheet();
+                    $rows = $sheet->toArray(null, true, true, true);
+                    $processedOrders = 0;
 
-    // Create arrays to store order data
-    $orderData = [];
-    $orderDetails = []; // Store order details (product info)
+                    // Create arrays to store order data
+                    $orderData = [];
 
-    foreach ($rows as $i => $row) {
-        if ($i < 2) continue; // Start from row 2
+                    foreach ($rows as $i => $row) {
+                        if ($i < 2) continue; // Start from row 2
 
-        // Get order number from column K (Nomor Pesanan)
-        $orderNumber = trim($row['K'] ?? '');
-        if (empty($orderNumber)) continue;
+                        // Get order number from column K (Nomor Pesanan)
+                        $orderNumber = trim($row['K'] ?? '');
+                        if (empty($orderNumber)) continue;
 
-        $feeName = trim($row['D'] ?? ''); // Nama biaya
-        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
+                        $feeName = trim($row['D'] ?? ''); // Nama biaya
+                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
 
-        // Clean up fee name
-        $feeName = preg_replace('/\s+/', ' ', $feeName);
+                        // Clean up fee name
+                        $feeName = preg_replace('/\s+/', ' ', $feeName);
 
-        // Initialize order data if not exists
-        if (!isset($orderData[$orderNumber])) {
-            $orderData[$orderNumber] = [
-                'no_faktur' => $orderNumber,
-                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
-                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
-                'total_faktur' => 0,
-                'total_sum' => 0,
-                'discount_sum' => 0,
-                'refund' => 0,
-                'fee_details' => [],
-                'omset_details' => [] // Store multiple omset entries
-            ];
-        }
+                        // Initialize order data if not exists
+                        if (!isset($orderData[$orderNumber])) {
+                            $orderData[$orderNumber] = [
+                                'no_faktur' => $orderNumber,
+                                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
+                                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
+                                'total_faktur' => 0,
+                                'total_sum' => 0,
+                                'discount_sum' => 0,
+                                'refund' => 0,
+                                'fee_details' => [],
+                                'omset_details' => []
+                            ];
+                        }
 
-        // Store fee details
-        $orderData[$orderNumber]['fee_details'][] = [
-            'name' => $feeName,
-            'amount' => $amount
-        ];
+                        // Store fee details
+                        $orderData[$orderNumber]['fee_details'][] = [
+                            'name' => $feeName,
+                            'amount' => $amount
+                        ];
 
-        // Sum all amounts
-        $orderData[$orderNumber]['total_sum'] += $amount;
+                        // Sum all amounts
+                        $orderData[$orderNumber]['total_sum'] += $amount;
 
-        // Check fee type
-        if (strpos($feeName, 'Omset Penjualan') !== false) {
-            // Store each omset entry separately
-            $orderData[$orderNumber]['omset_details'][] = [
-                'amount' => abs($amount),
-                'sku' => trim($row['L'] ?? ''), // Column L: SKU Penjual
-                'product_name' => trim($row['T'] ?? '') // Column T: Nama Produk
-            ];
-            $orderData[$orderNumber]['total_faktur'] += abs($amount);
-        } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
-            $orderData[$orderNumber]['discount_sum'] += abs($amount);
-        }
-    }
-
-    // Process each order
-    foreach ($orderData as $orderNumber => $data) {
-        $pay = $data['total_sum'];
-        $total_faktur = $data['total_faktur'];
-        $discount = $data['discount_sum'];
-
-        $detail = [
-            'idacc_lazada' => $id_header,
-            'no_faktur' => $orderNumber,
-            'order_date' => $data['order_date'],
-            'pay_date' => $data['pay_date'],
-            'total_faktur' => $total_faktur,
-            'pay' => $pay,
-            'discount' => $discount,
-            'payment' => $pay,
-            'refund' => $data['refund'],
-            'is_check' => 0,
-            'created_date' => date('Y-m-d H:i:s'),
-            'created_by' => $this->session->userdata('username'),
-            'updated_date' => date('Y-m-d H:i:s'),
-            'updated_by' => $this->session->userdata('username'),
-            'status' => 1
-        ];
-
-        // Upsert main order detail
-        $exists = $this->db->get_where('acc_lazada_detail', ['no_faktur' => $orderNumber])->row();
-        if ($exists) {
-            $this->db->where('no_faktur', $orderNumber)->update('acc_lazada_detail', $detail);
-        } else {
-            $this->db->insert('acc_lazada_detail', $detail);
-        }
-
-        // Insert order details for each omset entry (product information)
-        if (!empty($data['omset_details'])) {
-            foreach ($data['omset_details'] as $omset) {
-                if (!empty($omset['sku']) && !empty($omset['product_name'])) {
-                    $detail_order = [
-                        'no_faktur' => $orderNumber,
-                        'sku' => $omset['sku'],
-                        'name_product' => $omset['product_name'],
-                        'price_after_discount' => $omset['amount'],
-                        'address' => '', // Lazada Excel might not have address
-                        'pos_code' => '',
-                        'created_date' => date('Y-m-d H:i:s'),
-                        'created_by' => $this->session->userdata('username'),
-                        'updated_date' => date('Y-m-d H:i:s'),
-                        'updated_by' => $this->session->userdata('username'),
-                        'status' => 1
-                    ];
-
-                    // Upsert order details - check by no_faktur AND sku
-                    $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
-                        'no_faktur' => $orderNumber,
-                        'sku' => $omset['sku']
-                    ])->row();
-
-                    if ($existsDetail) {
-                        $this->db->where('no_faktur', $orderNumber)
-                            ->where('sku', $omset['sku'])
-                            ->update('acc_lazada_detail_details', $detail_order);
-                    } else {
-                        $this->db->insert('acc_lazada_detail_details', $detail_order);
+                        // Check fee type
+                        if (strpos($feeName, 'Omset Penjualan') !== false) {
+                            // Store each omset entry separately
+                            $orderData[$orderNumber]['omset_details'][] = [
+                                'amount' => abs($amount),
+                                'sku' => trim($row['L'] ?? ''), // Column L: SKU Penjual
+                                'product_name' => trim($row['T'] ?? '') // Column T: Nama Produk
+                            ];
+                            $orderData[$orderNumber]['total_faktur'] += abs($amount);
+                        } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
+                            $orderData[$orderNumber]['discount_sum'] += abs($amount);
+                        }
                     }
-                }
-            }
-        }
 
-        $processedOrders++;
-    }
+                    // Process each order
+                    foreach ($orderData as $orderNumber => $data) {
+                        $pay = $data['total_sum'];
+                        $total_faktur = $data['total_faktur'];
+                        $discount = $data['discount_sum'];
 
-    $this->session->set_flashdata(
-        $processedOrders > 0 ? 'success' : 'error',
-        $processedOrders > 0 ? "Data Lazada berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.'
-    );
-    break;
+                        $detail = [
+                            'idacc_lazada' => $id_header,
+                            'no_faktur' => $orderNumber,
+                            'order_date' => $data['order_date'],
+                            'pay_date' => $data['pay_date'],
+                            'total_faktur' => $total_faktur,
+                            'pay' => $pay,
+                            'discount' => $discount,
+                            'payment' => $pay,
+                            'refund' => $data['refund'],
+                            'is_check' => 0,
+                            'created_date' => date('Y-m-d H:i:s'),
+                            'created_by' => $this->session->userdata('username'),
+                            'updated_date' => date('Y-m-d H:i:s'),
+                            'updated_by' => $this->session->userdata('username'),
+                            'status' => 1
+                        ];
+
+                        // Upsert main order detail - Add idacc_lazada condition
+                        $exists = $this->db->get_where('acc_lazada_detail', [
+                            'no_faktur' => $orderNumber,
+                            'idacc_lazada' => $id_header
+                        ])->row();
+
+                        if ($exists) {
+                            $this->db->where('no_faktur', $orderNumber)
+                                ->where('idacc_lazada', $id_header)
+                                ->update('acc_lazada_detail', $detail);
+                        } else {
+                            $this->db->insert('acc_lazada_detail', $detail);
+                        }
+
+                        // Insert order details for each omset entry
+                        if (!empty($data['omset_details'])) {
+                            foreach ($data['omset_details'] as $omset) {
+                                if (!empty($omset['sku']) && !empty($omset['product_name'])) {
+                                    $detail_order = [
+                                        'no_faktur' => $orderNumber,
+                                        'sku' => $omset['sku'],
+                                        'name_product' => $omset['product_name'],
+                                        'price_after_discount' => $omset['amount'],
+                                        'address' => '',
+                                        'pos_code' => '',
+                                        'created_date' => date('Y-m-d H:i:s'),
+                                        'created_by' => $this->session->userdata('username'),
+                                        'updated_date' => date('Y-m-d H:i:s'),
+                                        'updated_by' => $this->session->userdata('username'),
+                                        'status' => 1
+                                    ];
+
+                                    // Upsert order details - check by no_faktur AND sku AND idacc_lazada
+                                    $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
+                                        'no_faktur' => $orderNumber,
+                                        'sku' => $omset['sku'],
+                                        'idacc_lazada' => $id_header
+                                    ])->row();
+
+                                    if ($existsDetail) {
+                                        $this->db->where('no_faktur', $orderNumber)
+                                            ->where('sku', $omset['sku'])
+                                            ->where('idacc_lazada', $id_header)
+                                            ->update('acc_lazada_detail_details', $detail_order);
+                                    } else {
+                                        $this->db->insert('acc_lazada_detail_details', $detail_order);
+                                    }
+                                }
+                            }
+                        }
+
+                        $processedOrders++;
+                    }
+
+                    $this->session->set_flashdata(
+                        $processedOrders > 0 ? 'success' : 'error',
+                        $processedOrders > 0 ? "Data Lazada " . ($is_kotime ? "Kotime" : "Asta") . " berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.'
+                    );
+                    break;
 
                 default:
                     $this->session->set_flashdata('error', 'Marketplace tidak dikenali.');

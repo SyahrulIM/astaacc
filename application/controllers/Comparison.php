@@ -21,16 +21,20 @@ class Comparison extends CI_Controller
         $start_date = $this->input->get('start_date');
         $end_date = $this->input->get('end_date');
         $order_start = $this->input->get('order_start');
-        $order_end = $this->input->get('order_end'); // Fixed: from 'end_date' to 'order_end'
+        $order_end = $this->input->get('order_end');
         $status_filter = $this->input->get('status');
         $ratio_limit = (float) ($this->input->get('ratio') ?? 0);
         $ratio_status = $this->input->get('ratio_status');
         $matching_status = $this->input->get('matching_status');
         $type_status = $this->input->get('type_status');
 
+        // Tentukan jika filter Kotime
+        $is_kotime = strpos($marketplace_filter, '_kotime') !== false;
+        $base_marketplace = $is_kotime ? str_replace('_kotime', '', $marketplace_filter) : $marketplace_filter;
+
         $data_comparison = [];
 
-        // Initialize ALL variables that the view expects
+        // Initialize variables...
         $grand_total_invoice = $grand_total_payment = 0;
         $grand_total_invoice_non_retur = $grand_total_payment_non_retur = 0;
         $grand_total_invoice_retur = $grand_total_payment_retur = 0;
@@ -43,19 +47,40 @@ class Comparison extends CI_Controller
             $filterTiktok = [];
             $filterLazada = [];
 
-            // Marketplace filter
-            if ($marketplace_filter === 'Shopee') {
+            // Marketplace filter berdasarkan is_kotime
+            if ($base_marketplace === 'shopee') {
                 $filterTiktok[] = "1 = 0";
                 $filterLazada[] = "1 = 0";
-            } elseif ($marketplace_filter === 'TikTok') {
+
+                // Tambahkan kondisi is_kotime jika dipilih
+                if ($is_kotime) {
+                    $filterShopee[] = "s.is_kotime = 1";
+                } else if ($marketplace_filter === 'shopee') {
+                    $filterShopee[] = "s.is_kotime = 0";
+                }
+            } elseif ($base_marketplace === 'tiktok') {
                 $filterShopee[] = "1 = 0";
                 $filterLazada[] = "1 = 0";
-            } elseif ($marketplace_filter === 'Lazada') {
+
+                // Tambahkan kondisi is_kotime jika dipilih
+                if ($is_kotime) {
+                    $filterTiktok[] = "t.is_kotime = 1";
+                } else if ($marketplace_filter === 'tiktok') {
+                    $filterTiktok[] = "t.is_kotime = 0";
+                }
+            } elseif ($base_marketplace === 'lazada') {
                 $filterShopee[] = "1 = 0";
                 $filterTiktok[] = "1 = 0";
+
+                // Tambahkan kondisi is_kotime jika dipilih
+                if ($is_kotime) {
+                    $filterLazada[] = "l.is_kotime = 1";
+                } else if ($marketplace_filter === 'lazada') {
+                    $filterLazada[] = "l.is_kotime = 0";
+                }
             }
 
-            // Date filters
+            // Date filters...
             if ($start_date && $end_date) {
                 $filterShopee[] = "asd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
                 $filterTiktok[] = "atd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
@@ -68,7 +93,7 @@ class Comparison extends CI_Controller
                 $filterLazada[] = "ald.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
             }
 
-            // Type status filter
+            // Type status filter...
             if ($type_status == 'retur') {
                 $filterShopee[] = "asd.refund < 0";
                 $filterTiktok[] = "atd.refund < 0";
@@ -84,98 +109,110 @@ class Comparison extends CI_Controller
             $whereLazada = !empty($filterLazada) ? "WHERE " . implode(" AND ", $filterLazada) : "";
 
             $sql = "
-            SELECT
-                asd.no_faktur,
-                MAX(asd.order_date) AS shopee_order_date,
-                MAX(asd.pay_date) AS shopee_pay_date,
-                MAX(asd.total_faktur) AS shopee_total_faktur,
-                MAX(asd.discount) AS shopee_discount,
-                MAX(asd.payment) AS shopee_payment,
-                MAX(asd.refund) AS shopee_refund,
-                MAX(asd.note) AS note,
-                MAX(asd.is_check) AS is_check,
-                MAX(asd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'shopee' AS source
-            FROM acc_shopee_detail asd
-            LEFT JOIN (
-                SELECT a1.*
-                FROM acc_accurate_detail a1
-                INNER JOIN (
-                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                    FROM acc_accurate_detail
-                    GROUP BY no_faktur
-                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-            ) aad ON aad.no_faktur = asd.no_faktur
-            {$whereShopee}
-            GROUP BY asd.no_faktur
+        SELECT
+            asd.no_faktur,
+            MAX(asd.order_date) AS shopee_order_date,
+            MAX(asd.pay_date) AS shopee_pay_date,
+            MAX(asd.total_faktur) AS shopee_total_faktur,
+            MAX(asd.discount) AS shopee_discount,
+            MAX(asd.payment) AS shopee_payment,
+            MAX(asd.refund) AS shopee_refund,
+            MAX(asd.note) AS note,
+            MAX(asd.is_check) AS is_check,
+            MAX(asd.status_dir) AS status_dir,
+            MAX(aad.pay_date) AS accurate_pay_date,
+            MAX(aad.total_faktur) AS accurate_total_faktur,
+            MAX(aad.discount) AS accurate_discount,
+            MAX(aad.payment) AS accurate_payment,
+            CASE 
+                WHEN MAX(s.is_kotime) = 1 THEN 'shopee_kotime'
+                ELSE 'shopee'
+            END AS source
+        FROM acc_shopee_detail asd
+        INNER JOIN acc_shopee s ON s.idacc_shopee = asd.idacc_shopee
+        LEFT JOIN (
+            SELECT a1.*
+            FROM acc_accurate_detail a1
+            INNER JOIN (
+                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                FROM acc_accurate_detail
+                GROUP BY no_faktur
+            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+        ) aad ON aad.no_faktur = asd.no_faktur
+        {$whereShopee}
+        GROUP BY asd.no_faktur
 
-            UNION
+        UNION
 
-            SELECT
-                atd.no_faktur,
-                MAX(atd.order_date) AS shopee_order_date,
-                MAX(atd.pay_date) AS shopee_pay_date,
-                MAX(atd.total_faktur) AS shopee_total_faktur,
-                MAX(atd.discount) AS shopee_discount,
-                MAX(atd.payment) AS shopee_payment,
-                MAX(atd.refund) AS shopee_refund,
-                MAX(atd.note) AS note,
-                MAX(atd.is_check) AS is_check,
-                MAX(atd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'tiktok' AS source
-            FROM acc_tiktok_detail atd
-            LEFT JOIN (
-                SELECT a1.*
-                FROM acc_accurate_detail a1
-                INNER JOIN (
-                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                    FROM acc_accurate_detail
-                    GROUP BY no_faktur
-                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-            ) aad ON aad.no_faktur = atd.no_faktur
-            {$whereTiktok}
-            GROUP BY atd.no_faktur
+        SELECT
+            atd.no_faktur,
+            MAX(atd.order_date) AS shopee_order_date,
+            MAX(atd.pay_date) AS shopee_pay_date,
+            MAX(atd.total_faktur) AS shopee_total_faktur,
+            MAX(atd.discount) AS shopee_discount,
+            MAX(atd.payment) AS shopee_payment,
+            MAX(atd.refund) AS shopee_refund,
+            MAX(atd.note) AS note,
+            MAX(atd.is_check) AS is_check,
+            MAX(atd.status_dir) AS status_dir,
+            MAX(aad.pay_date) AS accurate_pay_date,
+            MAX(aad.total_faktur) AS accurate_total_faktur,
+            MAX(aad.discount) AS accurate_discount,
+            MAX(aad.payment) AS accurate_payment,
+            CASE 
+                WHEN MAX(t.is_kotime) = 1 THEN 'tiktok_kotime'
+                ELSE 'tiktok'
+            END AS source
+        FROM acc_tiktok_detail atd
+        INNER JOIN acc_tiktok t ON t.idacc_tiktok = atd.idacc_tiktok
+        LEFT JOIN (
+            SELECT a1.*
+            FROM acc_accurate_detail a1
+            INNER JOIN (
+                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                FROM acc_accurate_detail
+                GROUP BY no_faktur
+            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+        ) aad ON aad.no_faktur = atd.no_faktur
+        {$whereTiktok}
+        GROUP BY atd.no_faktur
 
-            UNION
+        UNION
 
-            SELECT
-                ald.no_faktur,
-                MAX(ald.order_date) AS shopee_order_date,
-                MAX(ald.pay_date) AS shopee_pay_date,
-                MAX(ald.total_faktur) AS shopee_total_faktur,
-                MAX(ald.discount) AS shopee_discount,
-                MAX(ald.payment) AS shopee_payment,
-                MAX(ald.refund) AS shopee_refund,
-                MAX(ald.note) AS note,
-                MAX(ald.is_check) AS is_check,
-                MAX(ald.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'lazada' AS source
-            FROM acc_lazada_detail ald
-            LEFT JOIN (
-                SELECT a1.*
-                FROM acc_accurate_detail a1
-                INNER JOIN (
-                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                    FROM acc_accurate_detail
-                    GROUP BY no_faktur
-                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-            ) aad ON aad.no_faktur = ald.no_faktur
-            {$whereLazada}
-            GROUP BY ald.no_faktur
+        SELECT
+            ald.no_faktur,
+            MAX(ald.order_date) AS shopee_order_date,
+            MAX(ald.pay_date) AS shopee_pay_date,
+            MAX(ald.total_faktur) AS shopee_total_faktur,
+            MAX(ald.discount) AS shopee_discount,
+            MAX(ald.payment) AS shopee_payment,
+            MAX(ald.refund) AS shopee_refund,
+            MAX(ald.note) AS note,
+            MAX(ald.is_check) AS is_check,
+            MAX(ald.status_dir) AS status_dir,
+            MAX(aad.pay_date) AS accurate_pay_date,
+            MAX(aad.total_faktur) AS accurate_total_faktur,
+            MAX(aad.discount) AS accurate_discount,
+            MAX(aad.payment) AS accurate_payment,
+            CASE 
+                WHEN MAX(l.is_kotime) = 1 THEN 'lazada_kotime'
+                ELSE 'lazada'
+            END AS source
+        FROM acc_lazada_detail ald
+        INNER JOIN acc_lazada l ON l.idacc_lazada = ald.idacc_lazada
+        LEFT JOIN (
+            SELECT a1.*
+            FROM acc_accurate_detail a1
+            INNER JOIN (
+                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                FROM acc_accurate_detail
+                GROUP BY no_faktur
+            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+        ) aad ON aad.no_faktur = ald.no_faktur
+        {$whereLazada}
+        GROUP BY ald.no_faktur
 
-            ORDER BY no_faktur ASC
+        ORDER BY no_faktur ASC
         ";
 
             $results = $this->db->query($sql)->result();
@@ -183,7 +220,7 @@ class Comparison extends CI_Controller
             foreach ($results as $row) {
                 // Get SKUs for bottom price calculation
                 $sku_list = [];
-                if ($row->source == 'shopee') {
+                if (strpos($row->source, 'shopee') !== false) {
                     $sku_data = $this->db
                         ->select('sku')
                         ->from('acc_shopee_detail_details')
@@ -191,10 +228,18 @@ class Comparison extends CI_Controller
                         ->get()
                         ->result();
                     $sku_list = array_column($sku_data, 'sku');
-                } elseif ($row->source == 'tiktok') {
+                } elseif (strpos($row->source, 'tiktok') !== false) {
                     $sku_data = $this->db
                         ->select('sku')
                         ->from('acc_tiktok_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                } elseif (strpos($row->source, 'lazada') !== false) {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_lazada_detail_details')
                         ->where('no_faktur', $row->no_faktur)
                         ->get()
                         ->result();
@@ -223,6 +268,7 @@ class Comparison extends CI_Controller
 
                 $row->total_price_bottom = $total_price_bottom;
 
+                // Rest of your existing logic remains the same...
                 $is_sudah_bayar = !empty($row->accurate_pay_date);
 
                 // Status filter
@@ -248,7 +294,7 @@ class Comparison extends CI_Controller
                     }
                 }
 
-                // Add to totals
+                // Add to totals...
                 if ($row->accurate_payment) {
                     $grand_total_invoice += $shopee;
                     $grand_total_payment += $accurate;
@@ -263,7 +309,7 @@ class Comparison extends CI_Controller
                     $grand_total_payment_non_retur += $accurate;
                 }
 
-                // Calculate differences
+                // Calculate differences...
                 if ($shopee != $accurate) {
                     $difference_count++;
                     if (!$is_retur) {
@@ -271,7 +317,7 @@ class Comparison extends CI_Controller
                     }
                 }
 
-                // Calculate ratio
+                // Calculate ratio...
                 if ($accurate > 0 && $shopee > 0) {
                     $ratio = (($shopee - $accurate) / $shopee) * 100;
 
@@ -296,38 +342,70 @@ class Comparison extends CI_Controller
             }
         }
 
+        // Calculate additional revenue with Kotime support
         $additional_revenue = 0;
         if ($order_start && $order_end) {
-            if ($marketplace_filter == 'Shopee') {
+            if ($base_marketplace == 'shopee') {
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
+
+                // Tambahkan kondisi is_kotime untuk additional revenue
+                if ($is_kotime) {
+                    $this->db->where('is_kotime', 1);
+                } else if ($marketplace_filter === 'shopee') {
+                    $this->db->where('is_kotime', 0);
+                }
+
                 $additional_data = $this->db->get('acc_shopee_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
-            } elseif ($marketplace_filter == 'TikTok') {
+            } elseif ($base_marketplace == 'tiktok') {
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
+
+                // Tambahkan kondisi is_kotime untuk additional revenue
+                if ($is_kotime) {
+                    $this->db->where('is_kotime', 1);
+                } else if ($marketplace_filter === 'tiktok') {
+                    $this->db->where('is_kotime', 0);
+                }
+
                 $additional_data = $this->db->get('acc_tiktok_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
-            } elseif ($marketplace_filter == 'Lazada') {
+            } elseif ($base_marketplace == 'lazada') {
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
+
+                // Tambahkan kondisi is_kotime untuk additional revenue
+                if ($is_kotime) {
+                    $this->db->where('is_kotime', 1);
+                } else if ($marketplace_filter === 'lazada') {
+                    $this->db->where('is_kotime', 0);
+                }
+
                 $additional_data = $this->db->get('acc_lazada_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
             } else {
+                // Semua marketplace
+                $shopee = $tiktok = $lazada = 0;
+
+                // Shopee Asta & Kotime
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
-                $shopee = $this->db->get('acc_shopee_additional')->row()->additional_revenue ?? 0;
+                $shopee_data = $this->db->get('acc_shopee_additional')->row();
+                $shopee = $shopee_data->additional_revenue ?? 0;
 
+                // TikTok Asta & Kotime
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
-                $tiktok = $this->db->get('acc_tiktok_additional')->row()->additional_revenue ?? 0;
+                $tiktok_data = $this->db->get('acc_tiktok_additional')->row();
+                $tiktok = $tiktok_data->additional_revenue ?? 0;
 
-                $lazada = 0;
+                // Lazada Asta & Kotime
                 $this->db->select_sum('additional_revenue');
                 $this->db->where('start_date >=', $order_start);
                 $this->db->where('end_date <=', $order_end);
@@ -346,8 +424,6 @@ class Comparison extends CI_Controller
             'title' => 'Comparison',
             'data_comparison' => $data_comparison,
             'marketplace_filter' => $marketplace_filter,
-
-            // All variables that the view expects
             'grand_total_invoice' => $grand_total_invoice,
             'grand_total_payment' => $grand_total_payment,
             'grand_total_invoice_non_retur' => $grand_total_invoice_non_retur,
@@ -356,14 +432,12 @@ class Comparison extends CI_Controller
             'grand_total_payment_retur' => $grand_total_payment_retur,
             'grand_total_invoice_after_retur' => $grand_total_invoice_after_retur,
             'grand_total_payment_after_retur' => $grand_total_payment_after_retur,
-
             'difference_count' => $difference_count,
             'difference_count_non_retur' => $difference_count_non_retur,
             'exceed_ratio_count' => $exceed_ratio_count,
             'exceed_ratio_count_non_retur' => $exceed_ratio_count_non_retur,
             'mismatch_count' => $mismatch_count,
             'retur_count' => $retur_count,
-
             'ratio_status' => $ratio_status,
             'ratio_limit' => $ratio_limit,
             'matching_status' => $matching_status,

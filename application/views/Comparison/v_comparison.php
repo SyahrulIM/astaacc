@@ -18,9 +18,12 @@
                     <label for="marketplace" class="form-label">Marketplace</label>
                     <select id="marketplace" name="marketplace" class="form-select">
                         <option value="">Semua</option>
-                        <option value="Shopee" <?= ($marketplace_filter === 'Shopee' ? 'selected' : '') ?>>Shopee</option>
-                        <option value="TikTok" <?= ($marketplace_filter === 'TikTok' ? 'selected' : '') ?>>TikTok</option>
-                        <option value="Lazada" <?= ($marketplace_filter === 'Lazada' ? 'selected' : '') ?>>Lazada</option>
+                        <option value="shopee" <?= ($marketplace_filter === 'shopee' ? 'selected' : '') ?>>Shopee Asta</option>
+                        <option value="shopee_kotime" <?= ($marketplace_filter === 'shopee_kotime' ? 'selected' : '') ?>>Shopee Kotime</option>
+                        <option value="tiktok" <?= ($marketplace_filter === 'tiktok' ? 'selected' : '') ?>>TikTok Asta</option>
+                        <option value="tiktok_kotime" <?= ($marketplace_filter === 'tiktok_kotime' ? 'selected' : '') ?>>TikTok Kotime</option>
+                        <option value="lazada" <?= ($marketplace_filter === 'lazada' ? 'selected' : '') ?>>Lazada Asta</option>
+                        <option value="lazada_kotime" <?= ($marketplace_filter === 'lazada_kotime' ? 'selected' : '') ?>>Lazada Kotime</option>
                     </select>
                 </div>
 
@@ -79,8 +82,24 @@
             </form>
             <hr>
             <div class="row">
-                <div class="col text-center">
-                    <h3>Summary - Marketplace <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h3>
+                <div class="row">
+                    <div class="col text-center">
+                        <h3>Summary - Marketplace
+                            <?php
+                            if (empty($marketplace_filter)) {
+                                echo 'Semua';
+                            } else {
+                                // Konversi format marketplace_filter ke tampilan yang lebih user-friendly
+                                if (strpos($marketplace_filter, '_kotime') !== false) {
+                                    $base = str_replace('_kotime', '', $marketplace_filter);
+                                    echo ucfirst($base) . ' Kotime';
+                                } else {
+                                    echo ucfirst($marketplace_filter) . ' Asta';
+                                }
+                            }
+                            ?>
+                        </h3>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -126,7 +145,21 @@
             <hr>
             <div class="row">
                 <div class="col text-center mb-4">
-                    <h3>Summary - Marketplace <?= empty($marketplace_filter) ? 'Semua' : $marketplace_filter ?></h3>
+                    <h3>Summary - Marketplace
+                        <?php
+                        if (empty($marketplace_filter)) {
+                            echo 'Semua';
+                        } else {
+                            // Konversi format marketplace_filter ke tampilan yang lebih user-friendly
+                            if (strpos($marketplace_filter, '_kotime') !== false) {
+                                $base = str_replace('_kotime', '', $marketplace_filter);
+                                echo ucfirst($base) . ' Kotime';
+                            } else {
+                                echo ucfirst($marketplace_filter) . ' Asta';
+                            }
+                        }
+                        ?>
+                    </h3>
                     <font size='4'>Setelah Dikurangi Retur</font>
                 </div>
             </div>
@@ -343,15 +376,15 @@
                         <td><?= $no++ ?></td>
                         <td><?= $row->no_faktur ?></td>
                         <td>
-                            <?php if ($row->source == 'tiktok') { ?>
+                            <?php if (strpos($row->source, 'tiktok') !== false) { ?>
                             <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Tiktok / Tokopedia
-                            <?php } else if ($row->source == 'shopee') { ?>
+                            Tiktok <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
+                            <?php } else if (strpos($row->source, 'shopee') !== false) { ?>
                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Shopee
-                            <?php } else if ($row->source == 'lazada') { ?>
-                            <img src="https://cdn.brandfetch.io/idlM7RX-66/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Lazada
+                            Shopee <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
+                            <?php } else if (strpos($row->source, 'lazada') !== false) { ?>
+                            <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            Lazada <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
                             <?php } ?>
                         </td>
                         <td><?= $row->shopee_order_date ?? '-' ?></td>

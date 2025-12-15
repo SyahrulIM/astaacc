@@ -15,7 +15,7 @@
                         Template:
                     </strong>
                     <a href="<?= base_url('assets/template_excel/accurate/pembayaran_faktur_suryajayamakmur_250828155006.xlsx') ?>" class="btn btn-sm btn-success" download>
-                        <i class="fas fa-file-excel"></i> Income (Accurate)
+                        <i class="fas fa-file-excel"></i> Accurate
                     </a>
                     <a href="<?= base_url('assets/template_excel/shopee/Income.sudah dilepas.id.20250801_20250822.xlsx') ?>" class="btn btn-sm btn-success" download>
                         <i class="fas fa-file-excel"></i> Income (Shopee)
@@ -29,7 +29,7 @@
                     <a href="<?= base_url('assets/template_excel/tiktok/Selesai pesanan-2025-08-20-14_38.xlsx') ?>" class="btn btn-sm btn-info" download>
                         <i class="fas fa-file-excel"></i> Selesai (Tiktok)
                     </a>
-                    <a href="#" class="btn btn-sm btn-warning" download>
+                    <a href="<?= base_url('assets/template_excel/lazada/Saababbc280a34be799c7ed74aa259d7df.xlsx') ?>" class="btn btn-sm btn-warning" download>
                         <i class="fas fa-file-excel"></i> Lazada
                     </a>
                 </div>
@@ -39,10 +39,13 @@
                     <label for="marketplace" class="form-label">Marketplace</label>
                     <select name="marketplace" id="marketplace" class="form-select">
                         <option value="" selected disabled>Pilih Marketplace</option>
-                        <option value="shopee">Shopee</option>
-                        <option value="tiktok">Tiktok / Tokopedia</option>
+                        <option value="shopee">Shopee Asta</option>
+                        <option value="shopee_kotime">Shopee Kotime</option>
+                        <option value="tiktok">Tiktok Asta</option>
+                        <option value="tiktok_kotime">Tiktok Kotime</option>
+                        <option value="lazada">Lazada Asta</option>
+                        <option value="lazada_kotime">Lazada Kotime</option>
                         <option value="accurate">Accurate</option>
-                        <option value="lazada">Lazada</option>
                     </select>
                 </div>
 
@@ -125,16 +128,16 @@
                                         <td><?= $arkey + 1 ?></td>
                                         <td><?= $arvalue->full_name ?></td>
                                         <td>
-                                            <?php if ($arvalue->source == 'tiktok') { ?>
+                                            <?php if (strpos($arvalue->source, 'tiktok') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Tiktok / Tokopedia
-                                            <?php } else if ($arvalue->source == 'shopee') { ?>
+                                            Tiktok <?php echo $arvalue->source == 'tiktok_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if (strpos($arvalue->source, 'shopee') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Shopee
-                                            <?php } else if ($arvalue->source == 'lazada') { ?>
+                                            Shopee <?php echo $arvalue->source == 'shopee_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if (strpos($arvalue->source, 'lazada') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Lazada
-                                            <?php } else { ?>
+                                            Lazada <?php echo $arvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if ($arvalue->source == 'accurate') { ?>
                                             <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Accurate
                                             <?php } ?>
@@ -199,16 +202,16 @@
                                         <td><?= $ardkey + 1 ?></td>
                                         <td><?= $ardvalue->no_faktur ?></td>
                                         <td>
-                                            <?php if ($ardvalue->source == 'tiktok') { ?>
+                                            <?php if (strpos($ardvalue->source, 'tiktok') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Tiktok / Tokopedia
-                                            <?php } else if ($ardvalue->source == 'shopee') { ?>
+                                            Tiktok <?php echo $ardvalue->source == 'tiktok_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if (strpos($ardvalue->source, 'shopee') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Shopee
-                                            <?php } else if ($ardvalue->source == 'lazada') { ?>
+                                            Shopee <?php echo $ardvalue->source == 'shopee_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if (strpos($ardvalue->source, 'lazada') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Lazada
-                                            <?php } else { ?>
+                                            Lazada <?php echo $ardvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if ($ardvalue->source == 'accurate') { ?>
                                             <img src="https://penjovalonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Accurate
                                             <?php } ?>
@@ -299,6 +302,15 @@
                     text: 'Order'
                 }
             ],
+            shopee_kotime: [{
+                    value: 'income',
+                    text: 'Income'
+                },
+                {
+                    value: 'order',
+                    text: 'Order'
+                }
+            ],
             tiktok: [{
                     value: 'income',
                     text: 'Income'
@@ -308,8 +320,19 @@
                     text: 'Selesai'
                 }
             ],
+            tiktok_kotime: [{
+                    value: 'income',
+                    text: 'Income'
+                },
+                {
+                    value: 'selesai',
+                    text: 'Selesai'
+                }
+            ],
             accurate: [], // No options for Accurate
-            lazada: [] // No options for Lazada
+            accurate_kotime: [], // No options for Accurate Kotime (not in dropdown)
+            lazada: [], // No options for Lazada
+            lazada_kotime: [] // No options for Lazada Kotime
         };
 
         // Function to update Type Excel dropdown
@@ -319,8 +342,13 @@
             // Clear existing options
             typeExcelSelect.innerHTML = '';
 
-            // If no marketplace selected or Accurate/Lazada is selected
-            if (!selectedMarketplace || selectedMarketplace === 'accurate' || selectedMarketplace === 'lazada') {
+            // If no marketplace selected or Accurate/Lazada (or their kotime versions) is selected
+            if (!selectedMarketplace ||
+                selectedMarketplace === 'accurate' ||
+                selectedMarketplace === 'lazada' ||
+                selectedMarketplace === 'accurate_kotime' ||
+                selectedMarketplace === 'lazada_kotime') {
+
                 typeExcelContainer.style.display = 'none';
                 typeExcelSelect.removeAttribute('required');
 
@@ -345,12 +373,14 @@
 
                 // Add marketplace-specific options
                 const options = typeExcelOptions[selectedMarketplace];
-                options.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option.value;
-                    optionElement.textContent = option.text;
-                    typeExcelSelect.appendChild(optionElement);
-                });
+                if (options) {
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option.value;
+                        optionElement.textContent = option.text;
+                        typeExcelSelect.appendChild(optionElement);
+                    });
+                }
             }
         }
 
