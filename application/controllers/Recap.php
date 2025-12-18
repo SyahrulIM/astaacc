@@ -19,63 +19,63 @@ class Recap extends CI_Controller
         $title = 'Import Payment';
 
         $acc_recap = $this->db->query("
-    SELECT 
-        user.full_name AS full_name,
-        DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-        acc_shopee.idacc_shopee AS id_data,
-        acc_shopee.excel_type AS type,
-        CASE 
-            WHEN acc_shopee.is_kotime = 1 THEN 'shopee_kotime'
-            ELSE 'shopee'
-        END AS source
-    FROM acc_shopee
-    JOIN user ON user.iduser = acc_shopee.iduser
-    WHERE acc_shopee.created_date IS NOT NULL
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_shopee.idacc_shopee AS id_data,
+            acc_shopee.excel_type AS type,
+            CASE 
+                WHEN acc_shopee.is_kotime = 1 THEN 'shopee_kotime'
+                ELSE 'shopee'
+            END AS source
+        FROM acc_shopee
+        JOIN user ON user.iduser = acc_shopee.iduser
+        WHERE acc_shopee.created_date IS NOT NULL
 
-    UNION ALL
+        UNION ALL
 
-    SELECT 
-        user.full_name AS full_name,
-        DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-        acc_tiktok.idacc_tiktok AS id_data,
-        acc_tiktok.excel_type AS type,
-        CASE 
-            WHEN acc_tiktok.is_kotime = 1 THEN 'tiktok_kotime'
-            ELSE 'tiktok'
-        END AS source
-    FROM acc_tiktok
-    JOIN user ON user.iduser = acc_tiktok.iduser
-    WHERE acc_tiktok.created_date IS NOT NULL
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_tiktok.idacc_tiktok AS id_data,
+            acc_tiktok.excel_type AS type,
+            CASE 
+                WHEN acc_tiktok.is_kotime = 1 THEN 'tiktok_kotime'
+                ELSE 'tiktok'
+            END AS source
+        FROM acc_tiktok
+        JOIN user ON user.iduser = acc_tiktok.iduser
+        WHERE acc_tiktok.created_date IS NOT NULL
 
-    UNION ALL
+        UNION ALL
 
-    SELECT 
-        user.full_name AS full_name,
-        DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-        acc_accurate.idacc_accurate AS id_data,
-        'accurate' AS type,
-        'accurate' AS source
-    FROM acc_accurate
-    JOIN user ON user.iduser = acc_accurate.iduser
-    WHERE acc_accurate.created_date IS NOT NULL
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_accurate.idacc_accurate AS id_data,
+            'accurate' AS type,
+            'accurate' AS source
+        FROM acc_accurate
+        JOIN user ON user.iduser = acc_accurate.iduser
+        WHERE acc_accurate.created_date IS NOT NULL
 
-    UNION ALL
+        UNION ALL
 
-    SELECT 
-        user.full_name AS full_name,
-        DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-        acc_lazada.idacc_lazada AS id_data,
-        acc_lazada.excel_type AS type,
-        CASE 
-            WHEN acc_lazada.is_kotime = 1 THEN 'lazada_kotime'
-            ELSE 'lazada'
-        END AS source
-    FROM acc_lazada
-    JOIN user ON user.iduser = acc_lazada.iduser
-    WHERE acc_lazada.created_date IS NOT NULL
+        SELECT 
+            user.full_name AS full_name,
+            DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+            acc_lazada.idacc_lazada AS id_data,
+            acc_lazada.excel_type AS type,
+            CASE 
+                WHEN acc_lazada.is_kotime = 1 THEN 'lazada_kotime'
+                ELSE 'lazada'
+            END AS source
+        FROM acc_lazada
+        JOIN user ON user.iduser = acc_lazada.iduser
+        WHERE acc_lazada.created_date IS NOT NULL
 
-    ORDER BY created_date DESC
-")->result();
+        ORDER BY created_date DESC
+    ")->result();
 
         // Query untuk detail data
         $acc_recap_detail = $this->db->query("
@@ -179,7 +179,7 @@ class Recap extends CI_Controller
     WHERE d.pay_date IS NOT NULL
 
     ORDER BY pay_date DESC
-")->result();
+    ")->result();
 
         $data = [
             'title' => $title,
