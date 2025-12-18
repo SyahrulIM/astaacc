@@ -18,8 +18,6 @@ class Recap extends CI_Controller
     {
         $title = 'Import Payment';
 
-        // Query untuk recap data
-        // Query untuk recap data
         $acc_recap = $this->db->query("
     SELECT 
         user.full_name AS full_name,
@@ -201,7 +199,7 @@ class Recap extends CI_Controller
 
         if (empty($file)) {
             $this->session->set_flashdata('error', 'File tidak ditemukan.');
-            redirect('recap'); // Fixed: redirect to 'recap' instead of $marketplace . '_recap'
+            redirect('recap');
             return;
         }
 
@@ -228,7 +226,7 @@ class Recap extends CI_Controller
                 'created_date' => date('Y-m-d H:i:s'),
                 'status' => 1,
                 'excel_type' => $type_excel,
-                'is_kotime' => $is_kotime ? 1 : 0  // Add is_kotime to header data
+                'is_kotime' => $is_kotime ? 1 : 0
             ];
 
             switch ($base_marketplace) {
@@ -245,7 +243,7 @@ class Recap extends CI_Controller
                         }
                         if (empty($incomeSheets)) {
                             $this->session->set_flashdata('error', 'Tidak ditemukan sheet income dalam file.');
-                            redirect('recap'); // Fixed: redirect to 'recap'
+                            redirect('recap');
                             return;
                         }
 
@@ -284,7 +282,7 @@ class Recap extends CI_Controller
                                     'status' => 1
                                 ];
 
-                                // Upsert - Add is_kotime condition to where clause
+                                // Upsert for acc_shopee_detail
                                 $exists = $this->db->get_where('acc_shopee_detail', [
                                     'no_faktur' => $noFaktur,
                                     'idacc_shopee' => $id_header
@@ -326,15 +324,13 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert - Since acc_shopee_detail_details doesn't have is_kotime, link via idacc_shopee
+                            // FIXED: Remove idacc_shopee from WHERE clause for acc_shopee_detail_details
                             $exists = $this->db->get_where('acc_shopee_detail_details', [
-                                'no_faktur' => $row['A'],
-                                'idacc_shopee' => $id_header
+                                'no_faktur' => $row['A']
                             ])->row();
 
                             if ($exists) {
                                 $this->db->where('no_faktur', $row['A'])
-                                    ->where('idacc_shopee', $id_header)
                                     ->update('acc_shopee_detail_details', $detail_order);
                             } else {
                                 $this->db->insert('acc_shopee_detail_details', $detail_order);
@@ -384,7 +380,7 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert - Add idacc_tiktok condition
+                            // Upsert for acc_tiktok_detail
                             $exists = $this->db->get_where('acc_tiktok_detail', [
                                 'no_faktur' => $noFaktur,
                                 'idacc_tiktok' => $id_header
@@ -424,15 +420,13 @@ class Recap extends CI_Controller
                                 'status' => 1
                             ];
 
-                            // Upsert - Add idacc_tiktok condition
+                            // FIXED: Remove idacc_tiktok from WHERE clause for acc_tiktok_detail_details
                             $exists = $this->db->get_where('acc_tiktok_detail_details', [
-                                'no_faktur' => $row['A'],
-                                'idacc_tiktok' => $id_header
+                                'no_faktur' => $row['A']
                             ])->row();
 
                             if ($exists) {
                                 $this->db->where('no_faktur', $row['A'])
-                                    ->where('idacc_tiktok', $id_header)
                                     ->update('acc_tiktok_detail_details', $detail_order);
                             } else {
                                 $this->db->insert('acc_tiktok_detail_details', $detail_order);
@@ -463,7 +457,7 @@ class Recap extends CI_Controller
                             'payment' => str_replace(',', '', $row['P'])
                         ];
 
-                        // Upsert - Add idacc_accurate condition
+                        // Upsert for acc_accurate_detail
                         $exists = $this->db->get_where('acc_accurate_detail', [
                             'no_faktur' => $row['B'],
                             'idacc_accurate' => $id_header
@@ -493,14 +487,14 @@ class Recap extends CI_Controller
                     $orderData = [];
 
                     foreach ($rows as $i => $row) {
-                        if ($i < 2) continue; // Start from row 2
+                        if ($i < 2) continue;
 
                         // Get order number from column K (Nomor Pesanan)
                         $orderNumber = trim($row['K'] ?? '');
                         if (empty($orderNumber)) continue;
 
-                        $feeName = trim($row['D'] ?? ''); // Nama biaya
-                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Jumlah
+                        $feeName = trim($row['D'] ?? '');
+                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0'));
 
                         // Clean up fee name
                         $feeName = preg_replace('/\s+/', ' ', $feeName);
@@ -509,8 +503,8 @@ class Recap extends CI_Controller
                         if (!isset($orderData[$orderNumber])) {
                             $orderData[$orderNumber] = [
                                 'no_faktur' => $orderNumber,
-                                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null, // Tanggal Pesanan Dibuat
-                                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null, // Tanggal Dilepas
+                                'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null,
+                                'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null,
                                 'total_faktur' => 0,
                                 'total_sum' => 0,
                                 'discount_sum' => 0,
@@ -534,8 +528,8 @@ class Recap extends CI_Controller
                             // Store each omset entry separately
                             $orderData[$orderNumber]['omset_details'][] = [
                                 'amount' => abs($amount),
-                                'sku' => trim($row['L'] ?? ''), // Column L: SKU Penjual
-                                'product_name' => trim($row['T'] ?? '') // Column T: Nama Produk
+                                'sku' => trim($row['L'] ?? ''),
+                                'product_name' => trim($row['T'] ?? '')
                             ];
                             $orderData[$orderNumber]['total_faktur'] += abs($amount);
                         } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
@@ -567,7 +561,7 @@ class Recap extends CI_Controller
                             'status' => 1
                         ];
 
-                        // Upsert main order detail - Add idacc_lazada condition
+                        // Upsert main order detail - Keep idacc_lazada for acc_lazada_detail
                         $exists = $this->db->get_where('acc_lazada_detail', [
                             'no_faktur' => $orderNumber,
                             'idacc_lazada' => $id_header
@@ -599,17 +593,15 @@ class Recap extends CI_Controller
                                         'status' => 1
                                     ];
 
-                                    // Upsert order details - check by no_faktur AND sku AND idacc_lazada
+                                    // FIXED: Remove idacc_lazada from WHERE clause for acc_lazada_detail_details
                                     $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
                                         'no_faktur' => $orderNumber,
-                                        'sku' => $omset['sku'],
-                                        'idacc_lazada' => $id_header
+                                        'sku' => $omset['sku']
                                     ])->row();
 
                                     if ($existsDetail) {
                                         $this->db->where('no_faktur', $orderNumber)
                                             ->where('sku', $omset['sku'])
-                                            ->where('idacc_lazada', $id_header)
                                             ->update('acc_lazada_detail_details', $detail_order);
                                     } else {
                                         $this->db->insert('acc_lazada_detail_details', $detail_order);
