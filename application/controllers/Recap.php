@@ -220,17 +220,16 @@ class Recap extends CI_Controller
             $is_kotime = strpos($marketplace, '_kotime') !== false;
             $base_marketplace = $is_kotime ? str_replace('_kotime', '', $marketplace) : $marketplace;
 
-            $header_data = [
-                'iduser' => $this->session->userdata('iduser'),
-                'created_by' => $this->session->userdata('username'),
-                'created_date' => date('Y-m-d H:i:s'),
-                'status' => 1,
-                'excel_type' => $type_excel,
-                'is_kotime' => $is_kotime ? 1 : 0
-            ];
-
             switch ($base_marketplace) {
                 case 'shopee':
+                    $header_data = [
+                        'iduser' => $this->session->userdata('iduser'),
+                        'created_by' => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'status' => 1,
+                        'excel_type' => $type_excel,
+                        'is_kotime' => $is_kotime ? 1 : 0
+                    ];
                     $this->db->insert('acc_shopee', $header_data);
                     $id_header = $this->db->insert_id();
 
@@ -342,6 +341,14 @@ class Recap extends CI_Controller
                     break;
 
                 case 'tiktok':
+                    $header_data = [
+                        'iduser' => $this->session->userdata('iduser'),
+                        'created_by' => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'status' => 1,
+                        'excel_type' => $type_excel,
+                        'is_kotime' => $is_kotime ? 1 : 0
+                    ];
                     $this->db->insert('acc_tiktok', $header_data);
                     $id_header = $this->db->insert_id();
 
@@ -438,7 +445,13 @@ class Recap extends CI_Controller
                     break;
 
                 case 'accurate':
-                    $header_data['is_kotime'] = $is_kotime ? 1 : 0;
+                    // For accurate, don't include is_kotime and excel_type
+                    $header_data = [
+                        'iduser' => $this->session->userdata('iduser'),
+                        'created_by' => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'status' => 1
+                    ];
                     $this->db->insert('acc_accurate', $header_data);
                     $id_header = $this->db->insert_id();
 
@@ -472,87 +485,142 @@ class Recap extends CI_Controller
                         }
                         $processedOrders++;
                     }
-                    $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate " . ($is_kotime ? "Kotime" : "Asta") . " berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
+                    $this->session->set_flashdata($processedOrders > 0 ? 'success' : 'error', $processedOrders > 0 ? "Data Accurate berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.');
                     break;
 
                 case 'lazada':
+                    $header_data = [
+                        'iduser' => $this->session->userdata('iduser'),
+                        'created_by' => $this->session->userdata('username'),
+                        'created_date' => date('Y-m-d H:i:s'),
+                        'status' => 1,
+                        'excel_type' => $type_excel,
+                        'is_kotime' => $is_kotime ? 1 : 0
+                    ];
                     $this->db->insert('acc_lazada', $header_data);
                     $id_header = $this->db->insert_id();
 
                     $sheet = $spreadsheet->getActiveSheet();
                     $rows = $sheet->toArray(null, true, true, true);
                     $processedOrders = 0;
+                    $processedItems = 0;
 
                     // Create arrays to store order data
                     $orderData = [];
+                    $itemCounter = []; // Untuk melacak jumlah item per faktur
 
                     foreach ($rows as $i => $row) {
-                        if ($i < 2) continue;
+                        if ($i < 2) continue; // Start from row 2
 
                         // Get order number from column K (Nomor Pesanan)
                         $orderNumber = trim($row['K'] ?? '');
-                        if (empty($orderNumber)) continue;
+                        // Get order ID from column L (ID Pesanan)
+                        $orderId = trim($row['L'] ?? '');
 
-                        $feeName = trim($row['D'] ?? '');
-                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0'));
+                        if (empty($orderNumber) || empty($orderId)) continue;
+
+                        $feeName = trim($row['D'] ?? ''); // Kolom D = Nama biaya
+                        $amount = floatval(str_replace(['.', ','], '', $row['E'] ?? '0')); // Kolom E = Jumlah
+                        $sku = trim($row['M'] ?? ''); // Kolom M = SKU
+                        $productName = trim($row['R'] ?? ''); // Kolom R = Nama Produk
 
                         // Clean up fee name
                         $feeName = preg_replace('/\s+/', ' ', $feeName);
 
-                        // Initialize order data if not exists
-                        if (!isset($orderData[$orderNumber])) {
-                            $orderData[$orderNumber] = [
-                                'no_faktur' => $orderNumber,
+                        // UNIQUE KEY: Gunakan kombinasi Nomor Pesanan + ID Pesanan + SKU sebagai key
+                        $itemKey = $orderNumber . '|' . $orderId . '|' . $sku;
+
+                        // Initialize item data if not exists
+                        if (!isset($orderData[$itemKey])) {
+                            $orderData[$itemKey] = [
+                                'no_faktur' => $orderNumber,  // Simpan nomor pesanan asli
+                                'order_id' => $orderId,       // Simpan ID pesanan
+                                'sku' => $sku,
+                                'product_name' => $productName,
                                 'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null,
                                 'pay_date' => !empty($row['H']) ? date('Y-m-d', strtotime($row['H'])) : null,
                                 'total_faktur' => 0,
                                 'total_sum' => 0,
                                 'discount_sum' => 0,
                                 'refund' => 0,
-                                'fee_details' => [],
-                                'omset_details' => []
+                                'omset_amount' => 0,
+                                'discount_amount' => 0,
+                                'combined_key' => $orderNumber . '_' . $orderId // Key untuk grouping
                             ];
                         }
 
                         // Store fee details
-                        $orderData[$orderNumber]['fee_details'][] = [
+                        if (!isset($orderData[$itemKey]['fee_details'])) {
+                            $orderData[$itemKey]['fee_details'] = [];
+                        }
+
+                        $orderData[$itemKey]['fee_details'][] = [
                             'name' => $feeName,
                             'amount' => $amount
                         ];
 
                         // Sum all amounts
-                        $orderData[$orderNumber]['total_sum'] += $amount;
+                        $orderData[$itemKey]['total_sum'] += $amount;
 
                         // Check fee type
                         if (strpos($feeName, 'Omset Penjualan') !== false) {
-                            // Store each omset entry separately
-                            $orderData[$orderNumber]['omset_details'][] = [
-                                'amount' => abs($amount),
-                                'sku' => trim($row['L'] ?? ''),
-                                'product_name' => trim($row['T'] ?? '')
-                            ];
-                            $orderData[$orderNumber]['total_faktur'] += abs($amount);
-                        } elseif (strpos($feeName, 'Diskon') !== false || strpos($feeName, 'Promosi') !== false) {
-                            $orderData[$orderNumber]['discount_sum'] += abs($amount);
+                            $orderData[$itemKey]['omset_amount'] += abs($amount);
+                            $orderData[$itemKey]['total_faktur'] += abs($amount);
+                        } elseif (strpos($feeName, 'Diskon LazKoin') !== false) {
+                            $orderData[$itemKey]['discount_amount'] += abs($amount);
+                            $orderData[$itemKey]['discount_sum'] += abs($amount);
+                        } elseif (strpos($feeName, 'Promosi') !== false || strpos($feeName, 'Diskon') !== false) {
+                            $orderData[$itemKey]['discount_sum'] += abs($amount);
                         }
                     }
 
-                    // Process each order
-                    foreach ($orderData as $orderNumber => $data) {
-                        $pay = $data['total_sum'];
-                        $total_faktur = $data['total_faktur'];
-                        $discount = $data['discount_sum'];
+                    // Group by combined key (Nomor Pesanan + ID Pesanan) untuk summary
+                    $orderSummary = [];
+                    foreach ($orderData as $itemKey => $data) {
+                        $combinedKey = $data['combined_key'];
+
+                        if (!isset($orderSummary[$combinedKey])) {
+                            $orderSummary[$combinedKey] = [
+                                'no_faktur' => $data['no_faktur'],
+                                'order_id' => $data['order_id'],
+                                'order_date' => $data['order_date'],
+                                'pay_date' => $data['pay_date'],
+                                'total_faktur' => 0,
+                                'total_sum' => 0,
+                                'discount_sum' => 0,
+                                'refund' => 0,
+                                'items' => []
+                            ];
+                        }
+
+                        // Accumulate totals for the order
+                        $orderSummary[$combinedKey]['total_faktur'] += $data['total_faktur'];
+                        $orderSummary[$combinedKey]['total_sum'] += $data['total_sum'];
+                        $orderSummary[$combinedKey]['discount_sum'] += $data['discount_sum'];
+
+                        // Store item details
+                        $orderSummary[$combinedKey]['items'][] = $data;
+                    }
+
+                    // Process each order summary
+                    foreach ($orderSummary as $combinedKey => $summary) {
+                        $pay = $summary['total_sum'];
+                        $total_faktur = $summary['total_faktur'];
+                        $discount = $summary['discount_sum'];
+
+                        // Gunakan order_id sebagai no_faktur untuk detail
+                        $detailFaktur = $summary['order_id'];
 
                         $detail = [
                             'idacc_lazada' => $id_header,
-                            'no_faktur' => $orderNumber,
-                            'order_date' => $data['order_date'],
-                            'pay_date' => $data['pay_date'],
+                            'no_faktur' => $detailFaktur, // Gunakan order_id sebagai faktur
+                            'order_date' => $summary['order_date'],
+                            'pay_date' => $summary['pay_date'],
                             'total_faktur' => $total_faktur,
                             'pay' => $pay,
                             'discount' => $discount,
                             'payment' => $pay,
-                            'refund' => $data['refund'],
+                            'refund' => $summary['refund'],
                             'is_check' => 0,
                             'created_date' => date('Y-m-d H:i:s'),
                             'created_by' => $this->session->userdata('username'),
@@ -561,61 +629,68 @@ class Recap extends CI_Controller
                             'status' => 1
                         ];
 
-                        // Upsert main order detail - Keep idacc_lazada for acc_lazada_detail
+                        // Upsert main order detail - Gunakan order_id sebagai faktur
                         $exists = $this->db->get_where('acc_lazada_detail', [
-                            'no_faktur' => $orderNumber,
+                            'no_faktur' => $detailFaktur,
                             'idacc_lazada' => $id_header
                         ])->row();
 
                         if ($exists) {
-                            $this->db->where('no_faktur', $orderNumber)
+                            $this->db->where('no_faktur', $detailFaktur)
                                 ->where('idacc_lazada', $id_header)
                                 ->update('acc_lazada_detail', $detail);
                         } else {
                             $this->db->insert('acc_lazada_detail', $detail);
                         }
 
-                        // Insert order details for each omset entry
-                        if (!empty($data['omset_details'])) {
-                            foreach ($data['omset_details'] as $omset) {
-                                if (!empty($omset['sku']) && !empty($omset['product_name'])) {
-                                    $detail_order = [
-                                        'no_faktur' => $orderNumber,
-                                        'sku' => $omset['sku'],
-                                        'name_product' => $omset['product_name'],
-                                        'price_after_discount' => $omset['amount'],
-                                        'address' => '',
-                                        'pos_code' => '',
-                                        'created_date' => date('Y-m-d H:i:s'),
-                                        'created_by' => $this->session->userdata('username'),
+                        $processedOrders++;
+
+                        // Insert each item separately into detail_details
+                        foreach ($summary['items'] as $item) {
+                            // Calculate price_after_discount = Omset - Diskon LazKoin untuk item ini
+                            $priceAfterDiscount = $item['omset_amount'] - $item['discount_amount'];
+
+                            $detail_order = [
+                                'no_faktur' => $detailFaktur, // Gunakan order_id sebagai faktur
+                                'sku' => $item['sku'],
+                                'name_product' => $item['product_name'],
+                                'price_after_discount' => $priceAfterDiscount,
+                                'address' => '',
+                                'pos_code' => '',
+                                'created_date' => date('Y-m-d H:i:s'),
+                                'created_by' => $this->session->userdata('username'),
+                                'updated_date' => date('Y-m-d H:i:s'),
+                                'updated_by' => $this->session->userdata('username'),
+                                'status' => 1
+                            ];
+
+                            // Check if this faktur+SKU already exists
+                            $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
+                                'no_faktur' => $detailFaktur,
+                                'sku' => $item['sku']
+                            ])->row();
+
+                            if ($existsDetail) {
+                                // Jika sudah ada, update dengan menambahkan jumlah
+                                $newPriceAfterDiscount = $existsDetail->price_after_discount + $priceAfterDiscount;
+                                $this->db->where('no_faktur', $detailFaktur)
+                                    ->where('sku', $item['sku'])
+                                    ->update('acc_lazada_detail_details', [
+                                        'price_after_discount' => $newPriceAfterDiscount,
                                         'updated_date' => date('Y-m-d H:i:s'),
-                                        'updated_by' => $this->session->userdata('username'),
-                                        'status' => 1
-                                    ];
-
-                                    // FIXED: Remove idacc_lazada from WHERE clause for acc_lazada_detail_details
-                                    $existsDetail = $this->db->get_where('acc_lazada_detail_details', [
-                                        'no_faktur' => $orderNumber,
-                                        'sku' => $omset['sku']
-                                    ])->row();
-
-                                    if ($existsDetail) {
-                                        $this->db->where('no_faktur', $orderNumber)
-                                            ->where('sku', $omset['sku'])
-                                            ->update('acc_lazada_detail_details', $detail_order);
-                                    } else {
-                                        $this->db->insert('acc_lazada_detail_details', $detail_order);
-                                    }
-                                }
+                                        'updated_by' => $this->session->userdata('username')
+                                    ]);
+                            } else {
+                                // Jika belum ada, insert baru
+                                $this->db->insert('acc_lazada_detail_details', $detail_order);
+                                $processedItems++;
                             }
                         }
-
-                        $processedOrders++;
                     }
 
                     $this->session->set_flashdata(
                         $processedOrders > 0 ? 'success' : 'error',
-                        $processedOrders > 0 ? "Data Lazada " . ($is_kotime ? "Kotime" : "Asta") . " berhasil diimport ($processedOrders orders)." : 'Tidak ada data order yang ditemukan.'
+                        $processedOrders > 0 ? "Data Lazada " . ($is_kotime ? "Kotime" : "Asta") . " berhasil diimport ($processedOrders orders, $processedItems items)." : 'Tidak ada data order yang ditemukan.'
                     );
                     break;
 
