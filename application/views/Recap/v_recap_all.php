@@ -85,90 +85,89 @@
             <ul class="nav nav-tabs mt-4" id="listTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <a href="<?php echo base_url('recap'); ?>">
-                        <button class="nav-link active" id="list-tab">List</button>
+                        <button class="nav-link" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab">List</button>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a href="<?php echo base_url('recap/all'); ?>">
-                        <button class="nav-link" id="all-tab">All</button>
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">All</button>
                     </a>
                 </li>
             </ul>
-
-            <!-- Tabs Content -->
-            <div class="tab-content" id="listTabsContent">
-                <div class="tab-pane fade show active" id="list" role="tabpanel" aria-labelledby="list-tab">
-                    <div class="row mt-3">
-                        <div class="col">
-                            <table id="tableproduct" class="display" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>User Penginput</th>
-                                        <th>Marketplace</th>
-                                        <th>Type Excel</th>
-                                        <th>Tanggal Import</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    foreach ($acc_recap as $arkey => $arvalue) {
-                                        // Determine row style based on source
-                                        $row_style = '';
-                                        if (strtolower($arvalue->source) === 'shopee') {
-                                            $row_style = 'style="background-color: #EE4D2D; color: white;"'; // Orange Shopee
-                                        } elseif (strtolower($arvalue->source) === 'tiktok') {
-                                            $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
-                                        } elseif (strtolower($arvalue->source) === 'lazada') {
-                                            $row_style = 'style="background-color: #0F146D; color: white;"'; // Blue Lazada
-                                        } else {
-                                            $row_style = '';
-                                        }
-                                        ?>
-                                    <tr <?= $row_style ?>>
-                                        <td><?= $arkey + 1 ?></td>
-                                        <td><?= $arvalue->full_name ?></td>
-                                        <td>
-                                            <?php if (strpos($arvalue->source, 'tiktok') !== false) { ?>
-                                            <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Tiktok <?php echo $arvalue->source == 'tiktok_kotime' ? 'Kotime' : 'Asta'; ?>
-                                            <?php } else if (strpos($arvalue->source, 'shopee') !== false) { ?>
-                                            <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Shopee <?php echo $arvalue->source == 'shopee_kotime' ? 'Kotime' : 'Asta'; ?>
-                                            <?php } else if (strpos($arvalue->source, 'lazada') !== false) { ?>
-                                            <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Lazada <?php echo $arvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
-                                            <?php } else if ($arvalue->source == 'accurate') { ?>
-                                            <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                                            Accurate
-                                            <?php } ?>
-                                        </td>
-                                        <?php if ($arvalue->type == 'income') { ?>
-                                        <td>Income</td>
-                                        <?php } else if ($arvalue->type == 'order') { ?>
-                                        <td>Order</td>
-                                        <?php } else if ($arvalue->type == 'selesai') { ?>
-                                        <td>Selesai</td>
-                                        <?php } else { ?>
-                                        <td>Pembayaran</td>
-                                        <?php } ?>
-                                        <td><?= $arvalue->created_date ?></td>
-                                        <td>
-                                            <a href="<?php echo base_url('recap/detail_payment?idacc_recap=' . $arvalue->id_data . '&marketplace=' . $arvalue->source) ?>">
-                                                <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <?php } ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <table id="tableall">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nomer Faktur</th>
+                            <th>Marketplace</th>
+                            <th>Tanggal Pesanan</th>
+                            <th>Tanggal Pembayaran</th>
+                            <th>Total Faktur</th>
+                            <th>Bayar</th>
+                            <th>Diskon</th>
+                            <th>Refund</th>
+                            <th>Pembayaran</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($acc_recap_detail as $ardkey => $ardvalue) {
+                            // Tentukan warna background per baris
+                            $row_style = '';
+                            if (strtolower($ardvalue->source) === 'shopee') {
+                                $row_style = 'style="background-color: #EE4D2D; color: white;"';
+                            } elseif (strtolower($ardvalue->source) === 'tiktok') {
+                                $row_style = 'style="background-color: #5da96a; color: white;"';
+                            } elseif (strtolower($ardvalue->source) === 'lazada') {
+                                $row_style = 'style="background-color: #0F146D; color: white;"';
+                            } else {
+                                $row_style = '';
+                            }
+                            ?>
+                        <tr <?= $row_style ?>>
+                            <td><?= $ardkey + 1 ?></td>
+                            <td><?= $ardvalue->no_faktur ?></td>
+                            <td>
+                                <?php if (strpos($ardvalue->source, 'tiktok') !== false) { ?>
+                                <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                Tiktok <?php echo $ardvalue->source == 'tiktok_kotime' ? 'Kotime' : 'Asta'; ?>
+                                <?php } else if (strpos($ardvalue->source, 'shopee') !== false) { ?>
+                                <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                Shopee <?php echo $ardvalue->source == 'shopee_kotime' ? 'Kotime' : 'Asta'; ?>
+                                <?php } else if (strpos($ardvalue->source, 'lazada') !== false) { ?>
+                                <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                Lazada <?php echo $ardvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
+                                <?php } else if ($ardvalue->source == 'accurate') { ?>
+                                <img src="https://penjovalonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                Accurate
+                                <?php } ?>
+                            </td>
+                            <td><?= $ardvalue->order_date ?></td>
+                            <td><?= $ardvalue->pay_date ?></td>
+                            <td><?= number_format($ardvalue->total_faktur) ?></td>
+                            <td><?= number_format($ardvalue->pay) ?></td>
+                            <td><?= number_format($ardvalue->discount) ?></td>
+                            <td><?= number_format($ardvalue->refund) ?></td>
+                            <td><?= number_format($ardvalue->payment) ?></td>
+                            <td>
+                                <?php if ($ardvalue->source === 'tiktok' || $ardvalue->source === 'shopee' || $ardvalue->source === 'lazada') { ?>
+                                <a href="<?= base_url('recap/detail_faktur?no_faktur=' . $ardvalue->no_faktur . '&marketplace=' . $ardvalue->source) ?> ">
+                                    <button type="button" class="btn btn-success"><i class="fas fa-list"></i> Details</button>
+                                </a>
+                                <?php } ?>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -187,20 +186,6 @@
 
 <!-- Initialize DataTables AFTER all scripts are loaded -->
 <script>
-    $(document).ready(function() {
-        new DataTable('#tableproduct', {
-            responsive: false,
-            scrollX: true,
-            layout: {
-                bottomEnd: {
-                    paging: {
-                        firstLast: false
-                    }
-                }
-            }
-        });
-    });
-
     $(document).ready(function() {
         new DataTable('#tableall', {
             responsive: false,

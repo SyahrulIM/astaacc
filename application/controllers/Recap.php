@@ -16,179 +16,187 @@ class Recap extends CI_Controller
 
     public function index()
     {
-        $title = 'Import Payment';
-
         $acc_recap = $this->db->query("
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_shopee.idacc_shopee AS id_data,
-            acc_shopee.excel_type AS type,
-            CASE 
-                WHEN acc_shopee.is_kotime = 1 THEN 'shopee_kotime'
-                ELSE 'shopee'
-            END AS source
-        FROM acc_shopee
-        JOIN user ON user.iduser = acc_shopee.iduser
-        WHERE acc_shopee.created_date IS NOT NULL
+            SELECT 
+                user.full_name AS full_name,
+                DATE_FORMAT(acc_shopee.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                acc_shopee.idacc_shopee AS id_data,
+                acc_shopee.excel_type AS type,
+                CASE 
+                    WHEN acc_shopee.is_kotime = 1 THEN 'shopee_kotime'
+                    ELSE 'shopee'
+                END AS source
+            FROM acc_shopee
+            JOIN user ON user.iduser = acc_shopee.iduser
+            WHERE acc_shopee.created_date IS NOT NULL
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_tiktok.idacc_tiktok AS id_data,
-            acc_tiktok.excel_type AS type,
-            CASE 
-                WHEN acc_tiktok.is_kotime = 1 THEN 'tiktok_kotime'
-                ELSE 'tiktok'
-            END AS source
-        FROM acc_tiktok
-        JOIN user ON user.iduser = acc_tiktok.iduser
-        WHERE acc_tiktok.created_date IS NOT NULL
+            SELECT 
+                user.full_name AS full_name,
+                DATE_FORMAT(acc_tiktok.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                acc_tiktok.idacc_tiktok AS id_data,
+                acc_tiktok.excel_type AS type,
+                CASE 
+                    WHEN acc_tiktok.is_kotime = 1 THEN 'tiktok_kotime'
+                    ELSE 'tiktok'
+                END AS source
+            FROM acc_tiktok
+            JOIN user ON user.iduser = acc_tiktok.iduser
+            WHERE acc_tiktok.created_date IS NOT NULL
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_accurate.idacc_accurate AS id_data,
-            'accurate' AS type,
-            'accurate' AS source
-        FROM acc_accurate
-        JOIN user ON user.iduser = acc_accurate.iduser
-        WHERE acc_accurate.created_date IS NOT NULL
+            SELECT 
+                user.full_name AS full_name,
+                DATE_FORMAT(acc_accurate.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                acc_accurate.idacc_accurate AS id_data,
+                'accurate' AS type,
+                'accurate' AS source
+            FROM acc_accurate
+            JOIN user ON user.iduser = acc_accurate.iduser
+            WHERE acc_accurate.created_date IS NOT NULL
 
-        UNION ALL
+            UNION ALL
 
-        SELECT 
-            user.full_name AS full_name,
-            DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
-            acc_lazada.idacc_lazada AS id_data,
-            acc_lazada.excel_type AS type,
-            CASE 
-                WHEN acc_lazada.is_kotime = 1 THEN 'lazada_kotime'
-                ELSE 'lazada'
-            END AS source
-        FROM acc_lazada
-        JOIN user ON user.iduser = acc_lazada.iduser
-        WHERE acc_lazada.created_date IS NOT NULL
+            SELECT 
+                user.full_name AS full_name,
+                DATE_FORMAT(acc_lazada.created_date, '%Y-%m-%d %H:%i:%s') AS created_date,
+                acc_lazada.idacc_lazada AS id_data,
+                acc_lazada.excel_type AS type,
+                CASE 
+                    WHEN acc_lazada.is_kotime = 1 THEN 'lazada_kotime'
+                    ELSE 'lazada'
+                END AS source
+            FROM acc_lazada
+            JOIN user ON user.iduser = acc_lazada.iduser
+            WHERE acc_lazada.created_date IS NOT NULL
 
-        ORDER BY created_date DESC
-    ")->result();
-
-        // Query untuk detail data
-        $acc_recap_detail = $this->db->query("
-    SELECT 
-        d.no_faktur,
-        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-        d.total_faktur,
-        d.pay,
-        d.discount,
-        d.payment,
-        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-        d.refund,
-        d.idacc_shopee_detail AS id_detail,
-        CASE 
-            WHEN s.is_kotime = 1 THEN 'shopee_kotime'
-            ELSE 'shopee'
-        END AS source
-    FROM acc_shopee_detail d
-    JOIN (
-        SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
-        FROM acc_shopee_detail
-        GROUP BY no_faktur
-    ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
-    JOIN acc_shopee s ON s.idacc_shopee = d.idacc_shopee
-    JOIN user u ON u.iduser = s.iduser
-    WHERE d.pay_date IS NOT NULL
-
-    UNION ALL
-
-    SELECT 
-        d.no_faktur,
-        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-        d.total_faktur,
-        d.pay,
-        d.discount,
-        d.payment,
-        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-        d.refund,
-        d.idacc_tiktok_detail AS id_detail,
-        CASE 
-            WHEN t.is_kotime = 1 THEN 'tiktok_kotime'
-            ELSE 'tiktok'
-        END AS source
-    FROM acc_tiktok_detail d
-    JOIN (
-        SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
-        FROM acc_tiktok_detail
-        GROUP BY no_faktur
-    ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
-    JOIN acc_tiktok t ON t.idacc_tiktok = d.idacc_tiktok
-    JOIN user u ON u.iduser = t.iduser
-    WHERE d.pay_date IS NOT NULL
-
-    UNION ALL
-
-    SELECT 
-        d.no_faktur,
-        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-        d.total_faktur,
-        d.pay,
-        d.discount,
-        d.payment,
-        NULL AS order_date,
-        NULL AS refund,
-        d.idacc_accurate_detail AS id_detail,
-        'accurate' AS source
-    FROM acc_accurate_detail d
-    JOIN (
-        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-        FROM acc_accurate_detail
-        GROUP BY no_faktur
-    ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
-    JOIN acc_accurate a ON a.idacc_accurate = d.idacc_accurate
-    JOIN user u ON u.iduser = a.iduser
-    WHERE d.pay_date IS NOT NULL
-
-    UNION ALL
-
-    SELECT 
-        d.no_faktur,
-        DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
-        d.total_faktur,
-        d.pay,
-        d.discount,
-        d.payment,
-        DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
-        d.refund,
-        d.idacc_lazada_detail AS id_detail,
-        CASE 
-            WHEN l.is_kotime = 1 THEN 'lazada_kotime'
-            ELSE 'lazada'
-        END AS source
-    FROM acc_lazada_detail d
-    JOIN (
-        SELECT no_faktur, MAX(idacc_lazada_detail) AS max_id
-        FROM acc_lazada_detail
-        GROUP BY no_faktur
-    ) x ON d.no_faktur = x.no_faktur AND d.idacc_lazada_detail = x.max_id
-    JOIN acc_lazada l ON l.idacc_lazada = d.idacc_lazada
-    JOIN user u ON u.iduser = l.iduser
-    WHERE d.pay_date IS NOT NULL
-
-    ORDER BY pay_date DESC
-    ")->result();
+            ORDER BY created_date DESC
+        ")->result();
 
         $data = [
-            'title' => $title,
-            'acc_recap' => $acc_recap,
-            'acc_recap_detail' => $acc_recap_detail
+            'title' => 'Import Payment',
+            'acc_recap' => $acc_recap
         ];
 
         $this->load->view('theme/v_head', $data);
         $this->load->view('Recap/v_recap');
+    }
+
+    public function all()
+    {
+        $acc_recap_detail = $this->db->query("
+        SELECT 
+            d.no_faktur,
+            DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+            d.total_faktur,
+            d.pay,
+            d.discount,
+            d.payment,
+            DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+            d.refund,
+            d.idacc_shopee_detail AS id_detail,
+            CASE 
+                WHEN s.is_kotime = 1 THEN 'shopee_kotime'
+                ELSE 'shopee'
+            END AS source
+        FROM acc_shopee_detail d
+        JOIN (
+            SELECT no_faktur, MAX(idacc_shopee_detail) AS max_id
+            FROM acc_shopee_detail
+            GROUP BY no_faktur
+        ) x ON d.no_faktur = x.no_faktur AND d.idacc_shopee_detail = x.max_id
+        JOIN acc_shopee s ON s.idacc_shopee = d.idacc_shopee
+        JOIN user u ON u.iduser = s.iduser
+        WHERE d.pay_date IS NOT NULL
+
+        UNION ALL
+
+        SELECT 
+            d.no_faktur,
+            DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+            d.total_faktur,
+            d.pay,
+            d.discount,
+            d.payment,
+            DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+            d.refund,
+            d.idacc_tiktok_detail AS id_detail,
+            CASE 
+                WHEN t.is_kotime = 1 THEN 'tiktok_kotime'
+                ELSE 'tiktok'
+            END AS source
+        FROM acc_tiktok_detail d
+        JOIN (
+            SELECT no_faktur, MAX(idacc_tiktok_detail) AS max_id
+            FROM acc_tiktok_detail
+            GROUP BY no_faktur
+        ) x ON d.no_faktur = x.no_faktur AND d.idacc_tiktok_detail = x.max_id
+        JOIN acc_tiktok t ON t.idacc_tiktok = d.idacc_tiktok
+        JOIN user u ON u.iduser = t.iduser
+        WHERE d.pay_date IS NOT NULL
+
+        UNION ALL
+
+        SELECT 
+            d.no_faktur,
+            DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+            d.total_faktur,
+            d.pay,
+            d.discount,
+            d.payment,
+            NULL AS order_date,
+            NULL AS refund,
+            d.idacc_accurate_detail AS id_detail,
+            'accurate' AS source
+        FROM acc_accurate_detail d
+        JOIN (
+            SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+            FROM acc_accurate_detail
+            GROUP BY no_faktur
+        ) x ON d.no_faktur = x.no_faktur AND d.idacc_accurate_detail = x.max_id
+        JOIN acc_accurate a ON a.idacc_accurate = d.idacc_accurate
+        JOIN user u ON u.iduser = a.iduser
+        WHERE d.pay_date IS NOT NULL
+
+        UNION ALL
+
+        SELECT 
+            d.no_faktur,
+            DATE_FORMAT(d.pay_date, '%Y-%m-%d') AS pay_date,
+            d.total_faktur,
+            d.pay,
+            d.discount,
+            d.payment,
+            DATE_FORMAT(d.order_date, '%Y-%m-%d') AS order_date,
+            d.refund,
+            d.idacc_lazada_detail AS id_detail,
+            CASE 
+                WHEN l.is_kotime = 1 THEN 'lazada_kotime'
+                ELSE 'lazada'
+            END AS source
+        FROM acc_lazada_detail d
+        JOIN (
+            SELECT no_faktur, MAX(idacc_lazada_detail) AS max_id
+            FROM acc_lazada_detail
+            GROUP BY no_faktur
+        ) x ON d.no_faktur = x.no_faktur AND d.idacc_lazada_detail = x.max_id
+        JOIN acc_lazada l ON l.idacc_lazada = d.idacc_lazada
+        JOIN user u ON u.iduser = l.iduser
+        WHERE d.pay_date IS NOT NULL
+
+        ORDER BY pay_date DESC
+        ")->result();
+
+        $data = [
+            'title' => 'All Payment Data',
+            'acc_recap_detail' => $acc_recap_detail,  // Tetap gunakan 'acc_recap' untuk konsistensi
+            'active_tab' => 'all'  // Tambahkan ini untuk styling
+        ];
+
+        $this->load->view('theme/v_head', $data);
+        $this->load->view('Recap/v_recap_all');
     }
 
     public function createRecap()
