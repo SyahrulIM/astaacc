@@ -141,7 +141,7 @@
                                 <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                 Lazada <?php echo $ardvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
                                 <?php } else if ($ardvalue->source == 'accurate') { ?>
-                                <img src="https://penjovalonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                 Accurate
                                 <?php } ?>
                             </td>
