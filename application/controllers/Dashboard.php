@@ -10,52 +10,108 @@ class Dashboard extends CI_Controller
             $this->session->set_flashdata('error', 'Eeettss gak boleh nakal, Login dulu ya kak hehe.');
             redirect('auth');
         }
+        $this->load->database();
     }
 
     public function index()
     {
-        $title = 'Dashboard';
+        // Get today's date
+        $today = date('Y-m-d');
 
-        // Start Acc Detail Shopee
-        $this->db->select('
-            acc_shopee_detail.no_faktur,
-            MAX(acc_shopee_detail.pay_date) AS pay_date,
-            MAX(acc_shopee_detail.total_faktur) AS total_faktur,
-            MAX(acc_shopee_detail.pay) AS pay,
-            MAX(acc_shopee_detail.discount) AS discount,
-            MAX(acc_shopee_detail.payment) AS payment,
-            MAX(acc_shopee_detail.order_date) AS order_date
-        ');
-        $this->db->from('acc_shopee_detail');
-        $this->db->join('acc_shopee', 'acc_shopee.idacc_shopee = acc_shopee_detail.idacc_shopee');
-        $this->db->join('user', 'user.iduser = acc_shopee.iduser');
-        $this->db->group_by('acc_shopee_detail.no_faktur');
-        $acc_shopee_detail = $this->db->get();
-        // End
+        // Shopee stats
+        $shopee_count = $this->db->count_all('acc_shopee_detail');
+        $shopee_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_shopee_detail');
 
-        // Start Acc Detail Accurate
-        $this->db->select('
-            acc_accurate_detail.no_faktur,
-            MAX(acc_accurate_detail.pay_date) AS pay_date,
-            MAX(acc_accurate_detail.total_faktur) AS total_faktur,
-            MAX(acc_accurate_detail.pay) AS pay,
-            MAX(acc_accurate_detail.discount) AS discount,
-            MAX(acc_accurate_detail.payment) AS payment
-        ');
-        $this->db->from('acc_accurate_detail');
-        $this->db->join('acc_accurate', 'acc_accurate.idacc_accurate = acc_accurate_detail.idacc_accurate');
-        $this->db->join('user', 'user.iduser = acc_accurate.iduser');
-        $this->db->group_by('acc_accurate_detail.no_faktur');
-        $acc_accurate_detail = $this->db->get();
-        // End
+        // Accurate stats
+        $accurate_count = 0;
+        $accurate_today = 0;
+        if ($this->db->table_exists('acc_accurate_detail')) {
+            $accurate_count = $this->db->count_all('acc_accurate_detail');
+            $accurate_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_accurate_detail');
+        }
+
+        // TikTok stats
+        $tiktok_count = 0;
+        $tiktok_today = 0;
+        if ($this->db->table_exists('acc_tiktok_detail')) {
+            $tiktok_count = $this->db->count_all('acc_tiktok_detail');
+            $tiktok_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_tiktok_detail');
+        }
+
+        // Lazada stats
+        $lazada_count = 0;
+        $lazada_today = 0;
+        if ($this->db->table_exists('acc_lazada_detail')) {
+            $lazada_count = $this->db->count_all('acc_lazada_detail');
+            $lazada_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_lazada_detail');
+        }
+
+        // Calculate totals
+        $total_count = $shopee_count + $accurate_count + $tiktok_count + $lazada_count;
+        $total_today = $shopee_today + $accurate_today + $tiktok_today + $lazada_today;
 
         $data = [
-            'title' => $title,
-            'acc_shopee_detail' => $acc_shopee_detail->result(),
-            'acc_accurate_detail' => $acc_accurate_detail->result()
+            'title' => 'Dashboard',
+            'shopee_count' => $shopee_count,
+            'shopee_today' => $shopee_today,
+            'accurate_count' => $accurate_count,
+            'accurate_today' => $accurate_today,
+            'tiktok_count' => $tiktok_count,
+            'tiktok_today' => $tiktok_today,
+            'lazada_count' => $lazada_count,
+            'lazada_today' => $lazada_today,
+            'total_count' => $total_count,
+            'total_today' => $total_today,
         ];
 
         $this->load->view('theme/v_head', $data);
         $this->load->view('Dashboard/v_dashboard');
+    }
+
+    // AJAX function for real-time updates
+    public function get_real_time_stats()
+    {
+        $today = date('Y-m-d');
+
+        // Shopee stats
+        $shopee_count = $this->db->count_all('acc_shopee_detail');
+        $shopee_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_shopee_detail');
+
+        // Accurate stats
+        $accurate_count = 0;
+        $accurate_today = 0;
+        if ($this->db->table_exists('acc_accurate_detail')) {
+            $accurate_count = $this->db->count_all('acc_accurate_detail');
+            $accurate_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_accurate_detail');
+        }
+
+        // TikTok stats
+        $tiktok_count = 0;
+        $tiktok_today = 0;
+        if ($this->db->table_exists('acc_tiktok_detail')) {
+            $tiktok_count = $this->db->count_all('acc_tiktok_detail');
+            $tiktok_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_tiktok_detail');
+        }
+
+        // Lazada stats
+        $lazada_count = 0;
+        $lazada_today = 0;
+        if ($this->db->table_exists('acc_lazada_detail')) {
+            $lazada_count = $this->db->count_all('acc_lazada_detail');
+            $lazada_today = $this->db->where('DATE(created_date)', $today)->count_all_results('acc_lazada_detail');
+        }
+
+        echo json_encode([
+            'success' => true,
+            'shopee_count' => $shopee_count,
+            'shopee_today' => $shopee_today,
+            'accurate_count' => $accurate_count,
+            'accurate_today' => $accurate_today,
+            'tiktok_count' => $tiktok_count,
+            'tiktok_today' => $tiktok_today,
+            'lazada_count' => $lazada_count,
+            'lazada_today' => $lazada_today,
+            'updated_at' => date('H:i:s')
+        ]);
     }
 }
