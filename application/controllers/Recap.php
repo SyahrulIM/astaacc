@@ -271,6 +271,11 @@ class Recap extends CI_Controller
                                 $total = $hargaAsli - $totalDiskon;
                                 $discount = $total - $income;
 
+                                // Cek apakah data sudah ada berdasarkan no_faktur
+                                $existingData = $this->db->get_where('acc_shopee_detail', [
+                                    'no_faktur' => $noFaktur
+                                ])->row();
+
                                 $detail = [
                                     'idacc_shopee' => $id_header,
                                     'no_faktur' => $noFaktur,
@@ -281,26 +286,22 @@ class Recap extends CI_Controller
                                     'payment' => $income,
                                     'discount' => $discount,
                                     'refund' => $refund,
-                                    'is_check' => 0,
-                                    'created_date' => date('Y-m-d H:i:s'),
-                                    'created_by' => $this->session->userdata('username'),
                                     'updated_date' => date('Y-m-d H:i:s'),
                                     'updated_by' => $this->session->userdata('username'),
                                     'status' => 1
                                 ];
 
-                                // Upsert for acc_shopee_detail
-                                $exists = $this->db->get_where('acc_shopee_detail', [
-                                    'no_faktur' => $noFaktur,
-                                    'idacc_shopee' => $id_header
-                                ])->row();
+                                if (!$existingData) {
+                                    // Insert baru jika data belum ada
+                                    $detail['is_check'] = 0;
+                                    $detail['created_date'] = date('Y-m-d H:i:s');
+                                    $detail['created_by'] = $this->session->userdata('username');
 
-                                if ($exists) {
-                                    $this->db->where('no_faktur', $noFaktur)
-                                        ->where('idacc_shopee', $id_header)
-                                        ->update('acc_shopee_detail', $detail);
-                                } else {
                                     $this->db->insert('acc_shopee_detail', $detail);
+                                } else {
+                                    // Update jika sudah ada (tidak termasuk note, is_check, status_dir)
+                                    $this->db->where('no_faktur', $noFaktur)
+                                        ->update('acc_shopee_detail', $detail);
                                 }
                                 $processedOrders++;
                             }
@@ -324,22 +325,24 @@ class Recap extends CI_Controller
                                 'price_after_discount' => $price,
                                 'address' => $fullAddress,
                                 'pos_code' => $posCode,
-                                'created_date' => date('Y-m-d H:i:s'),
-                                'created_by' => $this->session->userdata('username'),
                                 'updated_date' => date('Y-m-d H:i:s'),
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
                             ];
 
-                            // FIXED: Remove idacc_shopee from WHERE clause for acc_shopee_detail_details
+                            // Cek apakah sudah ada di acc_shopee_detail_details
                             $exists = $this->db->get_where('acc_shopee_detail_details', [
                                 'no_faktur' => $row['A']
                             ])->row();
 
                             if ($exists) {
+                                // Update jika sudah ada
                                 $this->db->where('no_faktur', $row['A'])
                                     ->update('acc_shopee_detail_details', $detail_order);
                             } else {
+                                // Insert baru jika belum ada
+                                $detail_order['created_date'] = date('Y-m-d H:i:s');
+                                $detail_order['created_by'] = $this->session->userdata('username');
                                 $this->db->insert('acc_shopee_detail_details', $detail_order);
                             }
                             $processedOrders++;
@@ -377,6 +380,11 @@ class Recap extends CI_Controller
                             $discount = is_numeric($discountRaw) ? abs($discountRaw) : str_replace('-', '', $discountRaw);
                             $refund = $sheet->getCell('K' . $rowIndex)->getValue();
 
+                            // Cek apakah data sudah ada berdasarkan no_faktur
+                            $existingData = $this->db->get_where('acc_tiktok_detail', [
+                                'no_faktur' => $noFaktur
+                            ])->row();
+
                             $detail = [
                                 'idacc_tiktok' => $id_header,
                                 'no_faktur' => $noFaktur,
@@ -387,26 +395,22 @@ class Recap extends CI_Controller
                                 'payment' => $payment,
                                 'discount' => $discount,
                                 'refund' => $refund,
-                                'is_check' => 0,
-                                'created_date' => date('Y-m-d H:i:s'),
-                                'created_by' => $this->session->userdata('username'),
                                 'updated_date' => date('Y-m-d H:i:s'),
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
                             ];
 
-                            // Upsert for acc_tiktok_detail
-                            $exists = $this->db->get_where('acc_tiktok_detail', [
-                                'no_faktur' => $noFaktur,
-                                'idacc_tiktok' => $id_header
-                            ])->row();
+                            if (!$existingData) {
+                                // Insert baru jika data belum ada
+                                $detail['is_check'] = 0;
+                                $detail['created_date'] = date('Y-m-d H:i:s');
+                                $detail['created_by'] = $this->session->userdata('username');
 
-                            if ($exists) {
-                                $this->db->where('no_faktur', $noFaktur)
-                                    ->where('idacc_tiktok', $id_header)
-                                    ->update('acc_tiktok_detail', $detail);
-                            } else {
                                 $this->db->insert('acc_tiktok_detail', $detail);
+                            } else {
+                                // Update jika sudah ada (tidak termasuk note, is_check, status_dir)
+                                $this->db->where('no_faktur', $noFaktur)
+                                    ->update('acc_tiktok_detail', $detail);
                             }
                             $processedOrders++;
                         }
@@ -428,22 +432,24 @@ class Recap extends CI_Controller
                                 'price_after_discount' => $price,
                                 'address' => $fullAddress,
                                 'pos_code' => $posCode,
-                                'created_date' => date('Y-m-d H:i:s'),
-                                'created_by' => $this->session->userdata('username'),
                                 'updated_date' => date('Y-m-d H:i:s'),
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
                             ];
 
-                            // FIXED: Remove idacc_tiktok from WHERE clause for acc_tiktok_detail_details
+                            // Cek apakah sudah ada di acc_tiktok_detail_details
                             $exists = $this->db->get_where('acc_tiktok_detail_details', [
                                 'no_faktur' => $row['A']
                             ])->row();
 
                             if ($exists) {
+                                // Update jika sudah ada
                                 $this->db->where('no_faktur', $row['A'])
                                     ->update('acc_tiktok_detail_details', $detail_order);
                             } else {
+                                // Insert baru jika belum ada
+                                $detail_order['created_date'] = date('Y-m-d H:i:s');
+                                $detail_order['created_by'] = $this->session->userdata('username');
                                 $this->db->insert('acc_tiktok_detail_details', $detail_order);
                             }
                             $processedOrders++;
@@ -468,6 +474,12 @@ class Recap extends CI_Controller
                     $processedOrders = 0;
                     foreach ($rows as $i => $row) {
                         if ($i < 6 || !$row['B']) continue;
+
+                        // Cek apakah data sudah ada berdasarkan no_faktur
+                        $existingData = $this->db->get_where('acc_accurate_detail', [
+                            'no_faktur' => $row['B']
+                        ])->row();
+
                         $detail = [
                             'idacc_accurate' => $id_header,
                             'no_faktur' => $row['B'],
@@ -475,21 +487,22 @@ class Recap extends CI_Controller
                             'total_faktur' => str_replace(',', '', $row['J']),
                             'pay' => str_replace(',', '', $row['L']),
                             'discount' => str_replace(',', '', $row['N']),
-                            'payment' => str_replace(',', '', $row['P'])
+                            'payment' => str_replace(',', '', $row['P']),
+                            'updated_date' => date('Y-m-d H:i:s'),
+                            'updated_by' => $this->session->userdata('username'),
+                            'status' => 1
                         ];
 
-                        // Upsert for acc_accurate_detail
-                        $exists = $this->db->get_where('acc_accurate_detail', [
-                            'no_faktur' => $row['B'],
-                            'idacc_accurate' => $id_header
-                        ])->row();
+                        if (!$existingData) {
+                            // Insert baru jika data belum ada
+                            $detail['created_date'] = date('Y-m-d H:i:s');
+                            $detail['created_by'] = $this->session->userdata('username');
 
-                        if ($exists) {
-                            $this->db->where('no_faktur', $row['B'])
-                                ->where('idacc_accurate', $id_header)
-                                ->update('acc_accurate_detail', $detail);
-                        } else {
                             $this->db->insert('acc_accurate_detail', $detail);
+                        } else {
+                            // Update jika sudah ada
+                            $this->db->where('no_faktur', $row['B'])
+                                ->update('acc_accurate_detail', $detail);
                         }
                         $processedOrders++;
                     }
@@ -515,7 +528,6 @@ class Recap extends CI_Controller
 
                     // Create arrays to store order data
                     $orderData = [];
-                    $itemCounter = []; // Untuk melacak jumlah item per faktur
 
                     foreach ($rows as $i => $row) {
                         if ($i < 2) continue; // Start from row 2
@@ -541,8 +553,8 @@ class Recap extends CI_Controller
                         // Initialize item data if not exists
                         if (!isset($orderData[$itemKey])) {
                             $orderData[$itemKey] = [
-                                'no_faktur' => $orderNumber,  // Simpan nomor pesanan asli
-                                'order_id' => $orderId,       // Simpan ID pesanan
+                                'no_faktur' => $orderNumber,
+                                'order_id' => $orderId,
                                 'sku' => $sku,
                                 'product_name' => $productName,
                                 'order_date' => !empty($row['J']) ? date('Y-m-d', strtotime($row['J'])) : null,
@@ -553,7 +565,7 @@ class Recap extends CI_Controller
                                 'refund' => 0,
                                 'omset_amount' => 0,
                                 'discount_amount' => 0,
-                                'combined_key' => $orderNumber . '_' . $orderId // Key untuk grouping
+                                'combined_key' => $orderNumber . '_' . $orderId
                             ];
                         }
 
@@ -619,9 +631,14 @@ class Recap extends CI_Controller
                         // Gunakan order_id sebagai no_faktur untuk detail
                         $detailFaktur = $summary['order_id'];
 
+                        // Cek apakah data sudah ada berdasarkan no_faktur
+                        $existingData = $this->db->get_where('acc_lazada_detail', [
+                            'no_faktur' => $detailFaktur
+                        ])->row();
+
                         $detail = [
                             'idacc_lazada' => $id_header,
-                            'no_faktur' => $detailFaktur, // Gunakan order_id sebagai faktur
+                            'no_faktur' => $detailFaktur,
                             'order_date' => $summary['order_date'],
                             'pay_date' => $summary['pay_date'],
                             'total_faktur' => $total_faktur,
@@ -629,44 +646,38 @@ class Recap extends CI_Controller
                             'discount' => $discount,
                             'payment' => $pay,
                             'refund' => $summary['refund'],
-                            'is_check' => 0,
-                            'created_date' => date('Y-m-d H:i:s'),
-                            'created_by' => $this->session->userdata('username'),
                             'updated_date' => date('Y-m-d H:i:s'),
                             'updated_by' => $this->session->userdata('username'),
                             'status' => 1
                         ];
 
-                        // Upsert main order detail - Gunakan order_id sebagai faktur
-                        $exists = $this->db->get_where('acc_lazada_detail', [
-                            'no_faktur' => $detailFaktur,
-                            'idacc_lazada' => $id_header
-                        ])->row();
+                        if (!$existingData) {
+                            // Insert baru jika data belum ada
+                            $detail['is_check'] = 0;
+                            $detail['created_date'] = date('Y-m-d H:i:s');
+                            $detail['created_by'] = $this->session->userdata('username');
 
-                        if ($exists) {
-                            $this->db->where('no_faktur', $detailFaktur)
-                                ->where('idacc_lazada', $id_header)
-                                ->update('acc_lazada_detail', $detail);
-                        } else {
                             $this->db->insert('acc_lazada_detail', $detail);
+                        } else {
+                            // Update jika sudah ada (tidak termasuk note, is_check, status_dir)
+                            $this->db->where('no_faktur', $detailFaktur)
+                                ->update('acc_lazada_detail', $detail);
                         }
 
                         $processedOrders++;
 
-                        // Insert each item separately into detail_details
+                        // Process each item
                         foreach ($summary['items'] as $item) {
                             // Calculate price_after_discount = Omset - Diskon LazKoin untuk item ini
                             $priceAfterDiscount = $item['omset_amount'] - $item['discount_amount'];
 
                             $detail_order = [
-                                'no_faktur' => $detailFaktur, // Gunakan order_id sebagai faktur
+                                'no_faktur' => $detailFaktur,
                                 'sku' => $item['sku'],
                                 'name_product' => $item['product_name'],
                                 'price_after_discount' => $priceAfterDiscount,
                                 'address' => '',
                                 'pos_code' => '',
-                                'created_date' => date('Y-m-d H:i:s'),
-                                'created_by' => $this->session->userdata('username'),
                                 'updated_date' => date('Y-m-d H:i:s'),
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
@@ -679,7 +690,7 @@ class Recap extends CI_Controller
                             ])->row();
 
                             if ($existsDetail) {
-                                // Jika sudah ada, update dengan menambahkan jumlah
+                                // Update jika sudah ada
                                 $newPriceAfterDiscount = $existsDetail->price_after_discount + $priceAfterDiscount;
                                 $this->db->where('no_faktur', $detailFaktur)
                                     ->where('sku', $item['sku'])
@@ -689,7 +700,9 @@ class Recap extends CI_Controller
                                         'updated_by' => $this->session->userdata('username')
                                     ]);
                             } else {
-                                // Jika belum ada, insert baru
+                                // Insert baru jika belum ada
+                                $detail_order['created_date'] = date('Y-m-d H:i:s');
+                                $detail_order['created_by'] = $this->session->userdata('username');
                                 $this->db->insert('acc_lazada_detail_details', $detail_order);
                                 $processedItems++;
                             }
@@ -764,6 +777,6 @@ class Recap extends CI_Controller
         ];
 
         $this->load->view('theme/v_head', $data);
-        $this->load->view('shopee_recap/v_shopee_recap_detail');
+        $this->load->view('Shopee_recap/v_shopee_recap_detail');
     }
 }
