@@ -782,14 +782,7 @@ class Recap extends CI_Controller
                     $processedItems = 0;
 
                     foreach ($rows as $i => $row) {
-                        // Skip header (baris 1-2 berdasarkan contoh file)
-                        if ($i < 3) continue;
-
-                        // Skip baris summary total (baris yang memiliki kolom A berisi nomor decimal seperti 1.0, 2.0)
-                        $colA = trim($row['A'] ?? '');
-                        if (empty($colA) || $colA === '' || strpos($colA, '.') !== false) {
-                            continue;
-                        }
+                        if ($i < 3) continue; // Skip header (row 1-2 adalah header)
 
                         // Ambil data dari kolom sesuai format SSR Summary
                         $orderNumber = trim($row['B'] ?? ''); // Kolom B = Nomor pesanan (Order ID)
@@ -797,48 +790,17 @@ class Recap extends CI_Controller
                         $productName = trim($row['D'] ?? ''); // Kolom D = Nama produk
                         $sellerSku = trim($row['E'] ?? ''); // Kolom E = Seller SKU
                         $deliveredDate = trim($row['G'] ?? ''); // Kolom G = Tanggal terkirim
-
-                        // Konversi nilai dengan benar
                         $quantity = floatval($row['H'] ?? 0); // Kolom H = Jumlah
-
-                        // Parsing nilai mata uang untuk kolom I, J, K, U
-                        // Kolom I = Harga satuan
-                        $pricePerUnitValue = $row['I'] ?? 0;
-                        if (is_numeric($pricePerUnitValue)) {
-                            $pricePerUnit = intval($pricePerUnitValue);
-                        } else {
-                            $pricePerUnit = intval(str_replace(['Rp', ' ', '.', ','], '', $pricePerUnitValue));
-                        }
-
-                        // Kolom J = Total
-                        $totalValue = $row['J'] ?? 0;
-                        if (is_numeric($totalValue)) {
-                            $total = intval($totalValue);
-                        } else {
-                            $total = intval(str_replace(['Rp', ' ', '.', ','], '', $totalValue));
-                        }
-
-                        // Kolom K = Promo seller
-                        $sellerPromoValue = $row['K'] ?? 0;
-                        if (is_numeric($sellerPromoValue)) {
-                            $sellerPromo = intval($sellerPromoValue);
-                        } else {
-                            $sellerPromo = intval(str_replace(['Rp', ' ', '.', ','], '', $sellerPromoValue));
-                        }
-
-                        // Kolom U = Total pembayaran
-                        $totalPaymentValue = $row['U'] ?? 0;
-                        if (is_numeric($totalPaymentValue)) {
-                            $totalPayment = intval($totalPaymentValue);
-                        } else {
-                            $totalPayment = intval(str_replace(['Rp', ' ', '.', ','], '', $totalPaymentValue));
-                        }
+                        $pricePerUnit = floatval($row['I'] ?? 0); // Kolom I = Harga satuan
+                        $total = floatval($row['J'] ?? 0); // Kolom J = Total
+                        $sellerPromo = floatval($row['K'] ?? 0); // Kolom K = Promo seller
+                        $totalPayment = floatval($row['U'] ?? 0); // Kolom U = Total pembayaran
 
                         // Validasi: skip jika tidak ada order number
                         if (empty($orderNumber)) continue;
 
-                        // Gunakan kombinasi Order ID + SKU sebagai key unik
-                        $itemKey = $orderNumber . '|' . $sellerSku;
+                        // Gunakan kombinasi Order ID + Order Item ID sebagai key unik
+                        $itemKey = $orderNumber . '|' . $orderItemId;
 
                         if (!isset($orderData[$itemKey])) {
                             $orderData[$itemKey] = [
@@ -883,11 +845,9 @@ class Recap extends CI_Controller
 
                     // Proses setiap order summary ke acc_blibli_detail
                     foreach ($orderSummary as $noFaktur => $summary) {
-                        // Format nilai sesuai dengan format di database (dalam satuan penuh)
-                        $totalFaktur = intval($summary['total_faktur']);
-                        $pay = intval($summary['total_faktur']); // pay sama dengan total_faktur
-                        $payment = intval($summary['total_payment']);
-                        $discount = intval($summary['total_seller_promo']); // Seller promo sebagai discount
+                        $pay = $summary['total_faktur'];
+                        $payment = $summary['total_payment'];
+                        $discount = $summary['total_seller_promo']; // Seller promo sebagai discount
 
                         // Cek apakah data sudah ada berdasarkan no_faktur
                         $existingData = $this->db->get_where('acc_blibli_detail', [
@@ -899,7 +859,7 @@ class Recap extends CI_Controller
                             'no_faktur' => $noFaktur,
                             'order_date' => $summary['order_date'],
                             'pay_date' => '0000-00-00', // Default seperti yang diminta
-                            'total_faktur' => $totalFaktur,
+                            'total_faktur' => $summary['total_faktur'],
                             'pay' => $pay,
                             'discount' => $discount,
                             'payment' => $payment,
@@ -926,16 +886,13 @@ class Recap extends CI_Controller
 
                         // Proses setiap item ke acc_blibli_detail_details
                         foreach ($summary['items'] as $item) {
-                            // Potong nama produk jika terlalu panjang (maks 50 karakter sesuai database)
-                            $productName = substr($item['product_name'], 0, 50);
-
                             $detail_order = [
                                 'no_faktur' => $noFaktur,
                                 'sku' => $item['sku'],
-                                'name_product' => $productName,
-                                'price_after_discount' => intval($item['price_after_discount']),
+                                'name_product' => $item['product_name'],
+                                'price_after_discount' => $item['price_after_discount'],
                                 'address' => null, // Null seperti yang diminta
-                                'pos_code' => 0, // 0 seperti yang diminta
+                                'pos_code' => 00000, // 00000 seperti yang diminta
                                 'updated_date' => date('Y-m-d H:i:s'),
                                 'updated_by' => $this->session->userdata('username'),
                                 'status' => 1
@@ -952,8 +909,8 @@ class Recap extends CI_Controller
                                 $this->db->where('no_faktur', $noFaktur)
                                     ->where('sku', $item['sku'])
                                     ->update('acc_blibli_detail_details', [
-                                        'price_after_discount' => intval($item['price_after_discount']),
-                                        'name_product' => $productName,
+                                        'price_after_discount' => $item['price_after_discount'],
+                                        'name_product' => $item['product_name'],
                                         'updated_date' => date('Y-m-d H:i:s'),
                                         'updated_by' => $this->session->userdata('username')
                                     ]);

@@ -32,6 +32,9 @@
                     <a href="<?= base_url('assets/template_excel/lazada/Saababbc280a34be799c7ed74aa259d7df.xlsx') ?>" class="btn btn-sm btn-warning" download>
                         <i class="fas fa-file-excel"></i> Lazada
                     </a>
+                    <a href="<?= base_url('assets/template_excel/blibli/template_blibli.xlsx') ?>" class="btn btn-sm btn-danger" download>
+                        <i class="fas fa-file-excel"></i> Blibli
+                    </a>
                 </div>
             </div>
             <div class="card-body">
@@ -45,6 +48,7 @@
                         <option value="tiktok_kotime">Tiktok Kotime</option>
                         <option value="lazada">Lazada Asta</option>
                         <option value="lazada_kotime">Lazada Kotime</option>
+                        <option value="blibli">Blibli Asta</option>
                         <option value="accurate">Accurate</option>
                     </select>
                 </div>
@@ -122,6 +126,8 @@
                                             $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
                                         } elseif (strtolower($arvalue->source) === 'lazada') {
                                             $row_style = 'style="background-color: #0F146D; color: white;"'; // Blue Lazada
+                                        } elseif (strtolower($arvalue->source) === 'blibli') {
+                                            $row_style = 'style="background-color: #FF6600; color: white;"'; // Orange Blibli
                                         } else {
                                             $row_style = '';
                                         }
@@ -139,6 +145,9 @@
                                             <?php } else if (strpos($arvalue->source, 'lazada') !== false) { ?>
                                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Lazada <?php echo $arvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
+                                            <?php } else if (strpos($arvalue->source, 'blibli') !== false) { ?>
+                                            <img src="https://cdn.brandfetch.io/idJ9dK4XYB/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757588357687" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                            Blibli <?php echo $arvalue->source == 'blibli_kotime' ? 'Kotime' : 'Asta'; ?>
                                             <?php } else if ($arvalue->source == 'accurate') { ?>
                                             <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Accurate
@@ -261,7 +270,9 @@
             accurate: [], // No options for Accurate
             accurate_kotime: [], // No options for Accurate Kotime (not in dropdown)
             lazada: [], // No options for Lazada
-            lazada_kotime: [] // No options for Lazada Kotime
+            lazada_kotime: [], // No options for Lazada Kotime
+            blibli: [], // No options for Blibli
+            blibli_kotime: [] // No options for Blibli Kotime
         };
 
         // Function to update Type Excel dropdown
@@ -271,12 +282,14 @@
             // Clear existing options
             typeExcelSelect.innerHTML = '';
 
-            // If no marketplace selected or Accurate/Lazada (or their kotime versions) is selected
+            // If no marketplace selected or Accurate/Lazada/Blibli (or their kotime versions) is selected
             if (!selectedMarketplace ||
                 selectedMarketplace === 'accurate' ||
                 selectedMarketplace === 'lazada' ||
+                selectedMarketplace === 'blibli' ||
                 selectedMarketplace === 'accurate_kotime' ||
-                selectedMarketplace === 'lazada_kotime') {
+                selectedMarketplace === 'lazada_kotime' ||
+                selectedMarketplace === 'blibli_kotime') {
 
                 typeExcelContainer.style.display = 'none';
                 typeExcelSelect.removeAttribute('required');
