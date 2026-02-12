@@ -146,7 +146,7 @@
                                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Lazada <?php echo $arvalue->source == 'lazada_kotime' ? 'Kotime' : 'Asta'; ?>
                                             <?php } else if (strpos($arvalue->source, 'blibli') !== false) { ?>
-                                            <img src="https://cdn.brandfetch.io/idJ9dK4XYB/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757588357687" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                                            <img src="https://cdn.brandfetch.io/idb6ac5eKS/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1765597139425" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                                             Blibli <?php echo $arvalue->source == 'blibli_kotime' ? 'Kotime' : 'Asta'; ?>
                                             <?php } else if ($arvalue->source == 'accurate') { ?>
                                             <img src="https://penjualanonline.id/wp-content/uploads/2022/01/Logo-Accurate-Cloud.png" alt="Accurate Logo" style="height:20px; vertical-align:middle; margin-right:5px;">

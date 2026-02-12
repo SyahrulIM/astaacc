@@ -388,7 +388,7 @@
                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                             Lazada <?php echo $is_kotime ? 'Kotime' : 'Asta'; ?>
                             <?php } else if ($row->source == 'blibli') { ?>
-                            <img src="https://cdn.brandfetch.io/idNm9i5M80/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586526763" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            <img src="https://cdn.brandfetch.io/idb6ac5eKS/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1765597139425" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
                             Blibli
                             <?php } ?>
                         </td>
