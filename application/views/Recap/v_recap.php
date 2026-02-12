@@ -32,7 +32,7 @@
                     <a href="<?= base_url('assets/template_excel/lazada/Saababbc280a34be799c7ed74aa259d7df.xlsx') ?>" class="btn btn-sm btn-warning" download>
                         <i class="fas fa-file-excel"></i> Lazada
                     </a>
-                    <a href="<?= base_url('assets/template_excel/blibli/template_blibli.xlsx') ?>" class="btn btn-sm btn-danger" download>
+                    <a href="<?= base_url('assets/template_excel/blibli/20260104_ASH-42763_SettlementReport.xlsx.xlsx') ?>" class="btn btn-sm btn-danger" download>
                         <i class="fas fa-file-excel"></i> Blibli
                     </a>
                 </div>
