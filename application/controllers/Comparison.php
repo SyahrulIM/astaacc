@@ -46,11 +46,13 @@ class Comparison extends CI_Controller
             $filterShopee = [];
             $filterTiktok = [];
             $filterLazada = [];
+            $filterBlibli = [];
 
             // Marketplace filter berdasarkan is_kotime
             if ($base_marketplace === 'shopee') {
                 $filterTiktok[] = "1 = 0";
                 $filterLazada[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
 
                 // Tambahkan kondisi is_kotime jika dipilih
                 if ($is_kotime) {
@@ -61,6 +63,7 @@ class Comparison extends CI_Controller
             } elseif ($base_marketplace === 'tiktok') {
                 $filterShopee[] = "1 = 0";
                 $filterLazada[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
 
                 // Tambahkan kondisi is_kotime jika dipilih
                 if ($is_kotime) {
@@ -71,12 +74,22 @@ class Comparison extends CI_Controller
             } elseif ($base_marketplace === 'lazada') {
                 $filterShopee[] = "1 = 0";
                 $filterTiktok[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
 
                 // Tambahkan kondisi is_kotime jika dipilih
                 if ($is_kotime) {
                     $filterLazada[] = "l.is_kotime = 1";
                 } else if ($marketplace_filter === 'lazada') {
                     $filterLazada[] = "l.is_kotime = 0";
+                }
+            } elseif ($base_marketplace === 'blibli') {
+                $filterShopee[] = "1 = 0";
+                $filterTiktok[] = "1 = 0";
+                $filterLazada[] = "1 = 0";
+
+                // Blibli tidak memiliki is_kotime
+                if ($marketplace_filter === 'blibli') {
+                    $filterBlibli[] = "1 = 1"; // Always true
                 }
             }
 
@@ -85,12 +98,14 @@ class Comparison extends CI_Controller
                 $filterShopee[] = "asd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
                 $filterTiktok[] = "atd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
                 $filterLazada[] = "ald.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
+                $filterBlibli[] = "abd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
             }
 
             if ($order_start && $order_end) {
                 $filterShopee[] = "asd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
                 $filterTiktok[] = "atd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
                 $filterLazada[] = "ald.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
+                $filterBlibli[] = "abd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
             }
 
             // Type status filter...
@@ -98,121 +113,155 @@ class Comparison extends CI_Controller
                 $filterShopee[] = "asd.refund < 0";
                 $filterTiktok[] = "atd.refund < 0";
                 $filterLazada[] = "ald.refund < 0";
+                $filterBlibli[] = "abd.refund < 0";
             } elseif ($type_status == 'pembayaran') {
                 $filterShopee[] = "asd.refund >= 0";
                 $filterTiktok[] = "atd.refund >= 0";
                 $filterLazada[] = "ald.refund >= 0";
+                $filterBlibli[] = "abd.refund >= 0";
             }
 
             $whereShopee = !empty($filterShopee) ? "WHERE " . implode(" AND ", $filterShopee) : "";
             $whereTiktok = !empty($filterTiktok) ? "WHERE " . implode(" AND ", $filterTiktok) : "";
             $whereLazada = !empty($filterLazada) ? "WHERE " . implode(" AND ", $filterLazada) : "";
+            $whereBlibli = !empty($filterBlibli) ? "WHERE " . implode(" AND ", $filterBlibli) : "";
 
             $sql = "
-        SELECT
-            asd.no_faktur,
-            MAX(asd.order_date) AS shopee_order_date,
-            MAX(asd.pay_date) AS shopee_pay_date,
-            MAX(asd.total_faktur) AS shopee_total_faktur,
-            MAX(asd.discount) AS shopee_discount,
-            MAX(asd.payment) AS shopee_payment,
-            MAX(asd.refund) AS shopee_refund,
-            MAX(asd.note) AS note,
-            MAX(asd.is_check) AS is_check,
-            MAX(asd.status_dir) AS status_dir,
-            MAX(aad.pay_date) AS accurate_pay_date,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment,
-            CASE 
-                WHEN MAX(s.is_kotime) = 1 THEN 'shopee_kotime'
-                ELSE 'shopee'
-            END AS source
-        FROM acc_shopee_detail asd
-        INNER JOIN acc_shopee s ON s.idacc_shopee = asd.idacc_shopee
-        LEFT JOIN (
-            SELECT a1.*
-            FROM acc_accurate_detail a1
-            INNER JOIN (
-                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                FROM acc_accurate_detail
-                GROUP BY no_faktur
-            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-        ) aad ON aad.no_faktur = asd.no_faktur
-        {$whereShopee}
-        GROUP BY asd.no_faktur
+            SELECT
+                asd.no_faktur,
+                MAX(asd.order_date) AS shopee_order_date,
+                MAX(asd.pay_date) AS shopee_pay_date,
+                MAX(asd.total_faktur) AS shopee_total_faktur,
+                MAX(asd.discount) AS shopee_discount,
+                MAX(asd.payment) AS shopee_payment,
+                MAX(asd.refund) AS shopee_refund,
+                MAX(asd.note) AS note,
+                MAX(asd.is_check) AS is_check,
+                MAX(asd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                CASE 
+                    WHEN MAX(s.is_kotime) = 1 THEN 'shopee_kotime'
+                    ELSE 'shopee'
+                END AS source
+            FROM acc_shopee_detail asd
+            INNER JOIN acc_shopee s ON s.idacc_shopee = asd.idacc_shopee
+            LEFT JOIN (
+                SELECT a1.*
+                FROM acc_accurate_detail a1
+                INNER JOIN (
+                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                    FROM acc_accurate_detail
+                    GROUP BY no_faktur
+                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+            ) aad ON aad.no_faktur = asd.no_faktur
+            {$whereShopee}
+            GROUP BY asd.no_faktur
 
-        UNION
+            UNION
 
-        SELECT
-            atd.no_faktur,
-            MAX(atd.order_date) AS shopee_order_date,
-            MAX(atd.pay_date) AS shopee_pay_date,
-            MAX(atd.total_faktur) AS shopee_total_faktur,
-            MAX(atd.discount) AS shopee_discount,
-            MAX(atd.payment) AS shopee_payment,
-            MAX(atd.refund) AS shopee_refund,
-            MAX(atd.note) AS note,
-            MAX(atd.is_check) AS is_check,
-            MAX(atd.status_dir) AS status_dir,
-            MAX(aad.pay_date) AS accurate_pay_date,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment,
-            CASE 
-                WHEN MAX(t.is_kotime) = 1 THEN 'tiktok_kotime'
-                ELSE 'tiktok'
-            END AS source
-        FROM acc_tiktok_detail atd
-        INNER JOIN acc_tiktok t ON t.idacc_tiktok = atd.idacc_tiktok
-        LEFT JOIN (
-            SELECT a1.*
-            FROM acc_accurate_detail a1
-            INNER JOIN (
-                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                FROM acc_accurate_detail
-                GROUP BY no_faktur
-            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-        ) aad ON aad.no_faktur = atd.no_faktur
-        {$whereTiktok}
-        GROUP BY atd.no_faktur
+            SELECT
+                atd.no_faktur,
+                MAX(atd.order_date) AS shopee_order_date,
+                MAX(atd.pay_date) AS shopee_pay_date,
+                MAX(atd.total_faktur) AS shopee_total_faktur,
+                MAX(atd.discount) AS shopee_discount,
+                MAX(atd.payment) AS shopee_payment,
+                MAX(atd.refund) AS shopee_refund,
+                MAX(atd.note) AS note,
+                MAX(atd.is_check) AS is_check,
+                MAX(atd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                CASE 
+                    WHEN MAX(t.is_kotime) = 1 THEN 'tiktok_kotime'
+                    ELSE 'tiktok'
+                END AS source
+            FROM acc_tiktok_detail atd
+            INNER JOIN acc_tiktok t ON t.idacc_tiktok = atd.idacc_tiktok
+            LEFT JOIN (
+                SELECT a1.*
+                FROM acc_accurate_detail a1
+                INNER JOIN (
+                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                    FROM acc_accurate_detail
+                    GROUP BY no_faktur
+                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+            ) aad ON aad.no_faktur = atd.no_faktur
+            {$whereTiktok}
+            GROUP BY atd.no_faktur
 
-        UNION
+            UNION
 
-        SELECT
-            ald.no_faktur,
-            MAX(ald.order_date) AS shopee_order_date,
-            MAX(ald.pay_date) AS shopee_pay_date,
-            MAX(ald.total_faktur) AS shopee_total_faktur,
-            MAX(ald.discount) AS shopee_discount,
-            MAX(ald.payment) AS shopee_payment,
-            MAX(ald.refund) AS shopee_refund,
-            MAX(ald.note) AS note,
-            MAX(ald.is_check) AS is_check,
-            MAX(ald.status_dir) AS status_dir,
-            MAX(aad.pay_date) AS accurate_pay_date,
-            MAX(aad.total_faktur) AS accurate_total_faktur,
-            MAX(aad.discount) AS accurate_discount,
-            MAX(aad.payment) AS accurate_payment,
-            CASE 
-                WHEN MAX(l.is_kotime) = 1 THEN 'lazada_kotime'
-                ELSE 'lazada'
-            END AS source
-        FROM acc_lazada_detail ald
-        INNER JOIN acc_lazada l ON l.idacc_lazada = ald.idacc_lazada
-        LEFT JOIN (
-            SELECT a1.*
-            FROM acc_accurate_detail a1
-            INNER JOIN (
-                SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
-                FROM acc_accurate_detail
-                GROUP BY no_faktur
-            ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
-        ) aad ON aad.no_faktur = ald.no_faktur
-        {$whereLazada}
-        GROUP BY ald.no_faktur
+            SELECT
+                ald.no_faktur,
+                MAX(ald.order_date) AS shopee_order_date,
+                MAX(ald.pay_date) AS shopee_pay_date,
+                MAX(ald.total_faktur) AS shopee_total_faktur,
+                MAX(ald.discount) AS shopee_discount,
+                MAX(ald.payment) AS shopee_payment,
+                MAX(ald.refund) AS shopee_refund,
+                MAX(ald.note) AS note,
+                MAX(ald.is_check) AS is_check,
+                MAX(ald.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                CASE 
+                    WHEN MAX(l.is_kotime) = 1 THEN 'lazada_kotime'
+                    ELSE 'lazada'
+                END AS source
+            FROM acc_lazada_detail ald
+            INNER JOIN acc_lazada l ON l.idacc_lazada = ald.idacc_lazada
+            LEFT JOIN (
+                SELECT a1.*
+                FROM acc_accurate_detail a1
+                INNER JOIN (
+                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                    FROM acc_accurate_detail
+                    GROUP BY no_faktur
+                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+            ) aad ON aad.no_faktur = ald.no_faktur
+            {$whereLazada}
+            GROUP BY ald.no_faktur
 
-        ORDER BY no_faktur ASC
+            UNION
+
+            SELECT
+                abd.no_faktur,
+                MAX(abd.order_date) AS shopee_order_date,
+                MAX(abd.pay_date) AS shopee_pay_date,
+                MAX(abd.total_faktur) AS shopee_total_faktur,
+                MAX(abd.discount) AS shopee_discount,
+                MAX(abd.payment) AS shopee_payment,
+                MAX(abd.refund) AS shopee_refund,
+                MAX(abd.note) AS note,
+                MAX(abd.is_check) AS is_check,
+                MAX(abd.status_dir) AS status_dir,
+                MAX(aad.pay_date) AS accurate_pay_date,
+                MAX(aad.total_faktur) AS accurate_total_faktur,
+                MAX(aad.discount) AS accurate_discount,
+                MAX(aad.payment) AS accurate_payment,
+                'blibli' AS source
+            FROM acc_blibli_detail abd
+            LEFT JOIN (
+                SELECT a1.*
+                FROM acc_accurate_detail a1
+                INNER JOIN (
+                    SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                    FROM acc_accurate_detail
+                    GROUP BY no_faktur
+                ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+            ) aad ON aad.no_faktur = abd.no_faktur
+            {$whereBlibli}
+            GROUP BY abd.no_faktur
+
+            ORDER BY no_faktur ASC
         ";
 
             $results = $this->db->query($sql)->result();
@@ -240,6 +289,14 @@ class Comparison extends CI_Controller
                     $sku_data = $this->db
                         ->select('sku')
                         ->from('acc_lazada_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                } elseif ($row->source == 'blibli') {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_blibli_detail_details')
                         ->where('no_faktur', $row->no_faktur)
                         ->get()
                         ->result();
@@ -387,9 +444,15 @@ class Comparison extends CI_Controller
 
                 $additional_data = $this->db->get('acc_lazada_additional')->row();
                 $additional_revenue = $additional_data->additional_revenue ?? 0;
+            } elseif ($base_marketplace == 'blibli') {
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $additional_data = $this->db->get('acc_blibli_additional')->row();
+                $additional_revenue = $additional_data->additional_revenue ?? 0;
             } else {
                 // Semua marketplace
-                $shopee = $tiktok = $lazada = 0;
+                $shopee = $tiktok = $lazada = $blibli = 0;
 
                 // Shopee Asta & Kotime
                 $this->db->select_sum('additional_revenue');
@@ -412,7 +475,14 @@ class Comparison extends CI_Controller
                 $lazada_data = $this->db->get('acc_lazada_additional')->row();
                 $lazada = $lazada_data->additional_revenue ?? 0;
 
-                $additional_revenue = $shopee + $tiktok + $lazada;
+                // Blibli
+                $this->db->select_sum('additional_revenue');
+                $this->db->where('start_date >=', $order_start);
+                $this->db->where('end_date <=', $order_end);
+                $blibli_data = $this->db->get('acc_blibli_additional')->row();
+                $blibli = $blibli_data->additional_revenue ?? 0;
+
+                $additional_revenue = $shopee + $tiktok + $lazada + $blibli;
             }
         }
 
@@ -464,40 +534,45 @@ class Comparison extends CI_Controller
                 $cekLazada = $this->db->get_where('acc_lazada_detail', ['no_faktur' => $no_faktur])->row();
                 if ($cekLazada) {
                     $source = 'lazada';
+                } else {
+                    $cekBlibli = $this->db->get_where('acc_blibli_detail', ['no_faktur' => $no_faktur])->row();
+                    if ($cekBlibli) {
+                        $source = 'blibli';
+                    }
                 }
             }
         }
 
         if (!$source) {
-            echo '<div class="text-danger">Data tidak ditemukan di Shopee, TikTok, atau Lazada.</div>';
+            echo '<div class="text-danger">Data tidak ditemukan di marketplace.</div>';
             return;
         }
 
         if ($source == 'shopee') {
             // Ambil row terakhir Shopee + Accurate terakhir
             $this->db->select('
-            sd.no_faktur,
-            sd.total_faktur,
-            sd.discount,
-            sd.payment,
-            sd.refund,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
+                sd.no_faktur,
+                sd.total_faktur,
+                sd.discount,
+                sd.payment,
+                sd.refund,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
             $this->db->from('acc_shopee_detail sd');
             $this->db->join(
                 "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
-            FROM acc_accurate_detail GROUP BY no_faktur) x",
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
                 "sd.no_faktur = x.no_faktur",
                 "left"
             );
             $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
             $this->db->where("sd.idacc_shopee_detail = (
-            SELECT MAX(idacc_shopee_detail) 
-            FROM acc_shopee_detail 
-            WHERE no_faktur = " . $this->db->escape($no_faktur) . "
-        )");
+                SELECT MAX(idacc_shopee_detail) 
+                FROM acc_shopee_detail 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+            )");
             $detail = $this->db->get()->row();
 
             // Ambil detail SKU Shopee (unik per SKU)
@@ -505,37 +580,37 @@ class Comparison extends CI_Controller
             $this->db->from('acc_shopee_detail_details d');
             $this->db->join(
                 "(SELECT sku, MAX(idacc_shopee_detail_details) AS max_id 
-            FROM acc_shopee_detail_details 
-            WHERE no_faktur = " . $this->db->escape($no_faktur) . " 
-            GROUP BY sku) x",
+                FROM acc_shopee_detail_details 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . " 
+                GROUP BY sku) x",
                 "d.idacc_shopee_detail_details = x.max_id"
             );
             $sku_details = $this->db->get()->result();
         } elseif ($source == 'tiktok') {
             // Ambil row terakhir TikTok + Accurate terakhir
             $this->db->select('
-            td.no_faktur,
-            td.total_faktur,
-            td.discount,
-            td.payment,
-            td.refund,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
+                td.no_faktur,
+                td.total_faktur,
+                td.discount,
+                td.payment,
+                td.refund,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
             $this->db->from('acc_tiktok_detail td');
             $this->db->join(
                 "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
-            FROM acc_accurate_detail GROUP BY no_faktur) x",
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
                 "td.no_faktur = x.no_faktur",
                 "left"
             );
             $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
             $this->db->where("td.idacc_tiktok_detail = (
-            SELECT MAX(idacc_tiktok_detail) 
-            FROM acc_tiktok_detail 
-            WHERE no_faktur = " . $this->db->escape($no_faktur) . "
-        )");
+                SELECT MAX(idacc_tiktok_detail) 
+                FROM acc_tiktok_detail 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+            )");
             $detail = $this->db->get()->row();
 
             // Ambil detail SKU TikTok (unik per SKU)
@@ -549,37 +624,74 @@ class Comparison extends CI_Controller
                 "d.idacc_tiktok_detail_details = x.max_id"
             );
             $sku_details = $this->db->get()->result();
-        } else {
+        } elseif ($source == 'lazada') {
             // Lazada
             // Ambil row terakhir Lazada + Accurate terakhir
             $this->db->select('
-            ld.no_faktur,
-            ld.total_faktur,
-            ld.discount,
-            ld.payment,
-            ld.refund,
-            aad.total_faktur AS accurate_total_faktur,
-            aad.discount AS accurate_discount,
-            aad.payment AS accurate_payment
-        ');
+                ld.no_faktur,
+                ld.total_faktur,
+                ld.discount,
+                ld.payment,
+                ld.refund,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
             $this->db->from('acc_lazada_detail ld');
             $this->db->join(
                 "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
-            FROM acc_accurate_detail GROUP BY no_faktur) x",
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
                 "ld.no_faktur = x.no_faktur",
                 "left"
             );
             $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
             $this->db->where("ld.idacc_lazada_detail = (
-            SELECT MAX(idacc_lazada_detail) 
-            FROM acc_lazada_detail 
-            WHERE no_faktur = " . $this->db->escape($no_faktur) . "
-        )");
+                SELECT MAX(idacc_lazada_detail) 
+                FROM acc_lazada_detail 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+            )");
             $detail = $this->db->get()->row();
 
-            // Note: Lazada doesn't have a separate detail_details table yet
-            // You may need to create one or return empty for now
-            $sku_details = []; // Empty for now until you create Lazada detail_details table
+            $sku_details = [];
+        } elseif ($source == 'blibli') {
+            // Blibli
+            // Ambil row terakhir Blibli + Accurate terakhir
+            $this->db->select('
+                bd.no_faktur,
+                bd.total_faktur,
+                bd.discount,
+                bd.payment,
+                bd.refund,
+                aad.total_faktur AS accurate_total_faktur,
+                aad.discount AS accurate_discount,
+                aad.payment AS accurate_payment
+            ');
+            $this->db->from('acc_blibli_detail bd');
+            $this->db->join(
+                "(SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id 
+                FROM acc_accurate_detail GROUP BY no_faktur) x",
+                "bd.no_faktur = x.no_faktur",
+                "left"
+            );
+            $this->db->join("acc_accurate_detail aad", "aad.idacc_accurate_detail = x.max_id", "left");
+            $this->db->where("bd.idacc_blibli_detail = (
+                SELECT MAX(idacc_blibli_detail) 
+                FROM acc_blibli_detail 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . "
+            )");
+            $detail = $this->db->get()->row();
+
+            // Ambil detail SKU Blibli (unik per SKU)
+            $this->db->select('d.no_faktur, d.sku, d.name_product, d.price_after_discount');
+            $this->db->from('acc_blibli_detail_details d');
+            $this->db->join(
+                "(SELECT sku, MAX(idacc_blibli_detail_details) AS max_id 
+                FROM acc_blibli_detail_details 
+                WHERE no_faktur = " . $this->db->escape($no_faktur) . " 
+                GROUP BY sku) x",
+                "d.idacc_blibli_detail_details = x.max_id"
+            );
+            $sku_details = $this->db->get()->result();
         }
 
         $harga_bottom_map = [];
@@ -590,9 +702,9 @@ class Comparison extends CI_Controller
             $this->db->from('acc_shopee_bottom b');
             $this->db->join(
                 '(SELECT sku, MAX(idacc_shopee_bottom) as max_id 
-          FROM acc_shopee_bottom 
-          WHERE sku IN ("' . implode('","', $sku_list) . '") 
-          GROUP BY sku) latest',
+                FROM acc_shopee_bottom 
+                WHERE sku IN ("' . implode('","', $sku_list) . '") 
+                GROUP BY sku) latest',
                 'b.sku = latest.sku AND b.idacc_shopee_bottom = latest.max_id',
                 'inner'
             );
@@ -605,28 +717,28 @@ class Comparison extends CI_Controller
 
         // Output Ringkasan
         echo '<h5>Perbandingan Data (' . ucfirst($source) . ') - ' . $no_faktur . '</h5>
-    <table class="table table-bordered mb-4">
-        <thead><tr><th></th><th>' . ucfirst($source) . '</th><th>Accurate</th></tr></thead>
-        <tr><th>Total Faktur</th><td>' . number_format($detail->total_faktur ?? 0) . '</td><td>' . number_format($detail->accurate_total_faktur ?? 0) . '</td></tr>
-        <tr><th>Discount</th><td>' . number_format($detail->discount ?? 0) . '</td><td>' . number_format($detail->accurate_discount ?? 0) . '</td></tr>
-        <tr><th>Pembayaran</th><td>' . number_format($detail->payment ?? 0) . '</td><td>' . number_format($detail->accurate_payment ?? 0) . '</td></tr>
-        <tr><th>Refund</th><td>' . number_format($detail->refund ?? 0) . '</td><td>0</td></tr>
-    </table>';
+        <table class="table table-bordered mb-4">
+            <thead><tr><th></th><th>' . ucfirst($source) . '</th><th>Accurate</th></tr></thead>
+            <tr><th>Total Faktur</th><td>' . number_format($detail->total_faktur ?? 0) . '</td><td>' . number_format($detail->accurate_total_faktur ?? 0) . '</td></tr>
+            <tr><th>Discount</th><td>' . number_format($detail->discount ?? 0) . '</td><td>' . number_format($detail->accurate_discount ?? 0) . '</td></tr>
+            <tr><th>Pembayaran</th><td>' . number_format($detail->payment ?? 0) . '</td><td>' . number_format($detail->accurate_payment ?? 0) . '</td></tr>
+            <tr><th>Refund</th><td>' . number_format($detail->refund ?? 0) . '</td><td>0</td></tr>
+        </table>';
 
         // Output SKU only if available
         if (!empty($sku_details)) {
             echo '<h5>Detail Produk (' . ucfirst($source) . ' & Bottom)</h5>
-        <table class="table table-striped table-bordered">
-        <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead><tbody>';
+            <table class="table table-striped table-bordered">
+            <thead><tr><th>SKU</th><th>Nama Produk</th><th>Harga Invoice</th><th>Harga Bottom</th></tr></thead><tbody>';
 
             foreach ($sku_details as $item) {
                 $bottom = $harga_bottom_map[$item->sku] ?? '-';
                 echo '<tr>
-            <td>' . htmlspecialchars($item->sku) . '</td>
-            <td>' . htmlspecialchars($item->name_product) . '</td>
-            <td>' . number_format((float) $item->price_after_discount) . '</td>
-            <td>' . (is_numeric($bottom) ? number_format($bottom) : '-') . '</td>
-        </tr>';
+                    <td>' . htmlspecialchars($item->sku) . '</td>
+                    <td>' . htmlspecialchars($item->name_product) . '</td>
+                    <td>' . number_format((float) $item->price_after_discount) . '</td>
+                    <td>' . (is_numeric($bottom) ? number_format($bottom) : '-') . '</td>
+                </tr>';
             }
 
             echo '</tbody></table>';
@@ -639,25 +751,87 @@ class Comparison extends CI_Controller
     {
         $no_faktur = $this->input->post('no_faktur');
 
+        // Try to update in all marketplace tables
+        $updated = false;
+        $source = '';
+
+        // Check and update Shopee
         $this->db->where('no_faktur', $no_faktur);
         $updated = $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
+        if ($this->db->affected_rows() > 0) {
+            $source = 'Shopee';
+        } else {
+            // Check and update TikTok
+            $this->db->where('no_faktur', $no_faktur);
+            $updated = $this->db->update('acc_tiktok_detail', ['status_dir' => 'Allowed']);
+            if ($this->db->affected_rows() > 0) {
+                $source = 'TikTok';
+            } else {
+                // Check and update Lazada
+                $this->db->where('no_faktur', $no_faktur);
+                $updated = $this->db->update('acc_lazada_detail', ['status_dir' => 'Allowed']);
+                if ($this->db->affected_rows() > 0) {
+                    $source = 'Lazada';
+                } else {
+                    // Check and update Blibli
+                    $this->db->where('no_faktur', $no_faktur);
+                    $updated = $this->db->update('acc_blibli_detail', ['status_dir' => 'Allowed']);
+                    if ($this->db->affected_rows() > 0) {
+                        $source = 'Blibli';
+                    }
+                }
+            }
+        }
 
         echo json_encode([
             'success' => $updated,
-            'no_faktur' => $no_faktur
+            'no_faktur' => $no_faktur,
+            'source' => $source
         ]);
     }
 
     public function final_dir_batch()
     {
         $faktur_list = $this->input->post('faktur_list');
+        $processed_count = 0;
 
-        $this->db->where_in('no_faktur', $faktur_list);
-        $updated = $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
+        // Process each invoice
+        foreach ($faktur_list as $no_faktur) {
+            // Try to update in all marketplace tables
+            $updated = false;
+
+            $this->db->where('no_faktur', $no_faktur);
+            $this->db->update('acc_shopee_detail', ['status_dir' => 'Allowed']);
+            if ($this->db->affected_rows() > 0) {
+                $processed_count++;
+                continue;
+            }
+
+            $this->db->where('no_faktur', $no_faktur);
+            $this->db->update('acc_tiktok_detail', ['status_dir' => 'Allowed']);
+            if ($this->db->affected_rows() > 0) {
+                $processed_count++;
+                continue;
+            }
+
+            $this->db->where('no_faktur', $no_faktur);
+            $this->db->update('acc_lazada_detail', ['status_dir' => 'Allowed']);
+            if ($this->db->affected_rows() > 0) {
+                $processed_count++;
+                continue;
+            }
+
+            $this->db->where('no_faktur', $no_faktur);
+            $this->db->update('acc_blibli_detail', ['status_dir' => 'Allowed']);
+            if ($this->db->affected_rows() > 0) {
+                $processed_count++;
+                continue;
+            }
+        }
 
         echo json_encode([
-            'success' => $updated,
-            'processed' => count($faktur_list)
+            'success' => $processed_count > 0,
+            'processed' => $processed_count
         ]);
     }
 
@@ -682,84 +856,213 @@ class Comparison extends CI_Controller
         if (($start_date && $end_date) || ($order_start && $order_end)) {
             $filterShopee = [];
             $filterTiktok = [];
+            $filterLazada = [];
+            $filterBlibli = [];
 
-            if ($marketplace_filter === 'Shopee') {
+            if ($marketplace_filter === 'shopee' || $marketplace_filter === 'shopee_kotime') {
                 $filterTiktok[] = "1 = 0";
-            } elseif ($marketplace_filter === 'TikTok') {
+                $filterLazada[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
+
+                if ($marketplace_filter === 'shopee_kotime') {
+                    $filterShopee[] = "s.is_kotime = 1";
+                } else {
+                    $filterShopee[] = "s.is_kotime = 0";
+                }
+            } elseif ($marketplace_filter === 'tiktok' || $marketplace_filter === 'tiktok_kotime') {
                 $filterShopee[] = "1 = 0";
+                $filterLazada[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
+
+                if ($marketplace_filter === 'tiktok_kotime') {
+                    $filterTiktok[] = "t.is_kotime = 1";
+                } else {
+                    $filterTiktok[] = "t.is_kotime = 0";
+                }
+            } elseif ($marketplace_filter === 'lazada' || $marketplace_filter === 'lazada_kotime') {
+                $filterShopee[] = "1 = 0";
+                $filterTiktok[] = "1 = 0";
+                $filterBlibli[] = "1 = 0";
+
+                if ($marketplace_filter === 'lazada_kotime') {
+                    $filterLazada[] = "l.is_kotime = 1";
+                } else {
+                    $filterLazada[] = "l.is_kotime = 0";
+                }
+            } elseif ($marketplace_filter === 'blibli') {
+                $filterShopee[] = "1 = 0";
+                $filterTiktok[] = "1 = 0";
+                $filterLazada[] = "1 = 0";
             }
 
             // Date filters
             if ($start_date && $end_date) {
-                $filterShopee[] = "asd.pay_date >= '{$start_date}'";
-                $filterShopee[] = "asd.pay_date <= '{$end_date}'";
-                $filterTiktok[] = "atd.pay_date >= '{$start_date}'";
-                $filterTiktok[] = "atd.pay_date <= '{$end_date}'";
+                $filterShopee[] = "asd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
+                $filterTiktok[] = "atd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
+                $filterLazada[] = "ald.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
+                $filterBlibli[] = "abd.pay_date BETWEEN '{$start_date}' AND '{$end_date}'";
             }
             if ($order_start && $order_end) {
-                $filterShopee[] = "asd.order_date >= '{$order_start}'";
-                $filterShopee[] = "asd.order_date <= '{$order_end}'";
-                $filterTiktok[] = "atd.order_date >= '{$order_start}'";
-                $filterTiktok[] = "atd.order_date <= '{$order_end}'";
+                $filterShopee[] = "asd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
+                $filterTiktok[] = "atd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
+                $filterLazada[] = "ald.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
+                $filterBlibli[] = "abd.order_date BETWEEN '{$order_start}' AND '{$order_end}'";
             }
 
             if ($type_status == 'retur') {
                 $filterShopee[] = "asd.refund < 0";
                 $filterTiktok[] = "atd.refund < 0";
+                $filterLazada[] = "ald.refund < 0";
+                $filterBlibli[] = "abd.refund < 0";
             } elseif ($type_status == 'pembayaran') {
-                $filterShopee[] = "asd.refund > 0";
-                $filterTiktok[] = "atd.refund > 0";
+                $filterShopee[] = "asd.refund >= 0";
+                $filterTiktok[] = "atd.refund >= 0";
+                $filterLazada[] = "ald.refund >= 0";
+                $filterBlibli[] = "abd.refund >= 0";
             }
 
             $whereShopee = !empty($filterShopee) ? "WHERE " . implode(" AND ", $filterShopee) : "";
             $whereTiktok = !empty($filterTiktok) ? "WHERE " . implode(" AND ", $filterTiktok) : "";
+            $whereLazada = !empty($filterLazada) ? "WHERE " . implode(" AND ", $filterLazada) : "";
+            $whereBlibli = !empty($filterBlibli) ? "WHERE " . implode(" AND ", $filterBlibli) : "";
 
             $sql = "
-            SELECT
-                asd.no_faktur,
-                MAX(asd.order_date) AS shopee_order_date,
-                MAX(asd.pay_date) AS shopee_pay_date,
-                MAX(asd.total_faktur) AS shopee_total_faktur,
-                MAX(asd.discount) AS shopee_discount,
-                MAX(asd.payment) AS shopee_payment,
-                MAX(asd.refund) AS shopee_refund,
-                MAX(asd.note) AS note,
-                MAX(asd.is_check) AS is_check,
-                MAX(asd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'shopee' AS source
-            FROM acc_shopee_detail asd
-            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = asd.no_faktur
-            {$whereShopee}
-            GROUP BY asd.no_faktur
+                SELECT
+                    asd.no_faktur,
+                    MAX(asd.order_date) AS shopee_order_date,
+                    MAX(asd.pay_date) AS shopee_pay_date,
+                    MAX(asd.total_faktur) AS shopee_total_faktur,
+                    MAX(asd.discount) AS shopee_discount,
+                    MAX(asd.payment) AS shopee_payment,
+                    MAX(asd.refund) AS shopee_refund,
+                    MAX(asd.note) AS note,
+                    MAX(asd.is_check) AS is_check,
+                    MAX(asd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    CASE 
+                        WHEN MAX(s.is_kotime) = 1 THEN 'Shopee Kotime'
+                        ELSE 'Shopee'
+                    END AS source
+                FROM acc_shopee_detail asd
+                INNER JOIN acc_shopee s ON s.idacc_shopee = asd.idacc_shopee
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = asd.no_faktur
+                {$whereShopee}
+                GROUP BY asd.no_faktur
 
-            UNION
+                UNION
 
-            SELECT
-                atd.no_faktur,
-                MAX(atd.order_date) AS shopee_order_date,
-                MAX(atd.pay_date) AS shopee_pay_date,
-                MAX(atd.total_faktur) AS shopee_total_faktur,
-                MAX(atd.discount) AS shopee_discount,
-                MAX(atd.payment) AS shopee_payment,
-                MAX(atd.refund) AS shopee_refund,
-                MAX(atd.note) AS note,
-                MAX(atd.is_check) AS is_check,
-                MAX(atd.status_dir) AS status_dir,
-                MAX(aad.pay_date) AS accurate_pay_date,
-                MAX(aad.total_faktur) AS accurate_total_faktur,
-                MAX(aad.discount) AS accurate_discount,
-                MAX(aad.payment) AS accurate_payment,
-                'tiktok' AS source
-            FROM acc_tiktok_detail atd
-            LEFT JOIN acc_accurate_detail aad ON aad.no_faktur = atd.no_faktur
-            {$whereTiktok}
-            GROUP BY atd.no_faktur
-            ORDER BY no_faktur ASC
-        ";
+                SELECT
+                    atd.no_faktur,
+                    MAX(atd.order_date) AS shopee_order_date,
+                    MAX(atd.pay_date) AS shopee_pay_date,
+                    MAX(atd.total_faktur) AS shopee_total_faktur,
+                    MAX(atd.discount) AS shopee_discount,
+                    MAX(atd.payment) AS shopee_payment,
+                    MAX(atd.refund) AS shopee_refund,
+                    MAX(atd.note) AS note,
+                    MAX(atd.is_check) AS is_check,
+                    MAX(atd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    CASE 
+                        WHEN MAX(t.is_kotime) = 1 THEN 'TikTok Kotime'
+                        ELSE 'TikTok'
+                    END AS source
+                FROM acc_tiktok_detail atd
+                INNER JOIN acc_tiktok t ON t.idacc_tiktok = atd.idacc_tiktok
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = atd.no_faktur
+                {$whereTiktok}
+                GROUP BY atd.no_faktur
+
+                UNION
+
+                SELECT
+                    ald.no_faktur,
+                    MAX(ald.order_date) AS shopee_order_date,
+                    MAX(ald.pay_date) AS shopee_pay_date,
+                    MAX(ald.total_faktur) AS shopee_total_faktur,
+                    MAX(ald.discount) AS shopee_discount,
+                    MAX(ald.payment) AS shopee_payment,
+                    MAX(ald.refund) AS shopee_refund,
+                    MAX(ald.note) AS note,
+                    MAX(ald.is_check) AS is_check,
+                    MAX(ald.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    CASE 
+                        WHEN MAX(l.is_kotime) = 1 THEN 'Lazada Kotime'
+                        ELSE 'Lazada'
+                    END AS source
+                FROM acc_lazada_detail ald
+                INNER JOIN acc_lazada l ON l.idacc_lazada = ald.idacc_lazada
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = ald.no_faktur
+                {$whereLazada}
+                GROUP BY ald.no_faktur
+
+                UNION
+
+                SELECT
+                    abd.no_faktur,
+                    MAX(abd.order_date) AS shopee_order_date,
+                    MAX(abd.pay_date) AS shopee_pay_date,
+                    MAX(abd.total_faktur) AS shopee_total_faktur,
+                    MAX(abd.discount) AS shopee_discount,
+                    MAX(abd.payment) AS shopee_payment,
+                    MAX(abd.refund) AS shopee_refund,
+                    MAX(abd.note) AS note,
+                    MAX(abd.is_check) AS is_check,
+                    MAX(abd.status_dir) AS status_dir,
+                    MAX(aad.pay_date) AS accurate_pay_date,
+                    MAX(aad.total_faktur) AS accurate_total_faktur,
+                    MAX(aad.discount) AS accurate_discount,
+                    MAX(aad.payment) AS accurate_payment,
+                    'Blibli' AS source
+                FROM acc_blibli_detail abd
+                LEFT JOIN (
+                    SELECT a1.*
+                    FROM acc_accurate_detail a1
+                    INNER JOIN (
+                        SELECT no_faktur, MAX(idacc_accurate_detail) AS max_id
+                        FROM acc_accurate_detail
+                        GROUP BY no_faktur
+                    ) latest ON a1.no_faktur = latest.no_faktur AND a1.idacc_accurate_detail = latest.max_id
+                ) aad ON aad.no_faktur = abd.no_faktur
+                {$whereBlibli}
+                GROUP BY abd.no_faktur
+
+                ORDER BY no_faktur ASC
+            ";
 
             $results = $this->db->query($sql)->result();
             $seen_faktur = [];
@@ -767,18 +1070,46 @@ class Comparison extends CI_Controller
             foreach ($results as $row) {
                 if (in_array($row->no_faktur, $seen_faktur)) continue;
 
-                $sku_list = $this->db
-                    ->select('sku')
-                    ->from($row->source == 'Shopee' ? 'acc_shopee_detail_details' : 'acc_tiktok_detail_details')
-                    ->where('no_faktur', $row->no_faktur)
-                    ->get()
-                    ->result();
+                // Get SKUs based on source
+                $sku_list = [];
+                if (strpos($row->source, 'Shopee') !== false) {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_shopee_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                } elseif (strpos($row->source, 'TikTok') !== false) {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_tiktok_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                } elseif (strpos($row->source, 'Lazada') !== false) {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_lazada_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                } elseif ($row->source == 'Blibli') {
+                    $sku_data = $this->db
+                        ->select('sku')
+                        ->from('acc_blibli_detail_details')
+                        ->where('no_faktur', $row->no_faktur)
+                        ->get()
+                        ->result();
+                    $sku_list = array_column($sku_data, 'sku');
+                }
 
-                $skus = array_column($sku_list, 'sku');
                 $total_price_bottom = 0;
-                if (!empty($skus)) {
+                if (!empty($sku_list)) {
                     $this->db->select_sum('price_bottom', 'total_price_bottom');
-                    $this->db->where_in('sku', $skus);
+                    $this->db->where_in('sku', $sku_list);
                     $result_bottom = $this->db->get('acc_shopee_bottom')->row();
                     $total_price_bottom = $result_bottom->total_price_bottom ?? 0;
                 }
@@ -800,7 +1131,7 @@ class Comparison extends CI_Controller
                         empty($matching_status) || ($matching_status === 'match' && $is_match) || ($matching_status === 'mismatch' && !$is_match)
                     ) {
                         if ($accurate > 0 && $shopee > 0) {
-                            $ratio = (($shopee - $accurate) / $accurate) * 100;
+                            $ratio = (($shopee - $accurate) / $shopee) * 100;
                             if ($ratio_status === 'lebih' && $ratio <= $ratio_limit) continue;
                         }
 
@@ -878,10 +1209,10 @@ class Comparison extends CI_Controller
         foreach ($data_comparison as $row) {
             $accurate_payment = (float) ($row->accurate_payment ?? 0);
             $shopee_total = (float) ($row->shopee_total_faktur ?? 0);
-            $ratio_diference = ($accurate_payment == 0) ? 0 : (($shopee_total - $accurate_payment) / $accurate_payment) * 100;
+            $ratio_diference = ($accurate_payment == 0) ? 0 : (($shopee_total - $accurate_payment) / $shopee_total) * 100;
 
             $sheet->setCellValue("A$rowNumber", $rowNumber - 4);
-            $sheet->setCellValue("B$rowNumber", $row->source == 'shopee' ? 'Shopee' : 'TikTok');
+            $sheet->setCellValue("B$rowNumber", $row->source);
             $sheet->setCellValue("C$rowNumber", $row->no_faktur);
             $sheet->setCellValue("D$rowNumber", $row->shopee_order_date ?? '-');
             $sheet->setCellValue("E$rowNumber", $row->shopee_pay_date ?? '-');
@@ -1004,10 +1335,25 @@ class Comparison extends CI_Controller
             return;
         }
 
+        // Try Blibli table
+        $this->db->where('no_faktur', $no_faktur);
+        $blibli_updated = $this->db->update('acc_blibli_detail', ['note' => $note]);
+
+        if ($this->db->affected_rows() > 0) {
+            $updated_data = $this->db->get_where('acc_blibli_detail', ['no_faktur' => $no_faktur])->row();
+            echo json_encode([
+                'success' => true,
+                'no_faktur' => $no_faktur,
+                'note' => $updated_data->note,
+                'source' => 'Blibli'
+            ]);
+            return;
+        }
+
         // If not found in any table
         echo json_encode([
             'success' => false,
-            'message' => 'Faktur tidak ditemukan di database Shopee, TikTok, atau Lazada'
+            'message' => 'Faktur tidak ditemukan di database marketplace'
         ]);
     }
 
@@ -1024,7 +1370,7 @@ class Comparison extends CI_Controller
             return;
         }
 
-        // First try to update in Shopee table
+        // Try to update in Shopee table
         $this->db->where('no_faktur', $no_faktur);
         $shopee_updated = $this->db->update('acc_shopee_detail', ['is_check' => 1]);
 
@@ -1052,10 +1398,38 @@ class Comparison extends CI_Controller
             return;
         }
 
-        // If not found in either table
+        // If not found in TikTok, try Lazada table
+        $this->db->where('no_faktur', $no_faktur);
+        $lazada_updated = $this->db->update('acc_lazada_detail', ['is_check' => 1]);
+
+        if ($this->db->affected_rows() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Status checking berhasil diperbarui (Lazada)',
+                'no_faktur' => $no_faktur,
+                'source' => 'Lazada'
+            ]);
+            return;
+        }
+
+        // If not found in Lazada, try Blibli table
+        $this->db->where('no_faktur', $no_faktur);
+        $blibli_updated = $this->db->update('acc_blibli_detail', ['is_check' => 1]);
+
+        if ($this->db->affected_rows() > 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Status checking berhasil diperbarui (Blibli)',
+                'no_faktur' => $no_faktur,
+                'source' => 'Blibli'
+            ]);
+            return;
+        }
+
+        // If not found in any table
         echo json_encode([
             'success' => false,
-            'message' => 'Faktur tidak ditemukan di database Shopee maupun TikTok',
+            'message' => 'Faktur tidak ditemukan di database marketplace',
             'no_faktur' => $no_faktur
         ]);
     }
@@ -1072,6 +1446,8 @@ class Comparison extends CI_Controller
         // Initialize counters
         $shopee_updated = 0;
         $tiktok_updated = 0;
+        $lazada_updated = 0;
+        $blibli_updated = 0;
         $not_found = [];
 
         // Update Shopee orders
@@ -1084,10 +1460,20 @@ class Comparison extends CI_Controller
         $this->db->update('acc_tiktok_detail', ['is_check' => 1]);
         $tiktok_updated = $this->db->affected_rows();
 
+        // Update Lazada orders
+        $this->db->where_in('no_faktur', $faktur_list);
+        $this->db->update('acc_lazada_detail', ['is_check' => 1]);
+        $lazada_updated = $this->db->affected_rows();
+
+        // Update Blibli orders
+        $this->db->where_in('no_faktur', $faktur_list);
+        $this->db->update('acc_blibli_detail', ['is_check' => 1]);
+        $blibli_updated = $this->db->affected_rows();
+
         // Check which invoices weren't found
         $all_faktur = array_flip($faktur_list);
 
-        // Remove found Shopee invoices
+        // Remove found invoices from each marketplace
         if ($shopee_updated > 0) {
             $found_shopee = $this->db->select('no_faktur')
                 ->from('acc_shopee_detail')
@@ -1101,7 +1487,6 @@ class Comparison extends CI_Controller
             }
         }
 
-        // Remove found TikTok invoices
         if ($tiktok_updated > 0) {
             $found_tiktok = $this->db->select('no_faktur')
                 ->from('acc_tiktok_detail')
@@ -1115,23 +1500,53 @@ class Comparison extends CI_Controller
             }
         }
 
+        if ($lazada_updated > 0) {
+            $found_lazada = $this->db->select('no_faktur')
+                ->from('acc_lazada_detail')
+                ->where_in('no_faktur', $faktur_list)
+                ->where('is_check', 1)
+                ->get()
+                ->result_array();
+
+            foreach ($found_lazada as $faktur) {
+                unset($all_faktur[$faktur['no_faktur']]);
+            }
+        }
+
+        if ($blibli_updated > 0) {
+            $found_blibli = $this->db->select('no_faktur')
+                ->from('acc_blibli_detail')
+                ->where_in('no_faktur', $faktur_list)
+                ->where('is_check', 1)
+                ->get()
+                ->result_array();
+
+            foreach ($found_blibli as $faktur) {
+                unset($all_faktur[$faktur['no_faktur']]);
+            }
+        }
+
         $not_found = array_keys($all_faktur);
 
-        $total_updated = $shopee_updated + $tiktok_updated;
+        $total_updated = $shopee_updated + $tiktok_updated + $lazada_updated + $blibli_updated;
 
         echo json_encode([
             'success' => $total_updated > 0,
             'message' => sprintf(
-                'Berhasil update %d faktur (Shopee: %d, TikTok: %d). %d tidak ditemukan: %s',
+                'Berhasil update %d faktur (Shopee: %d, TikTok: %d, Lazada: %d, Blibli: %d). %d tidak ditemukan: %s',
                 $total_updated,
                 $shopee_updated,
                 $tiktok_updated,
+                $lazada_updated,
+                $blibli_updated,
                 count($not_found),
                 implode(', ', $not_found)
             ),
             'stats' => [
                 'shopee_updated' => $shopee_updated,
                 'tiktok_updated' => $tiktok_updated,
+                'lazada_updated' => $lazada_updated,
+                'blibli_updated' => $blibli_updated,
                 'not_found' => $not_found
             ]
         ]);

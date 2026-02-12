@@ -24,6 +24,7 @@
                         <option value="tiktok_kotime" <?= ($marketplace_filter === 'tiktok_kotime' ? 'selected' : '') ?>>TikTok Kotime</option>
                         <option value="lazada" <?= ($marketplace_filter === 'lazada' ? 'selected' : '') ?>>Lazada Asta</option>
                         <option value="lazada_kotime" <?= ($marketplace_filter === 'lazada_kotime' ? 'selected' : '') ?>>Lazada Kotime</option>
+                        <option value="blibli" <?= ($marketplace_filter === 'blibli' ? 'selected' : '') ?>>Blibli</option>
                     </select>
                 </div>
 
@@ -93,6 +94,8 @@
                                 if (strpos($marketplace_filter, '_kotime') !== false) {
                                     $base = str_replace('_kotime', '', $marketplace_filter);
                                     echo ucfirst($base) . ' Kotime';
+                                } elseif ($marketplace_filter === 'blibli') {
+                                    echo 'Blibli';
                                 } else {
                                     echo ucfirst($marketplace_filter) . ' Asta';
                                 }
@@ -154,6 +157,8 @@
                             if (strpos($marketplace_filter, '_kotime') !== false) {
                                 $base = str_replace('_kotime', '', $marketplace_filter);
                                 echo ucfirst($base) . ' Kotime';
+                            } elseif ($marketplace_filter === 'blibli') {
+                                echo 'Blibli';
                             } else {
                                 echo ucfirst($marketplace_filter) . ' Asta';
                             }
@@ -176,16 +181,6 @@
                     <h5>Selisih Total</h5>
                     <h5> : <?= number_format($grand_total_invoice_after_retur - $grand_total_payment_after_retur) ?></h5>
                 </div>
-                <!-- <div class="col">
-                    <h5>Ratio Selisih</h5>
-                    <h5> :
-                        <?php
-                        echo $grand_total_payment_after_retur > 0
-                            ? round((($grand_total_invoice_after_retur - $grand_total_payment_after_retur) / $grand_total_payment_after_retur) * 100, 2)
-                            : 0;
-                        ?>%
-                    </h5>
-                </div> -->
                 <div class="col">
                     <h5>Ratio Selisih</h5>
                     <h5> :
@@ -376,15 +371,25 @@
                         <td><?= $no++ ?></td>
                         <td><?= $row->no_faktur ?></td>
                         <td>
-                            <?php if (strpos($row->source, 'tiktok') !== false) { ?>
+                            <?php
+                                if (strpos($row->source, 'tiktok') !== false) {
+                                    $is_kotime = strpos($row->source, '_kotime') !== false;
+                                    ?>
                             <img src="https://cdn.brandfetch.io/idoruRsDhk/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668515567929" alt="Tiktok Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Tiktok <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
-                            <?php } else if (strpos($row->source, 'shopee') !== false) { ?>
+                            Tiktok <?php echo $is_kotime ? 'Kotime' : 'Asta'; ?>
+                            <?php } else if (strpos($row->source, 'shopee') !== false) {
+                                    $is_kotime = strpos($row->source, '_kotime') !== false;
+                                    ?>
                             <img src="https://cdn.brandfetch.io/idgVhUUiaD/w/500/h/500/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1750904105236" alt="Shopee Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Shopee <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
-                            <?php } else if (strpos($row->source, 'lazada') !== false) { ?>
+                            Shopee <?php echo $is_kotime ? 'Kotime' : 'Asta'; ?>
+                            <?php } else if (strpos($row->source, 'lazada') !== false) {
+                                    $is_kotime = strpos($row->source, '_kotime') !== false;
+                                    ?>
                             <img src="https://cdn.brandfetch.io/idEvFu7hHv/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586763652" alt="Lazada Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
-                            Lazada <?php echo strpos($row->source, '_kotime') !== false ? 'Kotime' : 'Asta'; ?>
+                            Lazada <?php echo $is_kotime ? 'Kotime' : 'Asta'; ?>
+                            <?php } else if ($row->source == 'blibli') { ?>
+                            <img src="https://cdn.brandfetch.io/idNm9i5M80/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1757586526763" alt="Blibli Logo" style="height:20px; vertical-align:middle; margin-right:5px;">
+                            Blibli
                             <?php } ?>
                         </td>
                         <td><?= $row->shopee_order_date ?? '-' ?></td>
@@ -501,6 +506,7 @@
             }]
         });
     });
+
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.detail-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -514,6 +520,38 @@
             });
         });
     });
+
+    // Toast function for notifications
+    function showToast(message, type = 'success') {
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toastContainer);
+        });
+    }
+
     // Start Final Dir
     $(document).on('click', '.btn-final-dir', function(e) {
         e.preventDefault();
@@ -549,6 +587,7 @@
         });
     });
     // End
+
     // Start Multiple Select
     document.getElementById('selectAll').addEventListener('change', function() {
         const isChecked = this.checked;
@@ -596,6 +635,7 @@
         });
     });
     // End
+
     // Start Modal Edit Keterangan (Without Page Refresh)
     $(document).ready(function() {
         // Show modal dan isi datanya
@@ -639,18 +679,19 @@
                         bootstrap.Modal.getInstance(document.getElementById('editNoteModal')).hide();
 
                         // Show success message
-                        alert('Keterangan berhasil diperbarui');
+                        showToast('Keterangan berhasil diperbarui', 'success');
                     } else {
-                        alert('Gagal: ' + response.message);
+                        showToast('Gagal: ' + response.message, 'error');
                     }
                 },
                 error: function() {
-                    alert('Terjadi kesalahan saat menyimpan keterangan');
+                    showToast('Terjadi kesalahan saat menyimpan keterangan', 'error');
                 }
             });
         });
     });
     // End
+
     // Start Tandai Checking
     // Handle checking button click
     $(document).on('click', '.btn-checking', function() {
@@ -699,6 +740,7 @@
         });
     });
     // End
+
     // Start tandai checking select
     $('#selectAll').change(function() {
         $('.select-row').prop('checked', $(this).prop('checked'));
