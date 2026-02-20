@@ -14,25 +14,25 @@
                     <strong>
                         Template:
                     </strong>
-                    <a href="<?= base_url('assets/template_excel/accurate/pembayaran_faktur_suryajayamakmur_250828155006.xlsx') ?>" class="btn btn-sm btn-success" download>
+                    <a href="<?= base_url('assets/template_excel/accurate/pembayaran_faktur_suryajayamakmur_250828155006.xlsx') ?>" class="btn btn-sm btn-danger" download>
                         <i class="fas fa-file-excel"></i> Accurate
                     </a>
-                    <a href="<?= base_url('assets/template_excel/shopee/Income.sudah dilepas.id.20250801_20250822.xlsx') ?>" class="btn btn-sm btn-success" download>
+                    <a href="<?= base_url('assets/template_excel/shopee/Income.sudah dilepas.id.20250801_20250822.xlsx') ?>" class="btn btn-sm" style="background-color: #EE4D2D; color: white; border-color: #EE4D2D;" download>
                         <i class="fas fa-file-excel"></i> Income (Shopee)
                     </a>
-                    <a href="<?= base_url('assets/template_excel/shopee/Order.completed.20250801_20250820.xlsx') ?>" class="btn btn-sm btn-info" download>
+                    <a href="<?= base_url('assets/template_excel/shopee/Order.completed.20250801_20250820.xlsx') ?>" class="btn btn-sm" style="background-color: #EE4D2D; color: white; border-color: #EE4D2D;" download>
                         <i class="fas fa-file-excel"></i> Order (Shopee)
                     </a>
                     <a href="<?= base_url('assets/template_excel/tiktok/income_20250823043937.xlsx') ?>" class="btn btn-sm btn-success" download>
                         <i class="fas fa-file-excel"></i> Income (Tiktok)
                     </a>
-                    <a href="<?= base_url('assets/template_excel/tiktok/Selesai pesanan-2025-08-20-14_38.xlsx') ?>" class="btn btn-sm btn-info" download>
+                    <a href="<?= base_url('assets/template_excel/tiktok/Selesai pesanan-2025-08-20-14_38.xlsx') ?>" class="btn btn-sm btn-success" download>
                         <i class="fas fa-file-excel"></i> Selesai (Tiktok)
                     </a>
-                    <a href="<?= base_url('assets/template_excel/lazada/Saababbc280a34be799c7ed74aa259d7df.xlsx') ?>" class="btn btn-sm btn-warning" download>
+                    <a href="<?= base_url('assets/template_excel/lazada/Saababbc280a34be799c7ed74aa259d7df.xlsx') ?>" class="btn btn-sm" style="background-color: #F01F74; color: white; border-color: #F01F74;" download>
                         <i class="fas fa-file-excel"></i> Lazada
                     </a>
-                    <a href="<?= base_url('assets/template_excel/blibli/20260104_ASH-42763_SettlementReport.xlsx') ?>" class="btn btn-sm btn-danger" download>
+                    <a href="<?= base_url('assets/template_excel/blibli/20260104_ASH-42763_SettlementReport.xlsx') ?>" class="btn btn-sm" style="background-color: #0072FF; color: white; border-color: #0072FF;" download>
                         <i class="fas fa-file-excel"></i> Blibli
                     </a>
                 </div>
@@ -121,13 +121,21 @@
                                         // Determine row style based on source
                                         $row_style = '';
                                         if (strtolower($arvalue->source) === 'shopee') {
-                                            $row_style = 'style="background-color: #EE4D2D; color: white;"'; // Orange Shopee
+                                            $row_style = 'style="background-color: #EE4D2D; color: white;"';
+                                        } elseif (strtolower($arvalue->source) === 'shopee_kotime') {
+                                            $row_style = 'style="background-color: #EE4D2D; color: white;"';
                                         } elseif (strtolower($arvalue->source) === 'tiktok') {
-                                            $row_style = 'style="background-color: #5da96a; color: white;"'; // Green TikTok
+                                            $row_style = 'style="background-color: #5da96a; color: white;"';
+                                        } elseif (strtolower($arvalue->source) === 'tiktok_kotime') {
+                                            $row_style = 'style="background-color: #5da96a; color: white;"';
                                         } elseif (strtolower($arvalue->source) === 'lazada') {
-                                            $row_style = 'style="background-color: #0F146D; color: white;"'; // Blue Lazada
+                                            $row_style = 'style="background-color: #F01F74; color: white;"';
+                                        } elseif (strtolower($arvalue->source) === 'lazada_kotime') {
+                                            $row_style = 'style="background-color: #F01F74; color: white;"';
                                         } elseif (strtolower($arvalue->source) === 'blibli') {
-                                            $row_style = 'style="background-color: #FF6600; color: white;"'; // Orange Blibli
+                                            $row_style = 'style="background-color: #0072FF; color: white;"';
+                                        } elseif (strtolower($arvalue->source) === 'accurate') {
+                                            $row_style = 'style="background-color: #DC3545; color: white;"';
                                         } else {
                                             $row_style = '';
                                         }
